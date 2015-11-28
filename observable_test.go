@@ -1,14 +1,15 @@
-package RxGo
+package RxGo_test
 
 import (
 	"fmt"
+	rx "github.com/droxer/RxGo"
 	"testing"
 )
 
 type simpleOnSubscribe struct {
 }
 
-func (s *simpleOnSubscribe) Call(sub Subscriber) {
+func (s *simpleOnSubscribe) Call(sub rx.Subscriber) {
 	for i := 0; i < 10; i++ {
 		sub.OnNext(i)
 	}
@@ -36,7 +37,7 @@ func (s *simpleSubscriber) OnError(e error) {
 func TestSimpleObservable(t *testing.T) {
 	sub := &simpleSubscriber{10}
 
-	observable := create(&simpleOnSubscribe{})
+	observable := rx.Create(&simpleOnSubscribe{})
 	observable.Subscribe(sub)
 
 	if sub.value != 55 {
@@ -47,7 +48,7 @@ func TestSimpleObservable(t *testing.T) {
 func ExampleSimpleObservable() {
 	sub := &simpleSubscriber{0}
 
-	observable := create(&simpleOnSubscribe{})
+	observable := rx.Create(&simpleOnSubscribe{})
 	observable.Subscribe(sub)
 	//Output: ++ 0
 	//++ 1

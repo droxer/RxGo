@@ -4,7 +4,7 @@ type Observable struct {
 	on OnSubscribe
 }
 
-func create(f OnSubscribe) *Observable {
+func Create(f OnSubscribe) *Observable {
 	return &Observable{f}
 }
 
