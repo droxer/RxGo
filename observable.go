@@ -1,17 +1,15 @@
 package RxGo
 
+type OnSubscribe func(sub Subscriber)
+
 type Observable struct {
 	on OnSubscribe
 }
 
-func Create(f OnSubscribe) *Observable {
-	return &Observable{f}
+func Create(fn OnSubscribe) *Observable {
+	return &Observable{fn}
 }
 
 func (o *Observable) Subscribe(sub Subscriber) {
-	o.on.Call(sub)
-}
-
-type OnSubscribe interface {
-	Call(sub Subscriber)
+	o.on(sub)
 }

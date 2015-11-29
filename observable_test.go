@@ -6,38 +6,34 @@ import (
 	"testing"
 )
 
-type simpleOnSubscribe struct {
-}
-
-func (s *simpleOnSubscribe) Call(sub rx.Subscriber) {
-	for i := 0; i < 10; i++ {
-		sub.OnNext(i)
-	}
-	sub.OnCompleted()
-}
-
-type simpleSubscriber struct {
+type TestSubscriber struct {
 	value int
 }
 
-func (s *simpleSubscriber) OnNext(next interface{}) {
+func (s *TestSubscriber) OnNext(next interface{}) {
 	if v, ok := next.(int); ok {
 		s.value += v
 		fmt.Printf("++ %d\n", v)
 	}
 }
 
-func (s *simpleSubscriber) OnCompleted() {
+func (s *TestSubscriber) OnCompleted() {
 	fmt.Printf("total: %d\n", s.value)
 }
 
-func (s *simpleSubscriber) OnError(e error) {
+func (s *TestSubscriber) OnError(e error) {
 }
 
-func TestSimpleObservable(t *testing.T) {
-	sub := &simpleSubscriber{10}
+func TestCreateObservable(t *testing.T) {
+	sub := &TestSubscriber{10}
 
-	observable := rx.Create(&simpleOnSubscribe{})
+	observable := rx.Create(func(sub rx.Subscriber) {
+		for i := 0; i < 10; i++ {
+			sub.OnNext(i)
+		}
+		sub.OnCompleted()
+	})
+
 	observable.Subscribe(sub)
 
 	if sub.value != 55 {
@@ -45,10 +41,16 @@ func TestSimpleObservable(t *testing.T) {
 	}
 }
 
-func ExampleSimpleObservable() {
-	sub := &simpleSubscriber{0}
+func ExampleCreateObservable() {
+	sub := &TestSubscriber{0}
 
-	observable := rx.Create(&simpleOnSubscribe{})
+	observable := rx.Create(func(sub rx.Subscriber) {
+		for i := 0; i < 10; i++ {
+			sub.OnNext(i)
+		}
+		sub.OnCompleted()
+	})
+
 	observable.Subscribe(sub)
 	//Output: ++ 0
 	//++ 1

@@ -6,6 +6,10 @@ type Observer interface {
 	OnNext(next interface{})
 }
 
+type Subscription interface {
+}
+
 type Subscriber interface {
 	Observer
+	Subscription
 }
