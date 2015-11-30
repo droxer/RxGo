@@ -22,6 +22,14 @@ func (s *TestSubscriber) OnCompleted() {
 }
 
 func (s *TestSubscriber) OnError(e error) {
+	panic(e)
+}
+
+func (s *TestSubscriber) UnSubscribe() {
+}
+
+func (s *TestSubscriber) IsSubscribed() bool {
+	return true
 }
 
 func TestCreateObservable(t *testing.T) {
