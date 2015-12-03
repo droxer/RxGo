@@ -8,7 +8,7 @@ import (
 type threadPoolScheduler struct {
 }
 
-func (t *threadPoolScheduler) CreateWorker() Worker {
+func (t *threadPoolScheduler) CreateWorker() rx.Worker {
 	return &threadWorker{}
 }
 
@@ -24,10 +24,10 @@ func (t *threadWorker) IsSubscribed() bool {
 	return false
 }
 
-func (t *threadWorker) Schedule(ac action0) rx.Subscription {
+func (t *threadWorker) Schedule(ac rx.Action0) rx.Subscription {
 	return nil
 }
 
-func (t *threadWorker) ScheduleAt(ac action0, delay int, unit time.Duration) rx.Subscription {
+func (t *threadWorker) ScheduleAt(ac rx.Action0, delay int, unit time.Duration) rx.Subscription {
 	return nil
 }

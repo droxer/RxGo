@@ -8,7 +8,7 @@ import (
 type eventLoopScheduler struct {
 }
 
-func (e *eventLoopScheduler) CreateWorker() Worker {
+func (e *eventLoopScheduler) CreateWorker() rx.Worker {
 	return &eventLoopWorker{}
 }
 
@@ -23,10 +23,10 @@ func (e *eventLoopWorker) IsSubscribed() bool {
 	return false
 }
 
-func (e *eventLoopWorker) Schedule(ac action0) rx.Subscription {
+func (e *eventLoopWorker) Schedule(ac rx.Action0) rx.Subscription {
 	return nil
 }
 
-func (e *eventLoopWorker) ScheduleAt(ac action0, delay int, unit time.Duration) rx.Subscription {
+func (e *eventLoopWorker) ScheduleAt(ac rx.Action0, delay int, unit time.Duration) rx.Subscription {
 	return nil
 }
