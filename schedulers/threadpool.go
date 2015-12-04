@@ -28,6 +28,6 @@ func (t *threadWorker) Schedule(ac rx.Action0) rx.Subscription {
 	return nil
 }
 
-func (t *threadWorker) ScheduleAt(ac rx.Action0, delay int, unit time.Duration) rx.Subscription {
+func (t *threadWorker) ScheduleAt(ac rx.Action0, delay time.Duration) rx.Subscription {
 	return nil
 }

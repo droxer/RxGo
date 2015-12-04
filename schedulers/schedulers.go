@@ -7,7 +7,7 @@ import (
 
 type periodicallyScheduler struct{}
 
-func (p *periodicallyScheduler) SchedulePeriodically(ac rx.Action0, delay int, period int, unit time.Duration) rx.Subscription {
+func (p *periodicallyScheduler) SchedulePeriodically(ac rx.Action0, initDelay, period time.Duration) rx.Subscription {
 	return nil
 }
 

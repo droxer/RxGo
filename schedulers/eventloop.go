@@ -27,6 +27,6 @@ func (e *eventLoopWorker) Schedule(ac rx.Action0) rx.Subscription {
 	return nil
 }
 
-func (e *eventLoopWorker) ScheduleAt(ac rx.Action0, delay int, unit time.Duration) rx.Subscription {
+func (e *eventLoopWorker) ScheduleAt(ac rx.Action0, delay time.Duration) rx.Subscription {
 	return nil
 }
