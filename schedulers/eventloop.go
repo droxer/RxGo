@@ -12,6 +12,14 @@ func (e *eventLoopScheduler) CreateWorker() rx.Worker {
 	return &eventLoopWorker{}
 }
 
+func (e *eventLoopScheduler) Start() {
+
+}
+
+func (e *eventLoopScheduler) Stop() {
+
+}
+
 type eventLoopWorker struct {
 	periodicallyScheduler
 }

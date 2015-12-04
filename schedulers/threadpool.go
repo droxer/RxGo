@@ -12,6 +12,14 @@ func (t *threadPoolScheduler) CreateWorker() rx.Worker {
 	return &threadWorker{}
 }
 
+func (t *threadPoolScheduler) Start() {
+
+}
+
+func (t *threadPoolScheduler) Stop() {
+
+}
+
 type threadWorker struct {
 	periodicallyScheduler
 }
