@@ -11,7 +11,21 @@ type Subscription interface {
 	IsSubscribed() bool
 }
 
-type Subscriber interface {
-	Observer
-	Subscription
+type Subscriber struct {
+	OnNext        func(next interface{})
+	OnError       func(e error)
+	OnCompleted   func()
+	subscriptions []Subscription
+}
+
+func (s *Subscriber) UnSubscribe() {
+	// TODO: TBD
+}
+
+func (s *Subscriber) IsSubscribed() bool {
+	return false
+}
+
+func (s *Subscriber) Add(sub Subscription) {
+	s.subscriptions = append(s.subscriptions, sub)
 }

@@ -6,36 +6,21 @@ import (
 	"testing"
 )
 
-type TestSubscriber struct {
-	value int
-}
-
-func (s *TestSubscriber) OnNext(next interface{}) {
-	if v, ok := next.(int); ok {
-		s.value += v
-		fmt.Printf("++ %d\n", v)
-	}
-}
-
-func (s *TestSubscriber) OnCompleted() {
-	fmt.Printf("total: %d\n", s.value)
-}
-
-func (s *TestSubscriber) OnError(e error) {
-	panic(e)
-}
-
-func (s *TestSubscriber) UnSubscribe() {
-}
-
-func (s *TestSubscriber) IsSubscribed() bool {
-	return true
+var counter = 0
+var sub = &rx.Subscriber{
+	OnNext: func(next interface{}) {
+		if v, ok := next.(int); ok {
+			counter += v
+			fmt.Printf("++ %d\n", counter)
+		}
+	},
+	OnCompleted: func() {
+		fmt.Printf("total: %d\n", counter)
+	},
 }
 
 func TestCreateObservable(t *testing.T) {
-	sub := &TestSubscriber{10}
-
-	observable := rx.Create(func(sub rx.Subscriber) {
+	observable := rx.Create(func(sub *rx.Subscriber) {
 		for i := 0; i < 10; i++ {
 			sub.OnNext(i)
 		}
@@ -44,31 +29,7 @@ func TestCreateObservable(t *testing.T) {
 
 	observable.Subscribe(sub)
 
-	if sub.value != 55 {
-		t.Errorf("expected 55, got %d", sub.value)
+	if counter != 45 {
+		t.Errorf("expected 45, got %d", counter)
 	}
-}
-
-func ExampleCreateObservable() {
-	sub := &TestSubscriber{0}
-
-	observable := rx.Create(func(sub rx.Subscriber) {
-		for i := 0; i < 10; i++ {
-			sub.OnNext(i)
-		}
-		sub.OnCompleted()
-	})
-
-	observable.Subscribe(sub)
-	//Output: ++ 0
-	//++ 1
-	//++ 2
-	//++ 3
-	//++ 4
-	//++ 5
-	//++ 6
-	//++ 7
-	//++ 8
-	//++ 9
-	//total: 45
 }
