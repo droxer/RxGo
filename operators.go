@@ -1,21 +1,45 @@
 package RxGo
 
-type opSubscribeOn struct {
+type Operator interface {
+	Call(sub Subscriber) Subscriber
+}
+
+type opObserveOn struct {
 	scheduler Scheduler
 }
 
-func (op *opSubscribeOn) Call(sub Subscriber) *Subscriber {
-	inner := op.scheduler.CreateWorker()
-	sub.Add(inner)
-
-	return &Subscriber{
-		OnError: func(e error) {
-			sub.OnError(e)
-		},
-		OnNext: func(next interface{}) {
-			inner.Schedule(func() {
-
-			})
-		},
+func (op *opObserveOn) Call(sub Subscriber) Subscriber {
+	return &observeOnSubscriber{
+		worker: op.scheduler.CreateWorker(),
+		child:  sub,
 	}
+}
+
+type observeOnSubscriber struct {
+	worker Worker
+	child  Subscriber
+}
+
+func (o *observeOnSubscriber) OnNext(next interface{}) {
+
+}
+
+func (o *observeOnSubscriber) OnError(e error) {
+
+}
+
+func (o *observeOnSubscriber) OnCompleted() {
+
+}
+
+func (o *observeOnSubscriber) UnSubscribe() {
+
+}
+
+func (o *observeOnSubscriber) IsSubscribed() bool {
+	return false
+}
+
+func (o *observeOnSubscriber) Add(sub Subscription) {
+
 }

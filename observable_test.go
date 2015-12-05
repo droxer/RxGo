@@ -6,30 +6,49 @@ import (
 	"testing"
 )
 
-var counter = 0
-var sub = &rx.Subscriber{
-	OnNext: func(next interface{}) {
-		if v, ok := next.(int); ok {
-			counter += v
-			fmt.Printf("++ %d\n", counter)
-		}
-	},
-	OnCompleted: func() {
-		fmt.Printf("total: %d\n", counter)
-	},
+type SampleSubscriber struct {
+	value int
+}
+
+func (s *SampleSubscriber) OnNext(next interface{}) {
+	if v, ok := next.(int); ok {
+		s.value += v
+		fmt.Printf("++ %d\n", s.value)
+	}
+}
+
+func (s *SampleSubscriber) OnCompleted() {
+	fmt.Printf("total: %d\n", s.value)
+}
+
+func (s *SampleSubscriber) OnError(e error) {
+
+}
+
+func (s *SampleSubscriber) IsSubscribed() bool {
+	return true
+}
+
+func (s *SampleSubscriber) UnSubscribe() {
+
+}
+
+func (s *SampleSubscriber) Add(sub rx.Subscription) {
+
 }
 
 func TestCreateObservable(t *testing.T) {
-	observable := rx.Create(func(sub *rx.Subscriber) {
+	observable := rx.Create(func(sub rx.Subscriber) {
 		for i := 0; i < 10; i++ {
 			sub.OnNext(i)
 		}
 		sub.OnCompleted()
 	})
 
+	sub := &SampleSubscriber{0}
 	observable.Subscribe(sub)
 
-	if counter != 45 {
-		t.Errorf("expected 45, got %d", counter)
+	if sub.value != 45 {
+		t.Errorf("expected 45, got %d", sub.value)
 	}
 }

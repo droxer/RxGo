@@ -8,11 +8,11 @@ import (
 type goWorker struct {
 }
 
-func (t *goWorker) UnSubscribe() {
+func (t *goWorker) UnSubscriber() {
 
 }
 
-func (t *goWorker) IsSubscribed() bool {
+func (t *goWorker) IsSubscriberd() bool {
 	return false
 }
 

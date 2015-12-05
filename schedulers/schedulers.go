@@ -14,7 +14,3 @@ func (p *periodicallyScheduler) SchedulePeriodically(ac rx.Action0, initDelay, p
 func Computation() rx.Scheduler {
 	return &eventLoopScheduler{}
 }
-
-func IO() rx.Scheduler {
-	return &threadPoolScheduler{}
-}

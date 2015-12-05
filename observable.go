@@ -1,15 +1,28 @@
 package RxGo
 
-func Create(on OnSubscribe) *Observable {
+func Create(on OnSubscriber) *Observable {
 	return &Observable{on}
 }
 
-type OnSubscribe func(sub *Subscriber)
+type OnSubscriber func(sub Subscriber)
 
 type Observable struct {
-	on OnSubscribe
+	onSubscriber OnSubscriber
 }
 
-func (o *Observable) Subscribe(sub *Subscriber) {
-	o.on(sub)
+func (o *Observable) Subscribe(sub Subscriber) {
+	o.onSubscriber(sub)
+}
+
+func (o *Observable) ObserveOn(sch Scheduler) *Observable {
+	return o.lift(&opObserveOn{sch})
+}
+
+func (o *Observable) lift(op Operator) *Observable {
+	return &Observable{
+		onSubscriber: func(sub Subscriber) {
+			st := op.Call(sub)
+			o.onSubscriber(st)
+		},
+	}
 }
