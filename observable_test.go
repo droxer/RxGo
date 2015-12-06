@@ -17,23 +17,15 @@ func (s *SampleSubscriber) OnNext(next interface{}) {
 	}
 }
 
+func (s *SampleSubscriber) OnStart() {
+
+}
+
 func (s *SampleSubscriber) OnCompleted() {
 	fmt.Printf("total: %d\n", s.value)
 }
 
 func (s *SampleSubscriber) OnError(e error) {
-
-}
-
-func (s *SampleSubscriber) IsSubscribed() bool {
-	return true
-}
-
-func (s *SampleSubscriber) UnSubscribe() {
-
-}
-
-func (s *SampleSubscriber) Add(sub rx.Subscription) {
 
 }
 

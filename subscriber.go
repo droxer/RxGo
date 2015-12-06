@@ -7,12 +7,9 @@ type Observer interface {
 }
 
 type Subscription interface {
-	UnSubscribe()
-	IsSubscribed() bool
 }
 
 type Subscriber interface {
 	Observer
 	Subscription
-	Add(sub Subscription)
 }

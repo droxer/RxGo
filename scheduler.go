@@ -5,12 +5,24 @@ import (
 )
 
 type Scheduler interface {
+	LifeCycle
 	CreateWorker() Worker
+}
+
+type LifeCycle interface {
+	Start()
+	Stop()
 }
 
 type Worker interface {
 	Subscription
-	Schedule(ac Action0) Subscription
-	ScheduleAt(ac Action0, delay time.Duration) Subscription
-	SchedulePeriodically(ac Action0, initDelay, period time.Duration) Subscription
+	Schedule(ac action0) Subscription
+	ScheduleAt(ac action0, delay time.Duration) Subscription
+	SchedulePeriodically(ac action0, initDelay, period time.Duration) Subscription
+}
+
+type periodicallyScheduler struct{}
+
+func (p *periodicallyScheduler) SchedulePeriodically(ac action0, initDelay, period time.Duration) Subscription {
+	return nil
 }

@@ -1,5 +1,5 @@
 package RxGo
 
-type Action0 func()
+type action0 func()
 
-type Action func(p ...interface{})
+type action func(p ...interface{})
