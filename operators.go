@@ -30,7 +30,13 @@ func (o *observeOnSubscriber) OnNext(next interface{}) {
 	o.queue.Add(next)
 
 	o.worker.Schedule(func() {
-
+		for {
+			item := o.queue.Poll()
+			if item == nil {
+				return
+			}
+			o.child.OnNext(item)
+		}
 	})
 }
 

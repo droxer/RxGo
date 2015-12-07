@@ -11,30 +11,19 @@ func (e *eventLoopScheduler) CreateWorker() Worker {
 	return &eventLoopWorker{}
 }
 
-func (e *eventLoopScheduler) Start() {
-
-}
-
-func (e *eventLoopScheduler) Stop() {
-
-}
-
 type eventLoopWorker struct {
-	periodicallyScheduler
-}
-
-func (e *eventLoopWorker) UnSubscribe() {
-}
-
-func (e *eventLoopWorker) IsSubscribed() bool {
-	return false
+	Executor
 }
 
 func (e *eventLoopWorker) Schedule(ac action0) Subscription {
-	ac()
+	go ac()
 	return nil
 }
 
 func (e *eventLoopWorker) ScheduleAt(ac action0, delay time.Duration) Subscription {
+	return nil
+}
+
+func (e *eventLoopWorker) SchedulePeriodically(ac action0, initDelay, period time.Duration) Subscription {
 	return nil
 }

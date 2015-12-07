@@ -1,7 +1,6 @@
 package RxGo_test
 
 import (
-	"fmt"
 	rx "github.com/droxer/RxGo"
 	"testing"
 )
@@ -13,16 +12,10 @@ type SampleSubscriber struct {
 func (s *SampleSubscriber) OnNext(next interface{}) {
 	if v, ok := next.(int); ok {
 		s.value += v
-		fmt.Printf("++ %d\n", s.value)
 	}
 }
 
-func (s *SampleSubscriber) OnStart() {
-
-}
-
 func (s *SampleSubscriber) OnCompleted() {
-	fmt.Printf("total: %d\n", s.value)
 }
 
 func (s *SampleSubscriber) OnError(e error) {
@@ -30,6 +23,7 @@ func (s *SampleSubscriber) OnError(e error) {
 }
 
 func TestCreateObservable(t *testing.T) {
+
 	observable := rx.Create(func(sub rx.Subscriber) {
 		for i := 0; i < 10; i++ {
 			sub.OnNext(i)
