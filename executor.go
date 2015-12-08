@@ -7,7 +7,7 @@ import (
 )
 
 type Task struct {
-	Call      runnable
+	Run       runnable
 	InitDelay time.Duration
 	Period    time.Duration
 }
@@ -40,22 +40,25 @@ func NewExecutor() *Executor {
 func (e *Executor) Start() {
 	e.running = true
 	go func() {
-		select {
-		case t, more := <-e.pool:
-			if more {
-				time.Sleep(t.InitDelay)
-				t.Call()
-			}
+		for {
+			select {
+			case t, more := <-e.pool:
+				if more {
+					time.Sleep(t.InitDelay)
+					t.Run()
+				}
 
-			if t.Period != 0 {
-				go func() {
-					for e.running {
-						time.Sleep(t.Period)
-						t.Call()
-					}
-				}()
+				if t.Period != 0 {
+					go func() {
+						for e.running {
+							time.Sleep(t.Period)
+							t.Run()
+						}
+					}()
+				}
 			}
 		}
+
 	}()
 }
 

@@ -8,15 +8,14 @@ import (
 	"time"
 )
 
-var wg sync.WaitGroup
-
 func TestExecutorDelayTask(t *testing.T) {
 	var counter int32 = 0
 
+	var wg sync.WaitGroup
 	wg.Add(1)
 
 	task := rx.Task{
-		Call: func() {
+		Run: func() {
 			atomic.AddInt32(&counter, 1)
 			wg.Done()
 		},
@@ -47,10 +46,11 @@ func TestExecutorDelayTask(t *testing.T) {
 func TestExecutorPeriodicTask(t *testing.T) {
 	var counter int32 = 0
 
+	var wg sync.WaitGroup
 	wg.Add(10)
 
 	task := rx.Task{
-		Call: func() {
+		Run: func() {
 			atomic.AddInt32(&counter, 1)
 			wg.Done()
 		},

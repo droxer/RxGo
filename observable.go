@@ -22,6 +22,7 @@ func (o *Observable) lift(op Operator) *Observable {
 	return &Observable{
 		onSubscribe: func(sub Subscriber) {
 			st := op.Call(sub)
+			st.Start()
 			o.onSubscribe(st)
 		},
 	}
