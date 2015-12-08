@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+type runnable func()
+
+type callable func() interface{}
+
 type Scheduler interface {
 	CreateWorker() Worker
 }
