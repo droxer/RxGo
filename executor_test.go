@@ -27,13 +27,14 @@ func TestExecutorDelayTask(t *testing.T) {
 		Pool: make(chan rx.Task),
 	}
 
-	executor.Run()
+	executor.Start()
+	defer executor.Stop()
 
 	now := time.Now()
-	executor.Schedule(task)
+	executor.Submit(task)
 
 	wg.Wait()
-	executor.Stop()
+
 	if atomic.LoadInt32(&counter) != 1 {
 		t.Errorf("expected 1, actual is %d", counter)
 
@@ -64,11 +65,12 @@ func TestExecutorPeriodicTask(t *testing.T) {
 	}
 
 	now := time.Now()
-	executor.Run()
-	executor.Schedule(task)
+	executor.Start()
+	defer executor.Stop()
+
+	executor.Submit(task)
 
 	wg.Wait()
-	executor.Stop()
 	since := time.Since(now).Seconds()
 
 	if atomic.LoadInt32(&counter) != 10 {

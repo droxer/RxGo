@@ -1,5 +1,5 @@
 package RxGo
 
-type action0 func()
+type runnable func()
 
-type action func(p ...interface{})
+type callable func() interface{}

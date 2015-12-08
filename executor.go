@@ -5,7 +5,7 @@ import (
 )
 
 type Task struct {
-	Call      action0
+	Call      runnable
 	InitDelay time.Duration
 	Period    time.Duration
 }
@@ -16,7 +16,7 @@ type Executor struct {
 	Running bool
 }
 
-func (e *Executor) Run() {
+func (e *Executor) Start() {
 	e.Running = true
 	go func() {
 		select {
@@ -43,6 +43,6 @@ func (e *Executor) Stop() {
 	e.Running = false
 }
 
-func (e *Executor) Schedule(t Task) {
+func (e *Executor) Submit(t Task) {
 	e.Pool <- t
 }

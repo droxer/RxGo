@@ -10,7 +10,7 @@ type Scheduler interface {
 
 type Worker interface {
 	Subscription
-	Schedule(ac action0) Subscription
-	ScheduleAt(ac action0, delay time.Duration) Subscription
-	SchedulePeriodically(ac action0, initDelay, period time.Duration) Subscription
+	Schedule(ac runnable) Subscription
+	ScheduleAt(ac runnable, delay time.Duration) Subscription
+	SchedulePeriodically(ac runnable, initDelay, period time.Duration) Subscription
 }
