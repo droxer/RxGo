@@ -1,6 +1,8 @@
 package RxGo
 
 import (
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -10,17 +12,36 @@ type Task struct {
 	Period    time.Duration
 }
 
+var id int32 = 0
+var mutex = &sync.Mutex{}
+
+func ID() int32 {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	atomic.AddInt32(&id, 1)
+	atomic.LoadInt32(&id)
+	return id
+}
+
 type Executor struct {
-	ID      int
-	Pool    chan Task
-	Running bool
+	id      int32
+	pool    chan Task
+	running bool
+}
+
+func NewExecutor() *Executor {
+	return &Executor{
+		pool: make(chan Task),
+		id:   ID(),
+	}
 }
 
 func (e *Executor) Start() {
-	e.Running = true
+	e.running = true
 	go func() {
 		select {
-		case t, more := <-e.Pool:
+		case t, more := <-e.pool:
 			if more {
 				time.Sleep(t.InitDelay)
 				t.Call()
@@ -28,7 +49,7 @@ func (e *Executor) Start() {
 
 			if t.Period != 0 {
 				go func() {
-					for e.Running {
+					for e.running {
 						time.Sleep(t.Period)
 						t.Call()
 					}
@@ -39,10 +60,10 @@ func (e *Executor) Start() {
 }
 
 func (e *Executor) Stop() {
-	close(e.Pool)
-	e.Running = false
+	close(e.pool)
+	e.running = false
 }
 
 func (e *Executor) Submit(t Task) {
-	e.Pool <- t
+	e.pool <- t
 }

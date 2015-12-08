@@ -23,9 +23,7 @@ func TestExecutorDelayTask(t *testing.T) {
 		InitDelay: time.Microsecond * 200,
 	}
 
-	executor := &rx.Executor{
-		Pool: make(chan rx.Task),
-	}
+	executor := rx.NewExecutor()
 
 	executor.Start()
 	defer executor.Stop()
@@ -60,9 +58,7 @@ func TestExecutorPeriodicTask(t *testing.T) {
 		Period:    time.Millisecond * 100,
 	}
 
-	executor := &rx.Executor{
-		Pool: make(chan rx.Task),
-	}
+	executor := rx.NewExecutor()
 
 	now := time.Now()
 	executor.Start()
