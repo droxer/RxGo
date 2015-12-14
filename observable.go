@@ -1,5 +1,9 @@
 package RxGo
 
+var (
+	ComputationScheduler = newEventLoopScheduler()
+)
+
 func Create(on OnSubscribe) *Observable {
 	return &Observable{on}
 }

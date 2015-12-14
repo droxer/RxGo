@@ -1,20 +1,44 @@
 package RxGo
 
 import (
+	_ "fmt"
+	"runtime"
 	"time"
 )
 
 type eventLoopScheduler struct {
+	worker []Worker
+	rr     int
+}
+
+func newEventLoopScheduler() *eventLoopScheduler {
+	var numCPUs = runtime.NumCPU()
+	runtime.GOMAXPROCS(numCPUs)
+
+	els := &eventLoopScheduler{
+		worker: make([]Worker, numCPUs),
+	}
+
+	for i := 0; i < numCPUs; i++ {
+		els.worker[i] = newEventLoopWorker()
+	}
+
+	return els
 }
 
 func (e *eventLoopScheduler) CreateWorker() Worker {
-	return &eventLoopWorker{
-		executor: NewExecutor(),
-	}
+	e.rr++
+	return e.worker[e.rr%len(e.worker)]
 }
 
 type eventLoopWorker struct {
 	executor *Executor
+}
+
+func newEventLoopWorker() *eventLoopWorker {
+	return &eventLoopWorker{
+		executor: NewExecutor(),
+	}
 }
 
 func (e *eventLoopWorker) Start() {
