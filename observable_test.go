@@ -1,7 +1,6 @@
 package RxGo_test
 
 import (
-	"fmt"
 	rx "github.com/droxer/RxGo"
 	"sync"
 	"testing"
@@ -65,7 +64,6 @@ func TestObservableSchedule(t *testing.T) {
 
 	observable := rx.Create(func(sub rx.Subscriber) {
 		for i := 0; i < 10; i++ {
-			fmt.Println(i)
 			sub.OnNext(i)
 
 		}

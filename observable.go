@@ -21,7 +21,13 @@ func (o *Observable) ObserveOn(sch Scheduler) *Observable {
 func (o *Observable) lift(op Operator) *Observable {
 	return &Observable{
 		onSubscribe: func(sub Subscriber) {
-			st := op.Call(sub)
+			var st Subscriber
+			defer func() {
+				if e := recover(); e != nil {
+					st.OnError(e.(error))
+				}
+			}()
+			st = op.Call(sub)
 			st.Start()
 			o.onSubscribe(st)
 		},
