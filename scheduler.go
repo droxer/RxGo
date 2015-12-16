@@ -6,8 +6,6 @@ import (
 
 type runnable func()
 
-type callable func() interface{}
-
 type Scheduler interface {
 	Start()
 	Stop()
@@ -15,15 +13,15 @@ type Scheduler interface {
 	ScheduleAt(run runnable, delay time.Duration)
 }
 
-type defaultScheduler struct {
+type eventLoopScheduler struct {
 	workers    []*poolWorker
 	jobQueue   chan job
 	workerPool chan chan job
 	quit       chan bool
 }
 
-func NewScheduler(maxWorkers int) Scheduler {
-	return &defaultScheduler{
+func newEventLoopScheduler(maxWorkers int) Scheduler {
+	return &eventLoopScheduler{
 		workers:    make([]*poolWorker, maxWorkers),
 		workerPool: make(chan chan job, maxWorkers),
 		jobQueue:   make(chan job),
@@ -31,7 +29,7 @@ func NewScheduler(maxWorkers int) Scheduler {
 	}
 }
 
-func (s *defaultScheduler) Start() {
+func (s *eventLoopScheduler) Start() {
 	for i := 0; i < len(s.workers); i++ {
 		s.workers[i] = newPoolWorker(s.workerPool)
 		s.workers[i].start()
@@ -40,21 +38,21 @@ func (s *defaultScheduler) Start() {
 	go s.dispatch()
 }
 
-func (s *defaultScheduler) Stop() {
+func (s *eventLoopScheduler) Stop() {
 	s.quit <- true
 	for _, worker := range s.workers {
 		worker.stop()
 	}
 }
 
-func (s *defaultScheduler) Schedule(run runnable) {
+func (s *eventLoopScheduler) Schedule(run runnable) {
 	job := job{
 		run: run,
 	}
 	s.jobQueue <- job
 }
 
-func (s *defaultScheduler) ScheduleAt(run runnable, delay time.Duration) {
+func (s *eventLoopScheduler) ScheduleAt(run runnable, delay time.Duration) {
 	job := job{
 		run:   run,
 		delay: delay,
@@ -62,7 +60,7 @@ func (s *defaultScheduler) ScheduleAt(run runnable, delay time.Duration) {
 	s.jobQueue <- job
 }
 
-func (s *defaultScheduler) dispatch() {
+func (s *eventLoopScheduler) dispatch() {
 	for {
 		select {
 		case job := <-s.jobQueue:
