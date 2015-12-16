@@ -16,39 +16,31 @@ import (
 )
 
 type SampleSubscriber struct {
-    doNext func(next interface{})
 }
 
 func (s *SampleSubscriber) Start() {
 }
 
 func (s *SampleSubscriber) OnNext(next interface{}) {
-    s.doNext(next)
+    if v, ok := next.(int); ok {
+        fmt.Println(v)
+    }
 }
 
 func (s *SampleSubscriber) OnCompleted() {
+    fmt.Println("Completed!")
 }
 
 func (s *SampleSubscriber) OnError(e error) {
 }
 
 func main() {
-    sub := &SampleSubscriber{
-        doNext: func(p interface{}) {
-            if v, ok := p.(int); ok {
-                fmt.Println(v)
-            }
-        },
-    }
-
-    observable := rx.Create(func(sub rx.Subscriber) {
+    rx.Create(func(sub rx.Subscriber) {
         for i := 0; i < 10; i++ {
             sub.OnNext(i)
         }
         sub.OnCompleted()
-    })
-
-    observable.Subscribe(sub)
+    }).Subscribe(&SampleSubscriber{})
 }
 
 
