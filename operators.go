@@ -9,23 +9,23 @@ type opObserveOn struct {
 }
 
 type observeOnSubscriber struct {
-	worker Worker
-	child  Subscriber
+	scheduler Scheduler
+	child     Subscriber
 }
 
 func (op *opObserveOn) Call(sub Subscriber) Subscriber {
 	return &observeOnSubscriber{
-		worker: op.scheduler.CreateWorker(),
-		child:  sub,
+		scheduler: op.scheduler,
+		child:     sub,
 	}
 }
 
 func (o *observeOnSubscriber) Start() {
-	o.worker.Start()
+	o.scheduler.Start()
 }
 
 func (o *observeOnSubscriber) OnNext(next interface{}) {
-	o.worker.Schedule(func() {
+	o.scheduler.Schedule(func() {
 		o.child.OnNext(next)
 	})
 }
@@ -35,7 +35,7 @@ func (o *observeOnSubscriber) OnError(e error) {
 }
 
 func (o *observeOnSubscriber) OnCompleted() {
-	o.worker.Stop()
+	o.scheduler.Stop()
 }
 
 func (o *observeOnSubscriber) UnSubscribe() {

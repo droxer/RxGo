@@ -70,7 +70,7 @@ func TestObservableSchedule(t *testing.T) {
 		sub.OnCompleted()
 	})
 
-	observable.ObserveOn(rx.ComputationScheduler).Subscribe(sub)
+	observable.ObserveOn(rx.NewScheduler(2)).Subscribe(sub)
 
 	wg.Wait()
 	if counter != 45 {
