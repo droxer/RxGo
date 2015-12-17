@@ -1,15 +1,19 @@
 package RxGo
 
+import (
+	"github.com/droxer/RxGo/schedulers"
+)
+
 type Operator interface {
 	Call(sub Subscriber) Subscriber
 }
 
 type opObserveOn struct {
-	scheduler Scheduler
+	scheduler schedulers.Scheduler
 }
 
 type observeOnSubscriber struct {
-	scheduler Scheduler
+	scheduler schedulers.Scheduler
 	child     Subscriber
 }
 

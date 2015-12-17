@@ -1,17 +1,8 @@
-package RxGo
+package schedulers
 
 import (
 	"time"
 )
-
-type runnable func()
-
-type Scheduler interface {
-	Start()
-	Stop()
-	Schedule(run runnable)
-	ScheduleAt(run runnable, delay time.Duration)
-}
 
 type eventLoopScheduler struct {
 	workers    []*poolWorker
@@ -45,14 +36,14 @@ func (s *eventLoopScheduler) Stop() {
 	}
 }
 
-func (s *eventLoopScheduler) Schedule(run runnable) {
+func (s *eventLoopScheduler) Schedule(run Runnable) {
 	job := job{
 		run: run,
 	}
 	s.jobQueue <- job
 }
 
-func (s *eventLoopScheduler) ScheduleAt(run runnable, delay time.Duration) {
+func (s *eventLoopScheduler) ScheduleAt(run Runnable, delay time.Duration) {
 	job := job{
 		run:   run,
 		delay: delay,

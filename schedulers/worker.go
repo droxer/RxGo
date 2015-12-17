@@ -1,11 +1,11 @@
-package RxGo
+package schedulers
 
 import (
 	"time"
 )
 
 type job struct {
-	run   runnable
+	run   Runnable
 	delay time.Duration
 }
 

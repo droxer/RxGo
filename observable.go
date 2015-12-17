@@ -1,5 +1,9 @@
 package RxGo
 
+import (
+	"github.com/droxer/RxGo/schedulers"
+)
+
 func Create(on OnSubscribe) *Observable {
 	return &Observable{on}
 }
@@ -14,7 +18,7 @@ func (o *Observable) Subscribe(sub Subscriber) {
 	o.onSubscribe(sub)
 }
 
-func (o *Observable) ObserveOn(sch Scheduler) *Observable {
+func (o *Observable) ObserveOn(sch schedulers.Scheduler) *Observable {
 	return o.lift(&opObserveOn{sch})
 }
 

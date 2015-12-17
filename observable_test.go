@@ -2,6 +2,7 @@ package RxGo_test
 
 import (
 	rx "github.com/droxer/RxGo"
+	"github.com/droxer/RxGo/schedulers"
 	"sync"
 	"testing"
 )
@@ -70,7 +71,7 @@ func TestObservableSchedule(t *testing.T) {
 		sub.OnCompleted()
 	})
 
-	observable.ObserveOn(rx.ComputationScheduler).Subscribe(sub)
+	observable.ObserveOn(schedulers.Computation).Subscribe(sub)
 
 	wg.Wait()
 	if counter != 45 {
