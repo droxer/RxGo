@@ -5,24 +5,24 @@ import (
 )
 
 type eventLoopScheduler struct {
-	workers    []*poolWorker
-	jobQueue   chan job
-	workerPool chan chan job
-	quit       chan bool
+	workers         []*poolWorker
+	jobQueue        chan job
+	fixedWorkerPool chan chan job
+	quit            chan bool
 }
 
 func newEventLoopScheduler(maxWorkers int) Scheduler {
 	return &eventLoopScheduler{
-		workers:    make([]*poolWorker, maxWorkers),
-		workerPool: make(chan chan job, maxWorkers),
-		jobQueue:   make(chan job),
-		quit:       make(chan bool),
+		workers:         make([]*poolWorker, maxWorkers),
+		fixedWorkerPool: make(chan chan job, maxWorkers),
+		jobQueue:        make(chan job),
+		quit:            make(chan bool),
 	}
 }
 
 func (s *eventLoopScheduler) Start() {
 	for i := 0; i < len(s.workers); i++ {
-		s.workers[i] = newPoolWorker(s.workerPool)
+		s.workers[i] = newPoolWorker(s.fixedWorkerPool)
 		s.workers[i].start()
 	}
 
@@ -55,10 +55,44 @@ func (s *eventLoopScheduler) dispatch() {
 	for {
 		select {
 		case job := <-s.jobQueue:
-			jobChan := <-s.workerPool
+			jobChan := <-s.fixedWorkerPool
 			jobChan <- job
 		case <-s.quit:
 			return
 		}
 	}
+}
+
+type poolWorker struct {
+	fixedWorkerPool chan chan job
+	jobChan         chan job
+	quit            chan bool
+}
+
+func newPoolWorker(fixedWorkerPool chan chan job) *poolWorker {
+	return &poolWorker{
+		fixedWorkerPool: fixedWorkerPool,
+		jobChan:         make(chan job),
+		quit:            make(chan bool),
+	}
+}
+
+func (p *poolWorker) start() {
+	go func() {
+		for {
+			p.fixedWorkerPool <- p.jobChan
+
+			select {
+			case job := <-p.jobChan:
+				time.Sleep(job.delay)
+				job.run()
+			case <-p.quit:
+				return
+			}
+		}
+	}()
+}
+
+func (p *poolWorker) stop() {
+	p.quit <- true
 }

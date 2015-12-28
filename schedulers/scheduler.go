@@ -7,6 +7,11 @@ import (
 
 type Runnable func()
 
+type job struct {
+	run   Runnable
+	delay time.Duration
+}
+
 type Scheduler interface {
 	Start()
 	Stop()
