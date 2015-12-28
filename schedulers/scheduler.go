@@ -26,6 +26,7 @@ var (
 
 func init() {
 	Computation = newEventLoopScheduler(maxParallelism())
+	IO = newThreadPoolScheduler(time.Second * 120)
 }
 
 func maxParallelism() int {
