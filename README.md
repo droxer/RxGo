@@ -1,5 +1,7 @@
 # RxGo
 
+[![Join the chat at https://gitter.im/droxer/RxGo](https://badges.gitter.im/droxer/RxGo.svg)](https://gitter.im/droxer/RxGo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/droxer/RxGo.svg?branch=develop)](https://travis-ci.org/droxer/RxGo)
 
 
