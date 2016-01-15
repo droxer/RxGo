@@ -2,7 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/droxer/RxGo.svg)](https://gitter.im/droxer/RxGo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Build Status](https://travis-ci.org/droxer/RxGo.svg?branch=develop)](https://travis-ci.org/droxer/RxGo)
-
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/droxer/rxgo/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 Experimental Reactive Extensions implementation for the Go Programming Language
 
