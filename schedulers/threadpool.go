@@ -38,7 +38,8 @@ func (tps *threadPoolScheduler) ScheduleAt(run Runnable, delay time.Duration) {
 
 func (tps *threadPoolScheduler) run() {
 	for {
-		for job := range tps.jobQueue {
+		select {
+		case job := <-tps.jobQueue:
 			tps.workerPool.get() <- job
 		}
 	}
@@ -52,7 +53,7 @@ type cachedThreadPool struct {
 func newCachedThreadPool(ttl time.Duration) *cachedThreadPool {
 	return &cachedThreadPool{
 		ttl:          ttl,
-		jobChanQueue: make(chan chan job),
+		jobChanQueue: make(chan chan job, 10),
 	}
 }
 
@@ -96,6 +97,7 @@ func (t *threadWorker) start() {
 				job.run()
 				t.timer.Reset(t.ttl)
 			case <-t.timer.C:
+				t.stop()
 				return
 			case <-t.quit:
 				return
