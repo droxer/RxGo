@@ -4,45 +4,48 @@
 
 Experimental Reactive Extensions implementation for the Go Programming Language
 
-## Example
+## Modern Example (Go 1.22+)
 
 ```go
 package main
 
 import (
-    rx "github.com/droxer/RxGo"
+    "context"
     "fmt"
+    
+    rx "github.com/droxer/RxGo"
 )
 
-type SampleSubscriber struct {
+// Type-safe subscriber with generics
+type IntSubscriber struct{}
+
+func (s *IntSubscriber) Start() {}
+
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Println(value)
 }
 
-func (s *SampleSubscriber) Start() {
+func (s *IntSubscriber) OnError(err error) {
+    fmt.Printf("Error: %v\n", err)
 }
 
-func (s *SampleSubscriber) OnNext(next interface{}) {
-    if v, ok := next.(int); ok {
-        fmt.Println(v)
-    }
-}
-
-func (s *SampleSubscriber) OnCompleted() {
+func (s *IntSubscriber) OnCompleted() {
     fmt.Println("Completed!")
 }
 
-func (s *SampleSubscriber) OnError(e error) {
-}
-
 func main() {
-    rx.Create(func(sub rx.Subscriber) {
+    // Create an observable with type safety
+    rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
         for i := 0; i < 10; i++ {
             sub.OnNext(i)
         }
         sub.OnCompleted()
-    }).Subscribe(&SampleSubscriber{})
+    }).Subscribe(context.Background(), &IntSubscriber{})
 }
 
-
+// Additional examples:
+// rx.Just(1, 2, 3, 4, 5).Subscribe(context.Background(), subscriber)
+// rx.Range(0, 10).Subscribe(context.Background(), subscriber)
 ```
 
 ## License

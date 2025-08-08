@@ -1,6 +1,7 @@
 package schedulers
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -94,7 +95,14 @@ func (t *threadWorker) start() {
 			select {
 			case job := <-t.jobChan:
 				time.Sleep(job.delay)
-				job.run()
+				func() {
+					defer func() {
+						if r := recover(); r != nil {
+							fmt.Printf("Thread worker recovered from panic: %v\n", r)
+						}
+					}()
+					job.run()
+				}()
 				t.timer.Reset(t.ttl)
 			case <-t.timer.C:
 				t.stop()

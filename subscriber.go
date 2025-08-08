@@ -1,12 +1,12 @@
 package RxGo
 
-type Observer interface {
+type Observer[T any] interface {
 	OnCompleted()
 	OnError(e error)
-	OnNext(next interface{})
+	OnNext(next T)
 }
 
-type Subscriber interface {
-	Observer
+type Subscriber[T any] interface {
+	Observer[T]
 	Start()
 }
