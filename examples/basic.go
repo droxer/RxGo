@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	rx "github.com/droxer/RxGo"
-	"github.com/droxer/RxGo/schedulers"
+	"github.com/droxer/RxGo/internal/scheduler"
+	rx "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 // IntSubscriber demonstrates type-safe subscriber with generics
@@ -32,17 +32,17 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
 	fmt.Println("=== RxGo Modern Example ===")
-	
+
 	// Example 1: Basic usage with Just
 	fmt.Println("\n1. Using Just():")
 	justObservable := rx.Just(1, 2, 3, 4, 5)
 	justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
-	
+
 	// Example 2: Range observable
 	fmt.Println("\n2. Using Range():")
 	rangeObservable := rx.Range(10, 5)
 	rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
-	
+
 	// Example 3: Create with custom logic
 	fmt.Println("\n3. Using Create():")
 	customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
@@ -58,17 +58,17 @@ func main() {
 		sub.OnCompleted()
 	})
 	customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
-	
+
 	// Example 4: With scheduler
 	fmt.Println("\n4. With scheduler:")
 	scheduledObservable := rx.Range(1, 3)
-	scheduledObservable.ObserveOn(schedulers.Computation).Subscribe(
-		context.Background(), 
+	scheduledObservable.ObserveOn(scheduler.Computation).Subscribe(
+		context.Background(),
 		&IntSubscriber{name: "Scheduled"},
 	)
-	
+
 	// Wait for scheduler to complete
 	time.Sleep(100 * time.Millisecond)
-	
+
 	fmt.Println("\n=== All examples completed ===")
 }

@@ -1,12 +1,13 @@
-package RxGo_test
+package observable_test
 
 import (
 	"context"
-	"testing"
 	"sync"
+	"sync/atomic"
+	"testing"
 
-	rx "github.com/droxer/RxGo"
-	"github.com/droxer/RxGo/schedulers"
+	"github.com/droxer/RxGo/internal/scheduler"
+	rx "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 var wg sync.WaitGroup
@@ -26,10 +27,10 @@ func (s *SampleSubscriber[T]) OnCompleted() {}
 func (s *SampleSubscriber[T]) OnError(e error) {}
 
 func TestObservable(t *testing.T) {
-	var counter = 0
+	var counter atomic.Int64
 	sub := &SampleSubscriber[int]{
 		doNext: func(p int) {
-			counter += p
+			counter.Add(int64(p))
 		},
 	}
 
@@ -42,16 +43,16 @@ func TestObservable(t *testing.T) {
 
 	observable.Subscribe(context.Background(), sub)
 
-	if counter != 45 {
-		t.Errorf("expected 45, got %d", counter)
+	if counter.Load() != 45 {
+		t.Errorf("expected 45, got %d", counter.Load())
 	}
 }
 
 func TestObservableSchedule(t *testing.T) {
-	var counter = 0
+	var counter atomic.Int64
 	sub := &SampleSubscriber[int]{
 		doNext: func(p int) {
-			counter += p
+			counter.Add(int64(p))
 			wg.Done()
 		},
 	}
@@ -65,10 +66,10 @@ func TestObservableSchedule(t *testing.T) {
 		sub.OnCompleted()
 	})
 
-	observable.ObserveOn(schedulers.Computation).Subscribe(context.Background(), sub)
+	observable.ObserveOn(scheduler.Computation).Subscribe(context.Background(), sub)
 
 	wg.Wait()
-	if counter != 45 {
-		t.Errorf("expected 45, got %d", counter)
+	if counter.Load() != 45 {
+		t.Errorf("expected 45, got %d", counter.Load())
 	}
 }

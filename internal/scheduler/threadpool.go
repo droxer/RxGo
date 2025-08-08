@@ -1,4 +1,4 @@
-package schedulers
+package scheduler
 
 import (
 	"fmt"
@@ -38,11 +38,8 @@ func (tps *threadPoolScheduler) ScheduleAt(run Runnable, delay time.Duration) {
 }
 
 func (tps *threadPoolScheduler) run() {
-	for {
-		select {
-		case job := <-tps.jobQueue:
-			tps.workerPool.get() <- job
-		}
+	for job := range tps.jobQueue {
+		tps.workerPool.get() <- job
 	}
 }
 
