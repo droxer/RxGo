@@ -2,7 +2,7 @@
 
 Modern Reactive Extensions for Go
 
-## Examples (Go 1.21+)
+## Examples (Go 1.23+)
 
 RxGo now supports both the original Observable API and the new Reactive Streams API with full backpressure support.
 
