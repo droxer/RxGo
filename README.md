@@ -37,8 +37,20 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 
 ### Installation
 
+### Latest Version
 ```bash
-go get github.com/droxer/RxGo
+go get github.com/droxer/RxGo@v1.0.0
+```
+
+### Go Modules
+Add to your `go.mod`:
+```go
+require github.com/droxer/RxGo v1.0.0
+```
+
+### Latest Development
+```bash
+go get github.com/droxer/RxGo@latest
 ```
 
 ### Requirements
