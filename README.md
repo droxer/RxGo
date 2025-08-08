@@ -2,11 +2,60 @@
 
 Modern Reactive Extensions for Go
 
-## Examples (Go 1.23+)
+[![Go Report Card](https://goreportcard.com/badge/github.com/droxer/RxGo)](https://goreportcard.com/report/github.com/droxer/RxGo)
+[![GoDoc](https://godoc.org/github.com/droxer/RxGo?status.svg)](https://godoc.org/github.com/droxer/RxGo)
 
-RxGo now supports both the original Observable API and the new Reactive Streams API with full backpressure support.
+## Overview
 
-### **1. Original Observable API (Backward Compatible)**
+RxGo is a reactive programming library for Go that provides both the original Observable API and full Reactive Streams 1.0.3 compliance with backpressure support. It enables you to compose asynchronous and event-based programs using observable sequences.
+
+## Features
+
+### **✅ Core Features**
+- **Type-safe generics** throughout the API
+- **Context-based cancellation** support
+- **Backpressure strategies**: Buffer, Drop, Latest, Error
+- **Thread-safe** signal delivery
+- **Memory efficient** with bounded buffers
+- **Full interoperability** between old and new APIs
+
+### **✅ Reactive Streams 1.0.3 Compliance**
+- **Publisher[T]** - Type-safe data source with demand control
+- **ReactiveSubscriber[T]** - Complete subscriber interface with lifecycle
+- **Subscription** - Request/cancel control with backpressure
+- **Processor[T,R]** - Transforming publisher
+- **Backpressure support** - Full demand-based flow control
+- **Non-blocking guarantees** - Async processing with context cancellation
+
+### **✅ Backpressure Strategies**
+- **Buffer** - Queue items when producer is faster than consumer
+- **Drop** - Drop new items when buffer is full
+- **Latest** - Keep only the latest item when buffer is full
+- **Error** - Signal error when buffer overflows
+
+## Quick Start
+
+### Installation
+
+```bash
+go get github.com/droxer/RxGo
+```
+
+### Requirements
+- Go 1.23 or higher (for generics support)
+
+## API Overview
+
+RxGo provides two compatible APIs:
+
+1. **Original Observable API** - Simple, callback-based approach
+2. **Reactive Streams API** - Full specification compliance with backpressure
+
+## Usage Examples
+
+### 1. Original Observable API (Simple)
+
+The simplest way to get started with RxGo using the backward-compatible Observable API:
 
 ```go
 package main
@@ -35,7 +84,9 @@ func main() {
 }
 ```
 
-### **2. Reactive Streams API (New - Full Compliance)**
+### 2. Reactive Streams API (Advanced)
+
+Full Reactive Streams compliance with backpressure and demand control:
 
 ```go
 package main
@@ -71,10 +122,7 @@ func (s *LoggingSubscriber[T]) OnComplete() {
 }
 
 func main() {
-    // Create a publisher with backpressure
     publisher := publisher.NewRangePublisher(1, 10)
-    
-    // Subscribe with backpressure control
     subscriber := &LoggingSubscriber[int]{name: "Demo"}
     publisher.Subscribe(context.Background(), subscriber)
     
@@ -82,7 +130,9 @@ func main() {
 }
 ```
 
-### **3. Backpressure Strategies**
+### 3. Backpressure Control
+
+Handle producer/consumer speed mismatches with backpressure:
 
 ```go
 package main
@@ -119,9 +169,7 @@ func (s *SlowSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
 func (s *SlowSubscriber) OnComplete() { fmt.Println("Done!") }
 
 func main() {
-    // Create publisher with buffer strategy
     publisher := publisher.NewRangePublisher(1, 100)
-    
     subscriber := &SlowSubscriber{}
     publisher.Subscribe(context.Background(), subscriber)
     
@@ -129,7 +177,9 @@ func main() {
 }
 ```
 
-### **4. Context Cancellation**
+### 4. Context Cancellation
+
+Graceful cancellation using Go context:
 
 ```go
 package main
@@ -168,12 +218,13 @@ func main() {
     subscriber := &ContextSubscriber{}
     
     publisher.Subscribe(ctx, subscriber)
-    
     time.Sleep(time.Second)
 }
 ```
 
-### **5. Processor (Transforming Publisher)**
+### 5. Data Transformation
+
+Create processors to transform data streams:
 
 ```go
 package main
@@ -210,7 +261,6 @@ func (p *DoubleProcessor) OnComplete() {
 func main() {
     source := publisher.NewRangePublisher(1, 5)
     
-    // Create a processor (both Subscriber and Publisher)
     processor := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
         source.Subscribe(ctx, &DoubleProcessor{processor: publisher.NewReactivePublisher(func(ctx context.Context, innerSub publisher.ReactiveSubscriber[int]) {
             sub = innerSub
@@ -223,46 +273,18 @@ func main() {
 }
 ```
 
-## Features
+## API Reference
 
-### **✅ Core Features**
-- **Type-safe generics** throughout the API
-- **Context-based cancellation** support
-- **Backpressure strategies**: Buffer, Drop, Latest, Error
-- **Thread-safe** signal delivery
-- **Memory efficient** with bounded buffers
-- **Full interoperability** between old and new APIs
+### Core Interfaces
 
-### **✅ Reactive Streams 1.0.3 Compliance**
-- **Publisher[T]** - Type-safe data source with demand control
-- **ReactiveSubscriber[T]** - Complete subscriber interface with lifecycle
-- **Subscription** - Request/cancel control with backpressure
-- **Processor[T,R]** - Transforming publisher
-- **Backpressure support** - Full demand-based flow control
-- **Non-blocking guarantees** - Async processing with context cancellation
-
-### **✅ Backpressure Strategies**
-- **Buffer** - Queue items when producer is faster than consumer
-- **Drop** - Drop new items when buffer is full
-- **Latest** - Keep only the latest item when buffer is full
-- **Error** - Signal error when buffer overflows
-
-### **✅ Utility Functions**
-- `observable.Just[T](values...)` - Create from literal values
-- `publisher.NewRangePublisher(start, count)` - Integer sequence publisher
-- `publisher.FromSlice[T](slice)` - Create from slice
-- `publisher.NewReactivePublisher[T](fn)` - Custom publisher creation
-
-## API Documentation
-
-### **Publisher[T] Interface**
+#### Publisher[T] Interface
 ```go
 type Publisher[T any] interface {
     Subscribe(ctx context.Context, s ReactiveSubscriber[T])
 }
 ```
 
-### **ReactiveSubscriber[T] Interface**
+#### ReactiveSubscriber[T] Interface
 ```go
 type ReactiveSubscriber[T any] interface {
     OnSubscribe(s Subscription)
@@ -272,7 +294,7 @@ type ReactiveSubscriber[T any] interface {
 }
 ```
 
-### **Subscription Interface**
+#### Subscription Interface
 ```go
 type Subscription interface {
     Request(n int64)
@@ -280,34 +302,55 @@ type Subscription interface {
 }
 ```
 
-### **Constants**
+### Constants
 ```go
 const (
     publisher.Unlimited = 1 << 62 // Maximum request value
 )
 ```
 
-## Installation
+### Utility Functions
 
-```bash
-go get github.com/droxer/RxGo
-```
+| Function | Description | Example |
+|----------|-------------|---------|
+| `observable.Just[T](values...)` | Create from literal values | `observable.Just(1, 2, 3)` |
+| `publisher.NewRangePublisher(start, count)` | Integer sequence publisher | `publisher.NewRangePublisher(1, 10)` |
+| `publisher.FromSlice[T](slice)` | Create from slice | `publisher.FromSlice([]int{1, 2, 3})` |
+| `publisher.NewReactivePublisher[T](fn)` | Custom publisher creation | `publisher.NewReactivePublisher(customProducer)` |
 
-## Running Examples
+## Running Examples and Tests
 
+### Basic Examples
 ```bash
 # Run basic examples
 go run examples/basic.go
 
-# Run tests
+# Run reactive streams examples
+go run examples/reactive_streams.go
+
+# Run backpressure examples
+go run examples/backpressure.go
+```
+
+### Testing
+```bash
+# Run all tests
 go test -v ./...
+
+# Run tests with race detection
+go test -race -v ./...
+
+# Run benchmarks
+go test -bench=. -benchmem ./...
 ```
 
 ## Migration Guide
 
-### **From Old API to Reactive Streams**
+### From Observable API to Reactive Streams API
 
-**Before:**
+The Reactive Streams API provides more control and backpressure support. Here's how to migrate:
+
+#### Before (Observable API)
 ```go
 obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
     sub.OnNext(42)
@@ -316,7 +359,7 @@ obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 obs.Subscribe(ctx, subscriber)
 ```
 
-**After:**
+#### After (Reactive Streams API)
 ```go
 publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
     sub.OnSubscribe(publisher.NewSubscription())
@@ -326,21 +369,54 @@ publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publis
 publisher.Subscribe(ctx, reactiveSubscriber)
 ```
 
+### Key Changes
+- Replace `Subscriber` with `ReactiveSubscriber`
+- Add `OnSubscribe` method to handle subscription
+- Use `Request(n)` for backpressure control
+- Replace `OnCompleted` with `OnComplete`
+
 ## Performance Considerations
 
+### Optimization Features
 - **Zero-allocation** signal delivery for common cases
 - **Lock-free** data structures where possible
 - **Context-aware** cancellation to prevent goroutine leaks
 - **Bounded buffers** to prevent memory issues
 - **Backpressure** to handle producer/consumer speed mismatches
 
+### Best Practices
+- Always use context cancellation for long-running streams
+- Implement proper backpressure with `Request(n)` calls
+- Use bounded buffers to prevent memory exhaustion
+- Prefer the Reactive Streams API for production use
+
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
+We welcome contributions! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Add** tests for new functionality
+4. **Ensure** all tests pass (`go test -v ./...`)
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a pull request
+
+### Development Setup
+```bash
+# Clone the repository
+git clone https://github.com/droxer/RxGo.git
+cd RxGo
+
+# Install dependencies
+go mod download
+
+# Run tests
+go test -v ./...
+
+# Run benchmarks
+go test -bench=. ./...
+```
 
 ## License
 
@@ -365,3 +441,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/droxer/RxGo/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/droxer/RxGo/discussions)
+- **Documentation**: [GoDoc](https://godoc.org/github.com/droxer/RxGo)
