@@ -1,5 +1,5 @@
 # RxGo Makefile - Modern Reactive Extensions for Go
-.PHONY: default dev build build-examples test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools
+.PHONY: default dev build build-examples test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools doc doc-serve
 
 # Default target
 default: deps test
@@ -54,6 +54,17 @@ check-security:
 # Benchmarking
 bench:
 	go test -bench=. -benchmem ./...
+
+# Documentation
+doc:
+	@echo "📚 Generating documentation..."
+	go doc -all ./pkg/observable
+	go doc -all ./internal/publisher
+	go doc -all .
+
+doc-serve:
+	@echo "🌐 Starting documentation server..."
+	godoc -http=:6060
 
 # Clean up
 clean:

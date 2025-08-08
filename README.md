@@ -48,12 +48,12 @@ go get github.com/droxer/RxGo
 
 RxGo provides two compatible APIs:
 
-1. **Original Observable API** - Simple, callback-based approach
+1. **Observable API** - Simple, callback-based approach
 2. **Reactive Streams API** - Full specification compliance with backpressure
 
 ## Usage Examples
 
-### 1. Original Observable API (Simple)
+### 1. Observable API (Simple)
 
 The simplest way to get started with RxGo using the backward-compatible Observable API:
 
@@ -445,5 +445,4 @@ SOFTWARE.
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/droxer/RxGo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/droxer/RxGo/discussions)
 - **Documentation**: [GoDoc](https://godoc.org/github.com/droxer/RxGo)
