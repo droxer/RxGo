@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] - 2025-08-08
+## [0.1.0] - 2025-08-08
 
 ### Added
 - Initial release of RxGo with full Reactive Streams 1.0.3 compliance
