@@ -319,6 +319,7 @@ func BenchmarkPanicRecovery(b *testing.B) {
 			defer func() {
 				if r := recover(); r != nil {
 					// Simulate panic recovery
+					_ = r
 				}
 			}()
 			// Simulate work

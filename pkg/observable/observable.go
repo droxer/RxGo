@@ -6,11 +6,15 @@ import (
 	"runtime/debug"
 
 	"github.com/droxer/RxGo/internal/scheduler"
-	"github.com/droxer/RxGo/internal/subscriber"
 )
 
-// Subscriber is an alias for backward compatibility
-type Subscriber[T any] = subscriber.Subscriber[T]
+// Subscriber is an alias for backward compatibility - use the interface directly from consumer code
+type Subscriber[T any] = interface {
+	Start()
+	OnNext(next T)
+	OnCompleted()
+	OnError(e error)
+}
 
 // Create creates a new Observable with the given OnSubscribe function.
 func Create[T any](on OnSubscribe[T]) *Observable[T] {
