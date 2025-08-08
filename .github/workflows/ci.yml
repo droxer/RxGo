@@ -13,7 +13,7 @@ jobs:
     
     strategy:
       matrix:
-        go-version: [1.21, 1.22, 1.23]
+        go-version: [1.23]
     
     steps:
     - name: Checkout code
@@ -62,7 +62,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.22
+        go-version: 1.23
     
     - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v6
@@ -81,7 +81,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.22
+        go-version: 1.23
     
     - name: Run Gosec Security Scanner
       uses: securecodewarrior/github-action-gosec@master
@@ -99,7 +99,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.22
+        go-version: 1.23
     
     - name: Build examples
       run: |
