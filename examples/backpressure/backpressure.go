@@ -6,18 +6,18 @@ import (
 	"sync"
 	"time"
 
-	rx "github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/internal/publisher"
 )
 
 type BackpressureSubscriber struct {
 	name         string
 	received     []int
-	subscription rx.Subscription
+	subscription publisher.Subscription
 	mu           sync.Mutex
 	wg           *sync.WaitGroup
 }
 
-func (s *BackpressureSubscriber) OnSubscribe(sub rx.Subscription) {
+func (s *BackpressureSubscriber) OnSubscribe(sub publisher.Subscription) {
 	s.subscription = sub
 	fmt.Printf("[%s] Subscribed, will request items slowly\n", s.name)
 
@@ -60,7 +60,7 @@ func main() {
 
 	subscriber := &BackpressureSubscriber{name: "Backpressure", wg: &wg}
 
-	publisher := rx.NewReactivePublisher(func(ctx context.Context, sub rx.ReactiveSubscriber[int]) {
+	publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
 		defer sub.OnComplete()
 		for i := 1; i <= 10; i++ {
 			sub.OnNext(i)

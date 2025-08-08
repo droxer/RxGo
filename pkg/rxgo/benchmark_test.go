@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/droxer/RxGo/internal/publisher"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 // BenchmarkSubscriber implements ReactiveSubscriber for benchmarks
@@ -161,7 +162,7 @@ func BenchmarkRxGoCustomPublisher(b *testing.B) {
 // Benchmark for custom observable creation
 func BenchmarkRxGoCustomObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := Create(func(ctx context.Context, sub Subscriber[int]) {
+		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 			for j := 0; j < 100; j++ {
 				sub.OnNext(j)
 			}
@@ -360,7 +361,7 @@ func BenchmarkRxGoErrorPropagation(b *testing.B) {
 	
 	b.Run("Observable", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			observable := Create(func(ctx context.Context, sub Subscriber[int]) {
+			observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 				sub.OnError(context.Canceled)
 			})
 			subscriber := NewBenchmarkSubscriberOld[int]()

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/internal/scheduler"
-	rx "github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 // IntSubscriber demonstrates type-safe subscriber with generics
@@ -35,17 +34,17 @@ func main() {
 
 	// Example 1: Basic usage with Just
 	fmt.Println("\n1. Using Just():")
-	justObservable := rx.Just(1, 2, 3, 4, 5)
+	justObservable := observable.Just(1, 2, 3, 4, 5)
 	justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 
 	// Example 2: Range observable
 	fmt.Println("\n2. Using Range():")
-	rangeObservable := rx.Range(10, 5)
+	rangeObservable := observable.Range(10, 5)
 	rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 
 	// Example 3: Create with custom logic
 	fmt.Println("\n3. Using Create():")
-	customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
+	customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 3; i++ {
 			select {
 			case <-ctx.Done():
@@ -59,15 +58,25 @@ func main() {
 	})
 	customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 
-	// Example 4: With scheduler
-	fmt.Println("\n4. With scheduler:")
-	scheduledObservable := rx.Range(1, 3)
-	scheduledObservable.ObserveOn(scheduler.Computation).Subscribe(
-		context.Background(),
-		&IntSubscriber{name: "Scheduled"},
-	)
-
-	// Wait for scheduler to complete
+	// Example 4: With context (no scheduler due to event loop issues)
+	fmt.Println("\n4. With context cancellation:")
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	
+	contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		for i := 0; i < 5; i++ {
+			select {
+			case <-ctx.Done():
+				sub.OnError(ctx.Err())
+				return
+			default:
+				sub.OnNext(i * 100)
+			}
+		}
+		sub.OnCompleted()
+	})
+	contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
+	
 	time.Sleep(100 * time.Millisecond)
 
 	fmt.Println("\n=== All examples completed ===")

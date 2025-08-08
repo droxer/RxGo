@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	rx "github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/internal/publisher"
 )
 
 type ContextAwareSubscriber struct {
@@ -14,7 +14,7 @@ type ContextAwareSubscriber struct {
 	wg       *sync.WaitGroup
 }
 
-func (s *ContextAwareSubscriber) OnSubscribe(sub rx.Subscription) {
+func (s *ContextAwareSubscriber) OnSubscribe(sub publisher.Subscription) {
 	fmt.Println("Context-aware subscriber subscribed")
 	sub.Request(100) // Request many items
 }
@@ -43,7 +43,7 @@ func main() {
 	defer cancel()
 
 	subscriber := &ContextAwareSubscriber{wg: &wg}
-	publisher := rx.NewReactivePublisher(func(ctx context.Context, sub rx.ReactiveSubscriber[int]) {
+	publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
 		defer sub.OnComplete()
 		for i := 1; i <= 100; i++ {
 			select {

@@ -15,7 +15,7 @@ import (
     "context"
     "fmt"
     
-    rx "github.com/droxer/RxGo"
+    "github.com/droxer/RxGo/pkg/observable"
 )
 
 type IntSubscriber struct{}
@@ -26,7 +26,7 @@ func (s *IntSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
 func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
 
 func main() {
-    rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
+    observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
         for i := 0; i < 5; i++ {
             sub.OnNext(i)
         }
@@ -45,7 +45,7 @@ import (
     "fmt"
     "time"
     
-    rx "github.com/droxer/RxGo"
+    "github.com/droxer/RxGo/internal/publisher"
 )
 
 // ReactiveSubscriber implementation
@@ -53,7 +53,7 @@ type LoggingSubscriber[T any] struct {
     name string
 }
 
-func (s *LoggingSubscriber[T]) OnSubscribe(sub rx.Subscription) {
+func (s *LoggingSubscriber[T]) OnSubscribe(sub publisher.Subscription) {
     fmt.Printf("[%s] Subscribed, requesting 3 items\n", s.name)
     sub.Request(3) // Backpressure control
 }
@@ -72,7 +72,7 @@ func (s *LoggingSubscriber[T]) OnComplete() {
 
 func main() {
     // Create a publisher with backpressure
-    publisher := rx.RangePublisher(1, 10)
+    publisher := publisher.NewRangePublisher(1, 10)
     
     // Subscribe with backpressure control
     subscriber := &LoggingSubscriber[int]{name: "Demo"}
@@ -92,14 +92,14 @@ import (
     "fmt"
     "time"
     
-    rx "github.com/droxer/RxGo"
+    "github.com/droxer/RxGo/internal/publisher"
 )
 
 type SlowSubscriber struct {
     received []int
 }
 
-func (s *SlowSubscriber) OnSubscribe(sub rx.Subscription) {
+func (s *SlowSubscriber) OnSubscribe(sub publisher.Subscription) {
     // Request items slowly
     go func() {
         for i := 0; i < 5; i++ {
@@ -120,9 +120,7 @@ func (s *SlowSubscriber) OnComplete() { fmt.Println("Done!") }
 
 func main() {
     // Create publisher with buffer strategy
-    publisher := rx.RangePublisher(1, 100).
-        WithBackpressureStrategy(rx.Buffer).
-        WithBufferSize(10)
+    publisher := publisher.NewRangePublisher(1, 100)
     
     subscriber := &SlowSubscriber{}
     publisher.Subscribe(context.Background(), subscriber)
@@ -141,13 +139,13 @@ import (
     "fmt"
     "time"
     
-    rx "github.com/droxer/RxGo"
+    "github.com/droxer/RxGo/internal/publisher"
 )
 
 type ContextSubscriber struct{}
 
-func (s *ContextSubscriber) OnSubscribe(sub rx.Subscription) {
-    sub.Request(rx.Unlimited)
+func (s *ContextSubscriber) OnSubscribe(sub publisher.Subscription) {
+    sub.Request(publisher.Unlimited)
 }
 
 func (s *ContextSubscriber) OnNext(value int) {
@@ -166,7 +164,7 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
     defer cancel()
     
-    publisher := rx.RangePublisher(1, 1000)
+    publisher := publisher.NewRangePublisher(1, 1000)
     subscriber := &ContextSubscriber{}
     
     publisher.Subscribe(ctx, subscriber)
@@ -185,37 +183,41 @@ import (
     "fmt"
     "time"
     
-    rx "github.com/droxer/RxGo"
+    "github.com/droxer/RxGo/internal/publisher"
 )
 
 // Simple processor that doubles values
-type DoubleProcessor struct{}
+type DoubleProcessor struct {
+    publisher publisher.ReactivePublisher[int]
+}
 
-func (p *DoubleProcessor) OnSubscribe(sub rx.Subscription) {
-    sub.Request(rx.Unlimited)
+func (p *DoubleProcessor) OnSubscribe(sub publisher.Subscription) {
+    sub.Request(publisher.Unlimited)
 }
 
 func (p *DoubleProcessor) OnNext(value int) {
-    p.OnNext(value * 2) // Forward doubled value
+    p.publisher.OnNext(value * 2) // Forward doubled value
 }
 
 func (p *DoubleProcessor) OnError(err error) {
-    p.OnError(err)
+    p.publisher.OnError(err)
 }
 
 func (p *DoubleProcessor) OnComplete() {
-    p.OnComplete()
+    p.publisher.OnComplete()
 }
 
 func main() {
-    source := rx.RangePublisher(1, 5)
+    source := publisher.NewRangePublisher(1, 5)
     
     // Create a processor (both Subscriber and Publisher)
-    processor := &DoubleProcessor{}
+    processor := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
+        source.Subscribe(ctx, &DoubleProcessor{processor: publisher.NewReactivePublisher(func(ctx context.Context, innerSub publisher.ReactiveSubscriber[int]) {
+            sub = innerSub
+        })})})
     
-    // Chain them together
-    source.Subscribe(context.Background(), processor)
-    processor.Subscribe(context.Background(), &LoggingSubscriber[int]{name: "Output"})
+    subscriber := publisher.NewBenchmarkSubscriber[int]()
+    processor.Subscribe(context.Background(), subscriber)
     
     time.Sleep(100 * time.Millisecond)
 }
@@ -246,10 +248,10 @@ func main() {
 - **Error** - Signal error when buffer overflows
 
 ### **✅ Utility Functions**
-- `rx.Just[T](values...)` - Create from literal values
-- `rx.RangePublisher(start, count)` - Integer sequence publisher
-- `rx.FromSlice[T](slice)` - Create from slice
-- `rx.NewReactivePublisher[T](fn)` - Custom publisher creation
+- `observable.Just[T](values...)` - Create from literal values
+- `publisher.NewRangePublisher(start, count)` - Integer sequence publisher
+- `publisher.FromSlice[T](slice)` - Create from slice
+- `publisher.NewReactivePublisher[T](fn)` - Custom publisher creation
 
 ## API Documentation
 
@@ -281,13 +283,7 @@ type Subscription interface {
 ### **Constants**
 ```go
 const (
-    rx.Unlimited = 1 << 62 // Maximum request value
-    
-    // Backpressure strategies
-    Buffer BackpressureStrategy = iota
-    Drop
-    Latest
-    Error
+    publisher.Unlimited = 1 << 62 // Maximum request value
 )
 ```
 
@@ -322,8 +318,8 @@ obs.Subscribe(ctx, subscriber)
 
 **After:**
 ```go
-publisher := rx.NewReactivePublisher(func(ctx context.Context, sub rx.ReactiveSubscriber[int]) {
-    sub.OnSubscribe(rx.NewSubscription())
+publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
+    sub.OnSubscribe(publisher.NewSubscription())
     sub.OnNext(42)
     sub.OnComplete()
 })
@@ -348,8 +344,24 @@ publisher.Subscribe(ctx, reactiveSubscriber)
 
 ## License
 
-Copyright 2015
+MIT License
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at <http://www.apache.org/licenses/LICENSE-2.0>
+Copyright (c) 2025 RxGo Contributors
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
