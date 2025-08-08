@@ -8,8 +8,8 @@ import (
 	"github.com/droxer/RxGo/internal/scheduler"
 )
 
-// Subscriber is an alias for backward compatibility - use the interface directly from consumer code
-type Subscriber[T any] = interface {
+// Subscriber is an interface for backward compatibility
+type Subscriber[T any] interface {
 	Start()
 	OnNext(next T)
 	OnCompleted()
