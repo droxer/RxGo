@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.1] - 2025-08-10
+## [v0.1.1] - 2025-08-10
 
 ### Fixed
 - **Examples**: Updated all examples to use public APIs instead of internal packages
@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Examples**: Refactored backpressure and context examples to use `pkg/observable` and `pkg/rxgo` instead of `internal/publisher`
 - **Examples**: Simplified example structure for better clarity and maintainability
 
-## [0.1.0] - 2025-08-08
+## [v0.1.0] - 2025-08-08
 
 ### Added
 - Initial release of RxGo with full Reactive Streams 1.0.3 compliance
