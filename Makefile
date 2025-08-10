@@ -1,5 +1,5 @@
 # RxGo Makefile - Modern Reactive Extensions for Go
-.PHONY: default dev build build-examples test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools doc doc-serve
+.PHONY: default dev build build-examples test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools
 
 # Default target
 default: deps test
@@ -43,10 +43,6 @@ deps:
 	go mod download
 	go mod tidy
 
-deps-upgrade:
-	go get -u ./...
-	go mod tidy
-
 # Security
 check-security:
 	gosec ./...
@@ -72,9 +68,20 @@ clean:
 	rm -f coverage.out coverage.html
 
 # All-in-one quality check
-quality: fmt vet lint test race
+check: fmt vet lint test race
 
 # Install development tools
 install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+	go install github.com/goreleaser/goreleaser@latest
+
+# Release targets
+release:
+	goreleaser release --clean
+
+release-snapshot:
+	goreleaser release --snapshot --clean
+
+release-check:
+	goreleaser check

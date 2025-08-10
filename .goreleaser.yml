@@ -1,0 +1,66 @@
+# GoReleaser configuration for RxGo
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+# No binaries to build for a library project
+builds: []
+
+archives:
+  - formats: ["tar.gz"]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: ["zip"]
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^refactor:'
+      - '^style:'
+
+release:
+  github:
+    owner: droxer
+    name: RxGo
+  draft: false
+  prerelease: auto
+  name_template: "RxGo v{{ .Version }}"
+  header: |
+    ## What's New in RxGo v{{ .Version }}
+    
+    Modern Reactive Extensions for Go with full Reactive Streams 1.0.3 compliance.
+  footer: |
+    ## Installation
+    
+    ### Go Modules
+    ```bash
+    go get github.com/droxer/RxGo@v{{ .Version }}
+    ```
+    
+    ### Latest Development
+    ```bash
+    go get github.com/droxer/RxGo@latest
+    ```
+
+# Library-specific configurations
+dist: dist
