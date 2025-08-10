@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/droxer/RxGo/pkg/observable"
 	"github.com/droxer/RxGo/pkg/rxgo"
 )
 
@@ -44,7 +45,7 @@ func main() {
 
 	// Example 3: Create with custom logic
 	fmt.Println("\n3. Using Create():")
-	customObservable := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
+	customObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 3; i++ {
 			select {
 			case <-ctx.Done():
@@ -63,7 +64,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	contextObservable := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
+	contextObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 5; i++ {
 			select {
 			case <-ctx.Done():
