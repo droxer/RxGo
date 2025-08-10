@@ -2,9 +2,9 @@
 
 This document contains basic usage examples for RxGo.
 
-## 1. Observable API (Simple)
+## 1. Unified RxGo API (Recommended)
 
-The simplest way to get started with RxGo using the backward-compatible Observable API:
+The unified RxGo API provides a clean, modern interface for both Observable and Reactive Streams patterns:
 
 ```go
 package main
@@ -13,7 +13,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 // IntSubscriber demonstrates type-safe subscriber with generics
@@ -39,7 +39,7 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
     // Create observable from literal values
-    observable := observable.Just(1, 2, 3, 4, 5)
+    observable := rxgo.Just(1, 2, 3, 4, 5)
     observable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 }
 ```
@@ -49,7 +49,7 @@ func main() {
 Create observables from ranges:
 
 ```go
-rangeObservable := observable.Range(10, 5)
+rangeObservable := rxgo.Range(10, 5)
 rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 ```
 
@@ -58,7 +58,7 @@ rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 Create observables with custom logic:
 
 ```go
-customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+customObservable := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
     for i := 0; i < 3; i++ {
         select {
         case <-ctx.Done():
@@ -71,4 +71,26 @@ customObservable := observable.Create(func(ctx context.Context, sub observable.S
     sub.OnCompleted()
 })
 customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
+```
+
+## 4. Observable API (Direct)
+
+For direct access to the Observable API:
+
+```go
+import "github.com/droxer/RxGo/pkg/observable"
+
+obs := observable.Just(1, 2, 3)
+obs.Subscribe(context.Background(), subscriber)
+```
+
+## 5. Reactive Streams API (Direct)
+
+For direct access to the Reactive Streams API:
+
+```go
+import "github.com/droxer/RxGo/pkg/reactive"
+
+publisher := reactive.Just(1, 2, 3)
+publisher.Subscribe(context.Background(), reactiveSubscriber)
 ```

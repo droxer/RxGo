@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/observable"
+	"github.com/droxer/RxGo/pkg/rxgo"
 )
 
 // IntSubscriber demonstrates type-safe subscriber with generics
@@ -34,17 +34,17 @@ func main() {
 
 	// Example 1: Basic usage with Just
 	fmt.Println("\n1. Using Just():")
-	justObservable := observable.Just(1, 2, 3, 4, 5)
+	justObservable := rxgo.Just(1, 2, 3, 4, 5)
 	justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 
 	// Example 2: Range observable
 	fmt.Println("\n2. Using Range():")
-	rangeObservable := observable.Range(10, 5)
+	rangeObservable := rxgo.Range(10, 5)
 	rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 
 	// Example 3: Create with custom logic
 	fmt.Println("\n3. Using Create():")
-	customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+	customObservable := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
 		for i := 0; i < 3; i++ {
 			select {
 			case <-ctx.Done():
@@ -63,7 +63,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+	contextObservable := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
 		for i := 0; i < 5; i++ {
 			select {
 			case <-ctx.Done():

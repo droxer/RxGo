@@ -84,7 +84,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 type IntSubscriber struct{}
@@ -95,7 +95,7 @@ func (s *IntSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
 func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
 
 func main() {
-    observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
         for i := 0; i < 5; i++ {
             sub.OnNext(i)
         }
@@ -132,13 +132,13 @@ type Subscriber[T any] interface {
 #### Publisher[T] Interface (Reactive Streams API)
 ```go
 type Publisher[T any] interface {
-    Subscribe(ctx context.Context, s ReactiveSubscriber[T])
+    Subscribe(ctx context.Context, s SubscriberReactive[T])
 }
 ```
 
-#### ReactiveSubscriber[T] Interface (Reactive Streams API)
+#### SubscriberReactive[T] Interface (Reactive Streams API)
 ```go
-type ReactiveSubscriber[T any] interface {
+type SubscriberReactive[T any] interface {
     OnSubscribe(s Subscription)
     OnNext(t T)
     OnError(err error)
@@ -165,12 +165,12 @@ const (
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `observable.Just[T](values...)` | Create from literal values | `observable.Just(1, 2, 3)` |
-| `observable.Range(start, count)` | Integer sequence observable | `observable.Range(1, 10)` |
-| `observable.Create[T](fn)` | Custom observable creation | `observable.Create(customProducer)` |
+| `rxgo.Just[T](values...)` | Create from literal values | `rxgo.Just(1, 2, 3)` |
+| `rxgo.Range(start, count)` | Integer sequence observable | `rxgo.Range(1, 10)` |
+| `rxgo.Create[T](fn)` | Custom observable creation | `rxgo.Create(customProducer)` |
 | `rxgo.RangePublisher(start, count)` | Integer sequence publisher | `rxgo.RangePublisher(1, 10)` |
-| `rxgo.FromSlice[T](slice)` | Create publisher from slice | `rxgo.FromSlice([]int{1, 2, 3})` |
-| `rxgo.NewReactivePublisher[T](fn)` | Custom publisher creation | `rxgo.NewReactivePublisher(customProducer)` |
+| `rxgo.FromSlicePublisher[T](slice)` | Create publisher from slice | `rxgo.FromSlicePublisher([]int{1, 2, 3})` |
+| `rxgo.NewPublisher[T](fn)` | Custom publisher creation | `rxgo.NewPublisher(customProducer)` |
 
 ## Running Examples and Tests
 

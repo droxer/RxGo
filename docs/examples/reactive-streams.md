@@ -17,7 +17,7 @@ import (
     "github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// ReactiveSubscriber implementation
+// LoggingSubscriber implementation for Reactive Streams
 type LoggingSubscriber[T any] struct {
     name string
 }
@@ -65,7 +65,7 @@ import (
 
 // CustomPublisher demonstrates creating a reactive publisher
 func CustomPublisher() rxgo.Publisher[string] {
-    return rxgo.NewReactivePublisher(func(ctx context.Context, sub rxgo.ReactiveSubscriber[string]) {
+    return rxgo.NewPublisher(func(ctx context.Context, sub rxgo.SubscriberReactive[string]) {
         messages := []string{"Hello", "World", "from", "RxGo"}
         
         for _, msg := range messages {
@@ -107,7 +107,7 @@ import (
 
 func main() {
     data := []int{100, 200, 300, 400, 500}
-    publisher := rxgo.FromSlice(data)
+    publisher := rxgo.FromSlicePublisher(data)
     
     subscriber := &LoggingSubscriber[int]{name: "FromSlice"}
     publisher.Subscribe(context.Background(), subscriber)
