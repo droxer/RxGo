@@ -14,7 +14,7 @@
 //	    sub.OnNext(3)
 //	    sub.OnCompleted()
 //	})
-//	
+//
 //	// Subscribe with a custom subscriber
 //	obs.Subscribe(context.Background(), &MySubscriber[int]{)
 //
@@ -22,14 +22,14 @@
 //
 //	// From literal values
 //	obs := observable.Just(1, 2, 3, 4, 5)
-//	
+//
 //	// From a range
 //	obs := observable.Range(1, 10)
 //
 // Subscriber interface:
 //
 //	type MySubscriber[T any] struct{}
-//	
+//
 //	func (s *MySubscriber[T]) Start() {}
 //	func (s *MySubscriber[T]) OnNext(value T) { fmt.Println(value) }
 //	func (s *MySubscriber[T]) OnCompleted() { fmt.Println("Done") }

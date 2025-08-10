@@ -11,10 +11,10 @@
 //
 //	// Create a publisher that emits integers 1-10
 //	publisher := publisher.NewRangePublisher(1, 10)
-//	
+//
 //	// Create a subscriber
 //	subscriber := &MySubscriber[int]{}
-//	
+//
 //	// Subscribe with context
 //	publisher.Subscribe(context.Background(), subscriber)
 //
@@ -31,7 +31,7 @@
 //
 //	// From slice
 //	publisher := publisher.FromSlice([]int{1, 2, 3, 4, 5})
-//	
+//
 //	// Custom publisher
 //	publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[string]) {
 //	    sub.OnNext("Hello")

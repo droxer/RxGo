@@ -3,20 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
-	"github.com/droxer/RxGo/internal/publisher"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 type ContextAwareSubscriber struct {
 	received int
-	wg       *sync.WaitGroup
 }
 
-func (s *ContextAwareSubscriber) OnSubscribe(sub publisher.Subscription) {
-	fmt.Println("Context-aware subscriber subscribed")
-	sub.Request(100) // Request many items
+func (s *ContextAwareSubscriber) Start() {
+	fmt.Println("Context-aware subscriber started")
 }
 
 func (s *ContextAwareSubscriber) OnNext(value int) {
@@ -26,25 +23,23 @@ func (s *ContextAwareSubscriber) OnNext(value int) {
 
 func (s *ContextAwareSubscriber) OnError(err error) {
 	fmt.Printf("Context cancelled: %v\n", err)
-	s.wg.Done()
 }
 
-func (s *ContextAwareSubscriber) OnComplete() {
+func (s *ContextAwareSubscriber) OnCompleted() {
 	fmt.Printf("Completed, total received: %d\n", s.received)
-	s.wg.Done()
 }
 
 func main() {
 	fmt.Println("=== Context Cancellation Example ===")
-	var wg sync.WaitGroup
-	wg.Add(1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	subscriber := &ContextAwareSubscriber{wg: &wg}
-	publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
-		defer sub.OnComplete()
+	subscriber := &ContextAwareSubscriber{}
+
+	// Create observable that respects context cancellation
+	observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		defer sub.OnCompleted()
 		for i := 1; i <= 100; i++ {
 			select {
 			case <-ctx.Done():
@@ -52,11 +47,12 @@ func main() {
 				return
 			default:
 				sub.OnNext(i)
+				time.Sleep(10 * time.Millisecond) // Small delay to show cancellation
 			}
 		}
 	})
 
-	publisher.Subscribe(ctx, subscriber)
-	wg.Wait()
+	observable.Subscribe(ctx, subscriber)
+	time.Sleep(500 * time.Millisecond) // Wait for completion
 	fmt.Println("Context cancellation example completed!")
 }

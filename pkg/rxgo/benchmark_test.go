@@ -86,7 +86,7 @@ func BenchmarkRxGoPublisherCreation(b *testing.B) {
 // Benchmark for reactive publisher with subscriber
 func BenchmarkRxGoPublisherWithSubscriber(b *testing.B) {
 	subscriber := NewBenchmarkSubscriber[int]()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice([]int{1, 2, 3, 4, 5})
@@ -105,7 +105,7 @@ func BenchmarkRxGoObservableCreation(b *testing.B) {
 // Benchmark for observable with subscriber
 func BenchmarkRxGoObservableWithSubscriber(b *testing.B) {
 	subscriber := NewBenchmarkSubscriberOld[int]()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		observable := Just(1, 2, 3, 4, 5)
@@ -119,7 +119,7 @@ func BenchmarkRxGoLargeDataset(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		data[i] = i
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
@@ -207,7 +207,7 @@ func BenchmarkRxGoMemoryAllocations(b *testing.B) {
 // Benchmark for string data handling
 func BenchmarkRxGoStringData(b *testing.B) {
 	data := []string{"hello", "world", "benchmark", "test", "performance"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
@@ -231,7 +231,7 @@ func BenchmarkRxGoStructData(b *testing.B) {
 		{ID: 4, Name: "test4", Value: 4.0},
 		{ID: 5, Name: "test5", Value: 5.0},
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
@@ -255,7 +255,7 @@ func BenchmarkRxGoErrorHandling(b *testing.B) {
 func BenchmarkRxGoContextCancellation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
-		
+
 		publisher := NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
 			for j := 0; j < 100; j++ {
 				select {
@@ -268,7 +268,7 @@ func BenchmarkRxGoContextCancellation(b *testing.B) {
 			}
 			sub.OnComplete()
 		})
-		
+
 		subscriber := NewBenchmarkSubscriber[int]()
 		go publisher.Subscribe(ctx, subscriber)
 		cancel()
@@ -284,7 +284,7 @@ func BenchmarkRxGoDataTypes(b *testing.B) {
 			publisher.Subscribe(context.Background(), subscriber)
 		}
 	})
-	
+
 	b.Run("Float64", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := FromSlice([]float64{1.0, 2.0, 3.0, 4.0, 5.0})
@@ -292,7 +292,7 @@ func BenchmarkRxGoDataTypes(b *testing.B) {
 			publisher.Subscribe(context.Background(), subscriber)
 		}
 	})
-	
+
 	b.Run("String", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := FromSlice([]string{"a", "b", "c", "d", "e"})
@@ -305,14 +305,14 @@ func BenchmarkRxGoDataTypes(b *testing.B) {
 // Benchmark for different dataset sizes
 func BenchmarkRxGoDatasetSizes(b *testing.B) {
 	sizes := []int{10, 100, 1000}
-	
+
 	for _, size := range sizes {
 		b.Run(string(rune('0'+rune(size))), func(b *testing.B) {
 			data := make([]int, size)
 			for i := 0; i < size; i++ {
 				data[i] = i
 			}
-			
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				publisher := FromSlice(data)
@@ -334,7 +334,7 @@ func BenchmarkRxGoConcurrentOperations(b *testing.B) {
 			}
 		})
 	})
-	
+
 	b.Run("Observables", func(b *testing.B) {
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -345,7 +345,6 @@ func BenchmarkRxGoConcurrentOperations(b *testing.B) {
 		})
 	})
 }
-
 
 // Benchmark for error propagation
 func BenchmarkRxGoErrorPropagation(b *testing.B) {
@@ -358,7 +357,7 @@ func BenchmarkRxGoErrorPropagation(b *testing.B) {
 			publisher.Subscribe(context.Background(), subscriber)
 		}
 	})
-	
+
 	b.Run("Observable", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {

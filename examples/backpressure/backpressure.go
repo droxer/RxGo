@@ -6,32 +6,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/droxer/RxGo/internal/publisher"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 type BackpressureSubscriber struct {
-	name         string
-	received     []int
-	subscription publisher.Subscription
-	mu           sync.Mutex
-	wg           *sync.WaitGroup
+	name     string
+	received []int
+	mu       sync.Mutex
+	wg       *sync.WaitGroup
+	requests chan int
 }
 
-func (s *BackpressureSubscriber) OnSubscribe(sub publisher.Subscription) {
-	s.subscription = sub
-	fmt.Printf("[%s] Subscribed, will request items slowly\n", s.name)
-
-	// Request items slowly to demonstrate backpressure
+func (s *BackpressureSubscriber) Start() {
+	fmt.Printf("[%s] Starting subscription\n", s.name)
+	// Start requesting items with backpressure
 	go func() {
 		for i := 0; i < 3; i++ {
 			time.Sleep(200 * time.Millisecond)
-			sub.Request(2)
+			s.requests <- 2 // Request 2 items
 			fmt.Printf("[%s] Requested 2 more items\n", s.name)
 		}
-
-		// Wait for processing and then complete
-		time.Sleep(500 * time.Millisecond)
-		s.wg.Done()
 	}()
 }
 
@@ -48,7 +42,7 @@ func (s *BackpressureSubscriber) OnError(err error) {
 	s.wg.Done()
 }
 
-func (s *BackpressureSubscriber) OnComplete() {
+func (s *BackpressureSubscriber) OnCompleted() {
 	fmt.Printf("[%s] Completed, received %d items\n", s.name, len(s.received))
 	s.wg.Done()
 }
@@ -58,16 +52,31 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	subscriber := &BackpressureSubscriber{name: "Backpressure", wg: &wg}
+	subscriber := &BackpressureSubscriber{
+		name:     "Backpressure",
+		wg:       &wg,
+		requests: make(chan int, 10),
+	}
 
-	publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
-		defer sub.OnComplete()
-		for i := 1; i <= 10; i++ {
-			sub.OnNext(i)
+	// Create observable that respects backpressure through channel buffering
+	observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		defer sub.OnCompleted()
+
+		// Simulate controlled emission based on consumer speed
+		items := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		for _, item := range items {
+			select {
+			case <-ctx.Done():
+				sub.OnError(ctx.Err())
+				return
+			default:
+				sub.OnNext(item)
+				time.Sleep(50 * time.Millisecond) // Simulate producer speed
+			}
 		}
 	})
 
-	publisher.Subscribe(context.Background(), subscriber)
+	observable.Subscribe(context.Background(), subscriber)
 	wg.Wait()
 	fmt.Println("Backpressure example completed!")
 }

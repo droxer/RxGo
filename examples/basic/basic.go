@@ -62,7 +62,7 @@ func main() {
 	fmt.Println("\n4. With context cancellation:")
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
-	
+
 	contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 5; i++ {
 			select {
@@ -76,7 +76,7 @@ func main() {
 		sub.OnCompleted()
 	})
 	contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
-	
+
 	time.Sleep(100 * time.Millisecond)
 
 	fmt.Println("\n=== All examples completed ===")

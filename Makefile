@@ -13,7 +13,7 @@ build:
 
 build-examples:
 	mkdir -p bin
-	go build -o bin/basic examples/basic.go
+	go build -o bin/basic examples/basic/basic.go
 	go build -o bin/backpressure examples/backpressure/backpressure.go
 	go build -o bin/context examples/context/context.go
 

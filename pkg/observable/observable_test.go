@@ -51,7 +51,7 @@ func TestObservableSchedule(t *testing.T) {
 	t.Skip("Scheduler implementation needs refinement - temporarily skipping")
 	var counter atomic.Int64
 	var wg sync.WaitGroup
-	
+
 	sub := &SampleSubscriber[int]{
 		doNext: func(p int) {
 			counter.Add(int64(p))
@@ -76,7 +76,7 @@ func TestObservableSchedule(t *testing.T) {
 		wg.Wait()
 		close(done)
 	}()
-	
+
 	select {
 	case <-done:
 		if counter.Load() != 45 {

@@ -13,7 +13,7 @@ func BenchmarkSchedulerSchedule(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -27,7 +27,7 @@ func BenchmarkThreadPoolScheduler(b *testing.B) {
 	scheduler := newThreadPoolScheduler(time.Second)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -41,7 +41,7 @@ func BenchmarkSchedulerScheduleAt(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.ScheduleAt(func() {
@@ -55,7 +55,7 @@ func BenchmarkSchedulerConcurrent(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -71,7 +71,7 @@ func BenchmarkThreadPoolConcurrent(b *testing.B) {
 	scheduler := newThreadPoolScheduler(time.Second)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -85,7 +85,7 @@ func BenchmarkThreadPoolConcurrent(b *testing.B) {
 // Benchmark for worker creation (simplified)
 func BenchmarkWorkerCreation(b *testing.B) {
 	jobChanQueue := make(chan chan job, 10)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		worker := newThreadWorker(time.Second, jobChanQueue)
@@ -97,7 +97,7 @@ func BenchmarkWorkerCreation(b *testing.B) {
 // Benchmark for pool worker creation
 func BenchmarkPoolWorkerCreation(b *testing.B) {
 	fixedWorkerPool := make(chan chan job, 4)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		worker := newPoolWorker(fixedWorkerPool)
@@ -111,16 +111,16 @@ func BenchmarkSchedulerWorkThroughput(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
 			counter.Add(1)
 		})
 	}
-	
+
 	// Wait for all work to complete
 	time.Sleep(100 * time.Millisecond)
 }
@@ -130,16 +130,16 @@ func BenchmarkThreadPoolWorkThroughput(b *testing.B) {
 	scheduler := newThreadPoolScheduler(time.Second)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
 			counter.Add(1)
 		})
 	}
-	
+
 	// Wait for all work to complete
 	time.Sleep(100 * time.Millisecond)
 }
@@ -149,7 +149,7 @@ func BenchmarkSchedulerMemoryAllocations(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -163,9 +163,9 @@ func BenchmarkSchedulerComplexWork(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -177,7 +177,7 @@ func BenchmarkSchedulerComplexWork(b *testing.B) {
 			counter.Add(int64(sum))
 		})
 	}
-	
+
 	// Wait for all work to complete
 	time.Sleep(200 * time.Millisecond)
 }
@@ -185,7 +185,7 @@ func BenchmarkSchedulerComplexWork(b *testing.B) {
 // Benchmark for worker timeout handling
 func BenchmarkWorkerTimeout(b *testing.B) {
 	pool := newCachedThreadPool(time.Millisecond)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		worker := newThreadWorker(time.Millisecond, pool.jobChanQueue)
@@ -200,16 +200,16 @@ func BenchmarkEventLoopThroughput(b *testing.B) {
 	eventLoop := newEventLoopScheduler(8)
 	eventLoop.Start()
 	defer eventLoop.Stop()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		eventLoop.Schedule(func() {
 			counter.Add(1)
 		})
 	}
-	
+
 	// Wait for completion
 	time.Sleep(100 * time.Millisecond)
 }
@@ -219,9 +219,9 @@ func BenchmarkContextSwitching(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	var wg sync.WaitGroup
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		wg.Add(1)
@@ -235,7 +235,7 @@ func BenchmarkContextSwitching(b *testing.B) {
 // Benchmark for job channel operations
 func BenchmarkJobChannelOperations(b *testing.B) {
 	jobQueue := make(chan job, 1000)
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -252,13 +252,13 @@ func BenchmarkJobChannelOperations(b *testing.B) {
 func BenchmarkFixedWorkerPool(b *testing.B) {
 	fixedWorkerPool := make(chan chan job, 4)
 	workers := make([]*poolWorker, 4)
-	
+
 	// Start workers
 	for i := 0; i < 4; i++ {
 		workers[i] = newPoolWorker(fixedWorkerPool)
 		workers[i].start()
 	}
-	
+
 	scheduler := &eventLoopScheduler{
 		workers:         workers,
 		fixedWorkerPool: fixedWorkerPool,
@@ -266,16 +266,16 @@ func BenchmarkFixedWorkerPool(b *testing.B) {
 		quit:            make(chan bool),
 	}
 	go scheduler.dispatch()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
 			counter.Add(1)
 		})
 	}
-	
+
 	// Cleanup
 	close(scheduler.quit)
 }
@@ -283,7 +283,7 @@ func BenchmarkFixedWorkerPool(b *testing.B) {
 // Benchmark for channel communication overhead
 func BenchmarkChannelCommunication(b *testing.B) {
 	ch := make(chan int, 100)
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -298,7 +298,7 @@ func BenchmarkChannelCommunication(b *testing.B) {
 // Benchmark for worker lifecycle
 func BenchmarkWorkerLifecycle(b *testing.B) {
 	jobChanQueue := make(chan chan job, 10)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		worker := newThreadWorker(time.Second, jobChanQueue)
@@ -312,7 +312,7 @@ func BenchmarkPanicRecovery(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -332,7 +332,7 @@ func BenchmarkSchedulerAllocations(b *testing.B) {
 	scheduler := newEventLoopScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
-	
+
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		scheduler.Schedule(func() {
@@ -353,7 +353,7 @@ func BenchmarkTimerOperations(b *testing.B) {
 // Benchmark for atomic operations
 func BenchmarkAtomicOperations(b *testing.B) {
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -367,13 +367,13 @@ func BenchmarkMultiThreadedScheduling(b *testing.B) {
 	computations := newEventLoopScheduler(runtime.NumCPU())
 	computations.Start()
 	defer computations.Stop()
-	
+
 	ios := newThreadPoolScheduler(time.Second)
 	ios.Start()
 	defer ios.Stop()
-	
+
 	var counter atomic.Int64
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -389,7 +389,7 @@ func BenchmarkMultiThreadedScheduling(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// Wait for completion
 	time.Sleep(200 * time.Millisecond)
 }

@@ -17,7 +17,7 @@ func BenchmarkPublisherCreation(b *testing.B) {
 // Benchmark for publisher with simple subscriber
 func BenchmarkPublisherWithSubscriber(b *testing.B) {
 	subscriber := NewTestReactiveSubscriber[int]()
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice([]int{1, 2, 3, 4, 5})
@@ -31,7 +31,7 @@ func BenchmarkPublisherLargeDataset(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		data[i] = i
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
@@ -55,13 +55,13 @@ func BenchmarkPublisherWithBackpressure(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		data[i] = i
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
 		subscriber := NewTestReactiveSubscriber[int]()
 		publisher.Subscribe(context.Background(), subscriber)
-		
+
 		// Simulate backpressure
 		sub := subscriber.getSubscription()
 		if sub != nil {
@@ -76,7 +76,7 @@ func BenchmarkPublisherWithCancellation(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		data[i] = i
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
@@ -103,7 +103,7 @@ func BenchmarkCustomPublisher(b *testing.B) {
 // Benchmark for concurrent subscribers
 func BenchmarkPublisherConcurrentSubscribers(b *testing.B) {
 	publisher := FromSlice([]int{1, 2, 3, 4, 5})
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -126,7 +126,7 @@ func BenchmarkPublisherMemoryAllocations(b *testing.B) {
 // Benchmark for string vs int performance
 func BenchmarkPublisherStringData(b *testing.B) {
 	data := []string{"hello", "world", "benchmark", "test", "performance"}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
@@ -142,13 +142,13 @@ func BenchmarkPublisherStructData(b *testing.B) {
 		Name  string
 		Value float64
 	}
-	
+
 	data := []TestStruct{
 		{ID: 1, Name: "test1", Value: 1.0},
 		{ID: 2, Name: "test2", Value: 2.0},
 		{ID: 3, Name: "test3", Value: 3.0},
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		publisher := FromSlice(data)
