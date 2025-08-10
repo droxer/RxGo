@@ -39,13 +39,13 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 
 ### Latest Version
 ```bash
-go get github.com/droxer/RxGo@v0.1.0
+go get github.com/droxer/RxGo@v0.1.1
 ```
 
 ### Go Modules
 Add to your `go.mod`:
 ```go
-require github.com/droxer/RxGo v0.1.0
+require github.com/droxer/RxGo v0.1.1
 ```
 
 ### Latest Development
@@ -65,9 +65,17 @@ RxGo provides two compatible APIs:
 
 ## Usage Examples
 
-### 1. Observable API (Simple)
+Comprehensive usage examples are available in the [docs/examples](./docs/examples/) directory:
 
-The simplest way to get started with RxGo using the backward-compatible Observable API:
+- **[Basic Usage](./docs/examples/basic-usage.md)** - Simple Observable API examples
+- **[Reactive Streams API](./docs/examples/reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
+- **[Backpressure Control](./docs/examples/backpressure.md)** - Handle producer/consumer speed mismatches
+- **[Context Cancellation](./docs/examples/context-cancellation.md)** - Graceful cancellation using Go context
+- **[Data Transformation](./docs/examples/data-transformation.md)** - Transform and process data streams
+
+### Quick Example
+
+Here's a simple example to get you started:
 
 ```go
 package main
@@ -96,211 +104,7 @@ func main() {
 }
 ```
 
-### 2. Reactive Streams API (Advanced)
-
-Full Reactive Streams compliance with backpressure and demand control:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/droxer/RxGo/pkg/rxgo"
-)
-
-// ReactiveSubscriber implementation
-type LoggingSubscriber[T any] struct {
-    name string
-}
-
-func (s *LoggingSubscriber[T]) OnSubscribe(sub rxgo.Subscription) {
-    fmt.Printf("[%s] Subscribed, requesting 3 items\n", s.name)
-    sub.Request(3) // Backpressure control
-}
-
-func (s *LoggingSubscriber[T]) OnNext(value T) {
-    fmt.Printf("[%s] Received: %v\n", s.name, value)
-}
-
-func (s *LoggingSubscriber[T]) OnError(err error) {
-    fmt.Printf("[%s] Error: %v\n", s.name, err)
-}
-
-func (s *LoggingSubscriber[T]) OnComplete() {
-    fmt.Printf("[%s] Completed\n", s.name)
-}
-
-func main() {
-    publisher := rxgo.RangePublisher(1, 10)
-    subscriber := &LoggingSubscriber[int]{name: "Demo"}
-    publisher.Subscribe(context.Background(), subscriber)
-    
-    time.Sleep(100 * time.Millisecond)
-}
-```
-
-### 3. Backpressure Control
-
-Handle producer/consumer speed mismatches with backpressure:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/droxer/RxGo/pkg/rxgo"
-)
-
-type SlowSubscriber struct {
-    received []int
-}
-
-func (s *SlowSubscriber) OnSubscribe(sub rxgo.Subscription) {
-    // Request items slowly
-    go func() {
-        for i := 0; i < 5; i++ {
-            time.Sleep(100 * time.Millisecond)
-            sub.Request(1)
-        }
-    }()
-}
-
-func (s *SlowSubscriber) OnNext(value int) {
-    s.received = append(s.received, value)
-    fmt.Printf("Processing: %d\n", value)
-    time.Sleep(50 * time.Millisecond) // Simulate slow processing
-}
-
-func (s *SlowSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
-func (s *SlowSubscriber) OnComplete() { fmt.Println("Done!") }
-
-func main() {
-    publisher := rxgo.RangePublisher(1, 100)
-    subscriber := &SlowSubscriber{}
-    publisher.Subscribe(context.Background(), subscriber)
-    
-    time.Sleep(time.Second)
-}
-```
-
-### 4. Context Cancellation
-
-Graceful cancellation using Go context:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/droxer/RxGo/pkg/rxgo"
-)
-
-type ContextSubscriber struct{}
-
-func (s *ContextSubscriber) OnSubscribe(sub rxgo.Subscription) {
-    sub.Request(rxgo.Unlimited)
-}
-
-func (s *ContextSubscriber) OnNext(value int) {
-    fmt.Printf("Received: %d\n", value)
-}
-
-func (s *ContextSubscriber) OnError(err error) {
-    fmt.Printf("Cancelled: %v\n", err)
-}
-
-func (s *ContextSubscriber) OnComplete() {
-    fmt.Println("Completed")
-}
-
-func main() {
-    ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-    defer cancel()
-    
-    publisher := rxgo.RangePublisher(1, 1000)
-    subscriber := &ContextSubscriber{}
-    
-    publisher.Subscribe(ctx, subscriber)
-    time.Sleep(time.Second)
-}
-```
-
-### 5. Data Transformation
-
-Create observables that transform data streams:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/droxer/RxGo/pkg/observable"
-)
-
-func main() {
-    // Create source observable
-    source := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
-        defer sub.OnCompleted()
-        for i := 1; i <= 5; i++ {
-            sub.OnNext(i)
-        }
-    })
-    
-    // Transform the stream by doubling values
-    transformed := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
-        source.Subscribe(ctx, observable.Subscriber[int]{
-            Start: func() {
-                sub.Start()
-            },
-            OnNext: func(value int) {
-                sub.OnNext(value * 2) // Double the value
-            },
-            OnError: func(err error) {
-                sub.OnError(err)
-            },
-            OnCompleted: func() {
-                sub.OnCompleted()
-            },
-        })
-    })
-    
-    // Subscribe to the transformed stream
-    type IntSubscriber struct{}
-    
-    func (s *IntSubscriber) Start() {
-        fmt.Println("Starting transformation subscriber")
-    }
-    
-    func (s *IntSubscriber) OnNext(value int) {
-        fmt.Printf("Received: %d\n", value)
-    }
-    
-    func (s *IntSubscriber) OnError(err error) {
-        fmt.Printf("Error: %v\n", err)
-    }
-    
-    func (s *IntSubscriber) OnCompleted() {
-        fmt.Println("Transformation completed")
-    }
-    
-    subscriber := &IntSubscriber{}
-    transformed.Subscribe(context.Background(), subscriber)
-    
-    time.Sleep(100 * time.Millisecond)
-}
-```
+For more detailed examples and advanced usage patterns, see the [examples directory](./docs/examples/).
 
 ## API Reference
 
