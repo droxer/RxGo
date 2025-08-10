@@ -39,13 +39,13 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 
 ### Latest Version
 ```bash
-go get github.com/droxer/RxGo@v0.1.0
+go get github.com/droxer/RxGo@v0.1.1
 ```
 
 ### Go Modules
 Add to your `go.mod`:
 ```go
-require github.com/droxer/RxGo v0.1.0
+require github.com/droxer/RxGo v0.1.1
 ```
 
 ### Latest Development
@@ -108,7 +108,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/droxer/RxGo/internal/publisher"
+    "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 // ReactiveSubscriber implementation
@@ -116,7 +116,7 @@ type LoggingSubscriber[T any] struct {
     name string
 }
 
-func (s *LoggingSubscriber[T]) OnSubscribe(sub publisher.Subscription) {
+func (s *LoggingSubscriber[T]) OnSubscribe(sub rxgo.Subscription) {
     fmt.Printf("[%s] Subscribed, requesting 3 items\n", s.name)
     sub.Request(3) // Backpressure control
 }
@@ -134,7 +134,7 @@ func (s *LoggingSubscriber[T]) OnComplete() {
 }
 
 func main() {
-    publisher := publisher.NewRangePublisher(1, 10)
+    publisher := rxgo.RangePublisher(1, 10)
     subscriber := &LoggingSubscriber[int]{name: "Demo"}
     publisher.Subscribe(context.Background(), subscriber)
     
@@ -154,14 +154,14 @@ import (
     "fmt"
     "time"
     
-    "github.com/droxer/RxGo/internal/publisher"
+    "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 type SlowSubscriber struct {
     received []int
 }
 
-func (s *SlowSubscriber) OnSubscribe(sub publisher.Subscription) {
+func (s *SlowSubscriber) OnSubscribe(sub rxgo.Subscription) {
     // Request items slowly
     go func() {
         for i := 0; i < 5; i++ {
@@ -181,7 +181,7 @@ func (s *SlowSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
 func (s *SlowSubscriber) OnComplete() { fmt.Println("Done!") }
 
 func main() {
-    publisher := publisher.NewRangePublisher(1, 100)
+    publisher := rxgo.RangePublisher(1, 100)
     subscriber := &SlowSubscriber{}
     publisher.Subscribe(context.Background(), subscriber)
     
@@ -201,13 +201,13 @@ import (
     "fmt"
     "time"
     
-    "github.com/droxer/RxGo/internal/publisher"
+    "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 type ContextSubscriber struct{}
 
-func (s *ContextSubscriber) OnSubscribe(sub publisher.Subscription) {
-    sub.Request(publisher.Unlimited)
+func (s *ContextSubscriber) OnSubscribe(sub rxgo.Subscription) {
+    sub.Request(rxgo.Unlimited)
 }
 
 func (s *ContextSubscriber) OnNext(value int) {
@@ -226,7 +226,7 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
     defer cancel()
     
-    publisher := publisher.NewRangePublisher(1, 1000)
+    publisher := rxgo.RangePublisher(1, 1000)
     subscriber := &ContextSubscriber{}
     
     publisher.Subscribe(ctx, subscriber)
@@ -236,7 +236,7 @@ func main() {
 
 ### 5. Data Transformation
 
-Create processors to transform data streams:
+Create observables that transform data streams:
 
 ```go
 package main
@@ -246,40 +246,57 @@ import (
     "fmt"
     "time"
     
-    "github.com/droxer/RxGo/internal/publisher"
+    "github.com/droxer/RxGo/pkg/observable"
 )
 
-// Simple processor that doubles values
-type DoubleProcessor struct {
-    publisher publisher.ReactivePublisher[int]
-}
-
-func (p *DoubleProcessor) OnSubscribe(sub publisher.Subscription) {
-    sub.Request(publisher.Unlimited)
-}
-
-func (p *DoubleProcessor) OnNext(value int) {
-    p.publisher.OnNext(value * 2) // Forward doubled value
-}
-
-func (p *DoubleProcessor) OnError(err error) {
-    p.publisher.OnError(err)
-}
-
-func (p *DoubleProcessor) OnComplete() {
-    p.publisher.OnComplete()
-}
-
 func main() {
-    source := publisher.NewRangePublisher(1, 5)
+    // Create source observable
+    source := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+        defer sub.OnCompleted()
+        for i := 1; i <= 5; i++ {
+            sub.OnNext(i)
+        }
+    })
     
-    processor := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
-        source.Subscribe(ctx, &DoubleProcessor{processor: publisher.NewReactivePublisher(func(ctx context.Context, innerSub publisher.ReactiveSubscriber[int]) {
-            sub = innerSub
-        })})})
+    // Transform the stream by doubling values
+    transformed := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+        source.Subscribe(ctx, observable.Subscriber[int]{
+            Start: func() {
+                sub.Start()
+            },
+            OnNext: func(value int) {
+                sub.OnNext(value * 2) // Double the value
+            },
+            OnError: func(err error) {
+                sub.OnError(err)
+            },
+            OnCompleted: func() {
+                sub.OnCompleted()
+            },
+        })
+    })
     
-    subscriber := publisher.NewBenchmarkSubscriber[int]()
-    processor.Subscribe(context.Background(), subscriber)
+    // Subscribe to the transformed stream
+    type IntSubscriber struct{}
+    
+    func (s *IntSubscriber) Start() {
+        fmt.Println("Starting transformation subscriber")
+    }
+    
+    func (s *IntSubscriber) OnNext(value int) {
+        fmt.Printf("Received: %d\n", value)
+    }
+    
+    func (s *IntSubscriber) OnError(err error) {
+        fmt.Printf("Error: %v\n", err)
+    }
+    
+    func (s *IntSubscriber) OnCompleted() {
+        fmt.Println("Transformation completed")
+    }
+    
+    subscriber := &IntSubscriber{}
+    transformed.Subscribe(context.Background(), subscriber)
     
     time.Sleep(100 * time.Millisecond)
 }
@@ -289,14 +306,33 @@ func main() {
 
 ### Core Interfaces
 
-#### Publisher[T] Interface
+#### Observable API (Simple)
+```go
+type Observable[T any] struct {
+    // Contains filtered or unexported fields
+}
+
+func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T])
+```
+
+#### Subscriber[T] Interface (Observable API)
+```go
+type Subscriber[T any] interface {
+    Start()
+    OnNext(next T)
+    OnCompleted()
+    OnError(e error)
+}
+```
+
+#### Publisher[T] Interface (Reactive Streams API)
 ```go
 type Publisher[T any] interface {
     Subscribe(ctx context.Context, s ReactiveSubscriber[T])
 }
 ```
 
-#### ReactiveSubscriber[T] Interface
+#### ReactiveSubscriber[T] Interface (Reactive Streams API)
 ```go
 type ReactiveSubscriber[T any] interface {
     OnSubscribe(s Subscription)
@@ -317,7 +353,7 @@ type Subscription interface {
 ### Constants
 ```go
 const (
-    publisher.Unlimited = 1 << 62 // Maximum request value
+    rxgo.Unlimited = 1 << 62 // Maximum request value
 )
 ```
 
@@ -326,22 +362,29 @@ const (
 | Function | Description | Example |
 |----------|-------------|---------|
 | `observable.Just[T](values...)` | Create from literal values | `observable.Just(1, 2, 3)` |
-| `publisher.NewRangePublisher(start, count)` | Integer sequence publisher | `publisher.NewRangePublisher(1, 10)` |
-| `publisher.FromSlice[T](slice)` | Create from slice | `publisher.FromSlice([]int{1, 2, 3})` |
-| `publisher.NewReactivePublisher[T](fn)` | Custom publisher creation | `publisher.NewReactivePublisher(customProducer)` |
+| `observable.Range(start, count)` | Integer sequence observable | `observable.Range(1, 10)` |
+| `observable.Create[T](fn)` | Custom observable creation | `observable.Create(customProducer)` |
+| `rxgo.RangePublisher(start, count)` | Integer sequence publisher | `rxgo.RangePublisher(1, 10)` |
+| `rxgo.FromSlice[T](slice)` | Create publisher from slice | `rxgo.FromSlice([]int{1, 2, 3})` |
+| `rxgo.NewReactivePublisher[T](fn)` | Custom publisher creation | `rxgo.NewReactivePublisher(customProducer)` |
 
 ## Running Examples and Tests
 
 ### Basic Examples
 ```bash
 # Run basic examples
-go run examples/basic.go
-
-# Run reactive streams examples
-go run examples/reactive_streams.go
+go run examples/basic/basic.go
 
 # Run backpressure examples
-go run examples/backpressure.go
+go run examples/backpressure/backpressure.go
+
+# Run context examples
+go run examples/context/context.go
+
+# Run compiled binaries
+./bin/basic
+./bin/backpressure
+./bin/context
 ```
 
 ### Testing
