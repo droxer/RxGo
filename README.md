@@ -356,37 +356,6 @@ go test -race -v ./...
 go test -bench=. -benchmem ./...
 ```
 
-## Migration Guide
-
-### From Observable API to Reactive Streams API
-
-The Reactive Streams API provides more control and backpressure support. Here's how to migrate:
-
-#### Before (Observable API)
-```go
-obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
-    sub.OnNext(42)
-    sub.OnCompleted()
-})
-obs.Subscribe(ctx, subscriber)
-```
-
-#### After (Reactive Streams API)
-```go
-publisher := publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[int]) {
-    sub.OnSubscribe(publisher.NewSubscription())
-    sub.OnNext(42)
-    sub.OnComplete()
-})
-publisher.Subscribe(ctx, reactiveSubscriber)
-```
-
-### Key Changes
-- Replace `Subscriber` with `ReactiveSubscriber`
-- Add `OnSubscribe` method to handle subscription
-- Use `Request(n)` for backpressure control
-- Replace `OnCompleted` with `OnComplete`
-
 ## Performance Considerations
 
 ### Optimization Features
