@@ -9,18 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [v0.1.1] - 2025-08-10
 
-### Fixed
-- **Examples**: Updated all examples to use public APIs instead of internal packages
-- **Makefile**: Fixed example build paths to match new directory structure
-- **Documentation**: Removed Migration Guide section from README to focus on current API
-- **Code Quality**: Resolved WaitGroup synchronization issues in examples
-
-### Changed
-- **Examples**: Refactored backpressure and context examples to use `pkg/observable` and `pkg/rxgo` instead of `internal/publisher`
-- **Examples**: Simplified example structure for better clarity and maintainability
-
-## [v0.1.0] - 2025-08-08
-
 ### Added
 - Initial release of RxGo with full Reactive Streams 1.0.3 compliance
 - Type-safe generics support throughout the API (Go 1.23+)

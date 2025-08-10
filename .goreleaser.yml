@@ -1,43 +1,25 @@
-# GoReleaser configuration for RxGo
+# GoReleaser configuration for RxGo library
 version: 2
 
-before:
-  hooks:
-    - go mod tidy
-    - go generate ./...
+project_name: RxGo
 
-# No binaries to build for a library project
-builds: []
+# Completely disable all building for library project
+builds:
+  - skip: true
+    goos: [linux]
+    goarch: [amd64]
+    main: <<<NONEXISTENT>>>
 
+# Disable archives since this is a library
 archives:
-  - formats: ["tar.gz"]
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
-    format_overrides:
-      - goos: windows
-        formats: ["zip"]
+  - id: none
+    builds: []
 
+# Disable checksums
 checksum:
-  name_template: 'checksums.txt'
+  disable: true
 
-snapshot:
-  version_template: "{{ incpatch .Version }}-next"
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-      - '^refactor:'
-      - '^style:'
-
+# Release configuration
 release:
   github:
     owner: droxer
@@ -52,15 +34,22 @@ release:
   footer: |
     ## Installation
     
-    ### Go Modules
     ```bash
     go get github.com/droxer/RxGo@v{{ .Version }}
     ```
-    
-    ### Latest Development
-    ```bash
-    go get github.com/droxer/RxGo@latest
-    ```
 
-# Library-specific configurations
-dist: dist
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^refactor:'
+      - '^style:'
+
+# Simple hooks for library validation
+before:
+  hooks:
+    - go mod tidy
+    - go vet ./...

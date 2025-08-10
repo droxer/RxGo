@@ -7,9 +7,10 @@ default: deps test
 # Development targets
 dev: fmt lint test race
 
-# Build targets
+# Build targets - library validation (no binaries to build)
 build:
 	go build ./...
+	@echo "✅ Library validation complete - no build errors"
 
 build-examples:
 	mkdir -p bin
