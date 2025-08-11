@@ -45,7 +45,7 @@ func main() {
 
 	// Example 3: Create with custom logic
 	fmt.Println("\n3. Using Create():")
-	customObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+	customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 3; i++ {
 			select {
 			case <-ctx.Done():
@@ -59,12 +59,12 @@ func main() {
 	})
 	customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 
-	// Example 4: With context (no scheduler due to event loop issues)
+	// Example 4: With context cancellation
 	fmt.Println("\n4. With context cancellation:")
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	contextObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+	contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
 		for i := 0; i < 5; i++ {
 			select {
 			case <-ctx.Done():
