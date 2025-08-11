@@ -185,22 +185,18 @@ go run examples/backpressure/backpressure.go
 # Run context examples
 go run examples/context/context.go
 
-# Run compiled binaries
-./bin/basic
-./bin/backpressure
-./bin/context
 ```
 
 ### Testing
 ```bash
 # Run all tests
-go test -v ./...
+make test
 
 # Run tests with race detection
-go test -race -v ./...
+make race
 
 # Run benchmarks
-go test -bench=. -benchmem ./...
+make bench
 ```
 
 ## Performance Considerations
@@ -225,7 +221,7 @@ We welcome contributions! Please follow these steps:
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
 3. **Add** tests for new functionality
-4. **Ensure** all tests pass (`go test -v ./...`)
+4. **Ensure** all tests pass (`make test`)
 5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
 6. **Push** to the branch (`git push origin feature/amazing-feature`)
 7. **Open** a pull request
@@ -237,13 +233,13 @@ git clone https://github.com/droxer/RxGo.git
 cd RxGo
 
 # Install dependencies
-go mod download
+make deps
 
 # Run tests
-go test -v ./...
+make test
 
 # Run benchmarks
-go test -bench=. ./...
+make bench
 ```
 
 ## License
