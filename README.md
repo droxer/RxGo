@@ -67,44 +67,12 @@ RxGo provides two compatible APIs:
 
 Comprehensive usage examples are available in the [docs/examples](./docs/examples/) directory:
 
+- **[Quick Start](./docs/examples/quick-start.md)** - Simple example to get you started
 - **[Basic Usage](./docs/examples/basic-usage.md)** - Simple Observable API examples
 - **[Reactive Streams API](./docs/examples/reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
 - **[Backpressure Control](./docs/examples/backpressure.md)** - Handle producer/consumer speed mismatches
 - **[Context Cancellation](./docs/examples/context-cancellation.md)** - Graceful cancellation using Go context
 - **[Data Transformation](./docs/examples/data-transformation.md)** - Transform and process data streams
-
-### Quick Example
-
-Here's a simple example to get you started:
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    
-    "github.com/droxer/RxGo/pkg/rxgo"
-)
-
-type IntSubscriber struct{}
-
-func (s *IntSubscriber) Start() {}
-func (s *IntSubscriber) OnNext(value int) { fmt.Println(value) }
-func (s *IntSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
-func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
-
-func main() {
-    rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
-        for i := 0; i < 5; i++ {
-            sub.OnNext(i)
-        }
-        sub.OnCompleted()
-    }).Subscribe(context.Background(), &IntSubscriber{})
-}
-```
-
-For more detailed examples and advanced usage patterns, see the [examples directory](./docs/examples/).
 
 ## API Reference
 
@@ -216,31 +184,7 @@ make bench
 
 ## Contributing
 
-We welcome contributions! Please follow these steps:
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Add** tests for new functionality
-4. **Ensure** all tests pass (`make test`)
-5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-6. **Push** to the branch (`git push origin feature/amazing-feature`)
-7. **Open** a pull request
-
-### Development Setup
-```bash
-# Clone the repository
-git clone https://github.com/droxer/RxGo.git
-cd RxGo
-
-# Install dependencies
-make deps
-
-# Run tests
-make test
-
-# Run benchmarks
-make bench
-```
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed guidelines on how to contribute to this project.
 
 ## License
 
