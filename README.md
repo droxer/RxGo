@@ -63,110 +63,18 @@ RxGo provides two compatible APIs:
 1. **Observable API** - Simple, callback-based approach
 2. **Reactive Streams API** - Full specification compliance with backpressure
 
-## Usage Examples
+## Documentation
 
-Comprehensive usage examples are available in the [docs/examples](./docs/examples/) directory:
+Comprehensive documentation is available in the [docs](./docs/) directory:
 
-- **[Quick Start](./docs/examples/quick-start.md)** - Simple example to get you started
-- **[Basic Usage](./docs/examples/basic-usage.md)** - Simple Observable API examples
-- **[Reactive Streams API](./docs/examples/reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
-- **[Backpressure Control](./docs/examples/backpressure.md)** - Handle producer/consumer speed mismatches
-- **[Context Cancellation](./docs/examples/context-cancellation.md)** - Graceful cancellation using Go context
-- **[Data Transformation](./docs/examples/data-transformation.md)** - Transform and process data streams
-
-## API Reference
-
-### Core Interfaces
-
-#### Observable API (Simple)
-```go
-type Observable[T any] struct {
-    // Contains filtered or unexported fields
-}
-
-func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T])
-```
-
-#### Subscriber[T] Interface (Observable API)
-```go
-type Subscriber[T any] interface {
-    Start()
-    OnNext(next T)
-    OnCompleted()
-    OnError(e error)
-}
-```
-
-#### Publisher[T] Interface (Reactive Streams API)
-```go
-type Publisher[T any] interface {
-    Subscribe(ctx context.Context, s SubscriberReactive[T])
-}
-```
-
-#### SubscriberReactive[T] Interface (Reactive Streams API)
-```go
-type SubscriberReactive[T any] interface {
-    OnSubscribe(s Subscription)
-    OnNext(t T)
-    OnError(err error)
-    OnComplete()
-}
-```
-
-#### Subscription Interface
-```go
-type Subscription interface {
-    Request(n int64)
-    Cancel()
-}
-```
-
-### Constants
-```go
-const (
-    rxgo.Unlimited = 1 << 62 // Maximum request value
-)
-```
-
-### Utility Functions
-
-| Function | Description | Example |
-|----------|-------------|---------|
-| `rxgo.Just[T](values...)` | Create from literal values | `rxgo.Just(1, 2, 3)` |
-| `rxgo.Range(start, count)` | Integer sequence observable | `rxgo.Range(1, 10)` |
-| `rxgo.Create[T](fn)` | Custom observable creation | `rxgo.Create(customProducer)` |
-| `rxgo.RangePublisher(start, count)` | Integer sequence publisher | `rxgo.RangePublisher(1, 10)` |
-| `rxgo.FromSlicePublisher[T](slice)` | Create publisher from slice | `rxgo.FromSlicePublisher([]int{1, 2, 3})` |
-| `rxgo.NewPublisher[T](fn)` | Custom publisher creation | `rxgo.NewPublisher(customProducer)` |
-
-## Running Examples and Tests
-
-### Basic Examples
-```bash
-# Run basic examples
-go run examples/basic/basic.go
-
-# Run backpressure examples
-go run examples/backpressure/backpressure.go
-
-# Run context examples
-go run examples/context/context.go
-
-```
-
-### Testing
-```bash
-# Run all tests
-make test
-
-# Run tests with race detection
-make race
-
-# Run benchmarks
-make bench
-```
-
+- **[Quick Start](./docs/quick-start.md)** - Simple example to get you started
+- **[Basic Usage](./docs/basic-usage.md)** - Simple Observable API examples
+- **[Reactive Streams API](./docs/reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
+- **[Backpressure Control](./docs/backpressure.md)** - Handle producer/consumer speed mismatches
+- **[Context Cancellation](./docs/context-cancellation.md)** - Graceful cancellation using Go context
+- **[Data Transformation](./docs/data-transformation.md)** - Transform and process data streams
+- **[Architecture](./docs/architecture.md)** - Package structure and API choices
+- **[API Reference](./docs/api-reference.md)** - Complete API documentation
 ## Performance Considerations
 
 ### Optimization Features
