@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/droxer/RxGo/pkg/observable"
@@ -60,9 +61,9 @@ func (s *MonitoringService) OnNext(data SensorData) {
 	}
 
 	trend := "stable"
-	if rand.Float64() > 0.7 {
+	if randomFloat64() > 0.7 {
 		trend = "increasing"
-	} else if rand.Float64() > 0.7 {
+	} else if randomFloat64() > 0.7 {
 		trend = "decreasing"
 	}
 
@@ -94,13 +95,22 @@ func (s *MonitoringService) OnCompleted() {
 	fmt.Printf("[%s] Monitoring completed! Total alerts: %d\n", s.name, s.alertCount)
 }
 
+// randomFloat64 generates a random float64 in [0.0, 1.0) using crypto/rand
+func randomFloat64() float64 {
+	n, err := rand.Int(rand.Reader, big.NewInt(1<<53))
+	if err != nil {
+		return 0.5 // fallback value
+	}
+	return float64(n.Int64()) / float64(1<<53)
+}
+
 // SensorSimulator generates realistic IoT sensor data
 func sensorSimulator(ctx context.Context, deviceID, location string) []SensorData {
 	var data []SensorData
 	baseTemp := 22.0
 
 	for i := 0; i < 15; i++ {
-		value := baseTemp + (rand.Float64()*10 - 5)
+		value := baseTemp + (randomFloat64()*10 - 5)
 
 		data = append(data, SensorData{
 			DeviceID:  deviceID,
