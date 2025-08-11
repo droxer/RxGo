@@ -1,6 +1,6 @@
 # Benchmarks
 
-This directory contains comprehensive benchmark tests for the RxGo library. All benchmarks use only public APIs and do not depend on internal packages.
+This directory contains comprehensive benchmark tests for the RxGo library. 
 
 ## Structure
 
@@ -94,10 +94,3 @@ The benchmarks cover:
 - **Error handling** performance impact
 - **Context cancellation** performance
 - **Backpressure strategy** performance impact
-
-## Notes
-
-- All benchmarks use only public APIs from `pkg/observable` and `pkg/rxgo`
-- No internal package dependencies are used
-- Benchmarks are designed to be run independently
-- Results may vary based on system specifications and load
