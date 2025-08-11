@@ -90,7 +90,6 @@ func Just[T any](values ...T) Publisher[T] {
 	return FromSlice(values)
 }
 
-// publisherAdapter adapts the reactive API to use internal publishers
 
 type publisherAdapter[T any] struct {
 	onSubscribe func(ctx context.Context, sub Subscriber[T])
@@ -100,7 +99,6 @@ func (a *publisherAdapter[T]) Subscribe(ctx context.Context, sub Subscriber[T]) 
 	a.onSubscribe(ctx, sub)
 }
 
-// subscriberBridge bridges between reactive.Subscriber and publisher.ReactiveSubscriber
 
 type subscriberBridge[T any] struct {
 	sub Subscriber[T]
@@ -122,7 +120,6 @@ func (b *subscriberBridge[T]) OnComplete() {
 	b.sub.OnComplete()
 }
 
-// subscriptionBridge bridges between reactive.Subscription and publisher.Subscription
 
 type subscriptionBridge struct {
 	internal publisher.Subscription
@@ -136,7 +133,6 @@ func (b *subscriptionBridge) Cancel() {
 	b.internal.Cancel()
 }
 
-// emptySubscription is a simple subscription that does nothing
 
 type emptySubscription struct{}
 

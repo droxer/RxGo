@@ -9,7 +9,6 @@ import (
 	"github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// IntSubscriber demonstrates type-safe subscriber with generics
 type IntSubscriber struct {
 	name string
 }

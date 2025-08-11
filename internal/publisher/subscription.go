@@ -41,22 +41,17 @@ func NewReactiveSubscription(ctx context.Context, onRequest func(n int64), onCan
 }
 
 func (s *ReactiveSubscription) Request(n int64) {
-	// Rule 3.9: n must be positive
 	if n <= 0 {
-		// Rule 3.9: IllegalArgumentException
 		return
 	}
 
-	// Rule 3.6: Subscription state check
 	currentState := s.state.Load().(SubscriptionState)
 	if currentState == Cancelled || currentState == Completed {
 		return
 	}
 
-	// Atomic addition to requested count
 	atomic.AddInt64(&s.requested, n)
 
-	// Notify publisher of demand
 	if s.onRequest != nil {
 		s.onRequest(n)
 	}

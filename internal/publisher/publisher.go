@@ -49,19 +49,15 @@ func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s ReactiveSubscrib
 		panic("subscriber cannot be nil")
 	}
 
-	// Create subscription
-	subscription := &reactiveSubscription{}
+		subscription := &reactiveSubscription{}
 
-	// Notify subscriber of subscription
-	s.OnSubscribe(subscription)
+		s.OnSubscribe(subscription)
 
-	// Start processing in a goroutine
-	go func() {
+		go func() {
 		p.processWithBackpressure(ctx, s, subscription)
 	}()
 }
 
-// processWithBackpressure handles item emission with proper backpressure control
 func (p *ReactivePublisher[T]) processWithBackpressure(ctx context.Context, s ReactiveSubscriber[T], sub *reactiveSubscription) {
 	// For now, use the direct subscription for simplicity
 	p.onSubscribe(ctx, s)

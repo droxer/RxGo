@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-// TestSubscriber is a test implementation of Subscriber
 type TestSubscriber[T any] struct {
 	values    []T
 	errors    []error
@@ -373,7 +372,6 @@ func TestErrorInOnNext(t *testing.T) {
 	obs.Subscribe(context.Background(), panicSub)
 }
 
-// panicSubscriber is a test subscriber that panics on OnNext
 type panicSubscriber struct{}
 
 func (p *panicSubscriber) Start()            {}

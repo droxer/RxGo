@@ -89,8 +89,6 @@ func (p *poolWorker) start() {
 				func() {
 					defer func() {
 						if r := recover(); r != nil {
-							// Log the panic but don't crash the worker
-							// In production, you might want to use a proper logger
 							fmt.Printf("Worker recovered from panic: %v\n", r)
 						}
 					}()

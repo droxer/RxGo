@@ -35,15 +35,12 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 		return
 	}
 
-	// Ensure context is not nil
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	// Start the subscriber
 	sub.Start()
 
-	// Ensure panic recovery
 	defer func() {
 		if r := recover(); r != nil {
 			debug.PrintStack()
@@ -51,7 +48,6 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 		}
 	}()
 
-	// Execute the subscription
 	o.onSubscribe(ctx, sub)
 }
 
@@ -138,7 +134,6 @@ func (o *Observable[T]) ObserveOn(scheduler Scheduler) *Observable[T] {
 	})
 }
 
-// observeOnSubscriber wraps a subscriber for scheduling
 type observeOnSubscriber[T any] struct {
 	scheduler Scheduler
 	sub       Subscriber[T]
@@ -202,7 +197,6 @@ func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T]
 	})
 }
 
-// mapSubscriber implements the mapping transformation
 type mapSubscriber[T, R any] struct {
 	sub       Subscriber[R]
 	transform func(T) R
@@ -213,7 +207,6 @@ func (m *mapSubscriber[T, R]) OnNext(t T)        { m.sub.OnNext(m.transform(t)) 
 func (m *mapSubscriber[T, R]) OnError(err error) { m.sub.OnError(err) }
 func (m *mapSubscriber[T, R]) OnCompleted()      { m.sub.OnCompleted() }
 
-// filterSubscriber implements the filtering transformation
 type filterSubscriber[T any] struct {
 	sub       Subscriber[T]
 	predicate func(T) bool

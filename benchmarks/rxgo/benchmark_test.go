@@ -11,7 +11,6 @@ import (
 	"github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// TestSubscriber for benchmarks
 type TestSubscriber[T any] struct {
 	received  []T
 	completed bool
@@ -39,7 +38,6 @@ func (t *TestSubscriber[T]) OnError(e error) {
 	t.mu.Unlock()
 }
 
-// Benchmark for rxgo observable creation
 func BenchmarkRxGoObservableCreation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		observable := rxgo.Just(1, 2, 3, 4, 5)
@@ -47,7 +45,6 @@ func BenchmarkRxGoObservableCreation(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo observable with subscriber
 func BenchmarkRxGoObservableWithSubscriber(b *testing.B) {
 	subscriber := &TestSubscriber[int]{}
 
@@ -58,7 +55,6 @@ func BenchmarkRxGoObservableWithSubscriber(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo observable with large dataset
 func BenchmarkRxGoObservableLargeDataset(b *testing.B) {
 	data := make([]int, 1000)
 	for i := 0; i < 1000; i++ {
@@ -78,7 +74,6 @@ func BenchmarkRxGoObservableLargeDataset(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo range observable
 func BenchmarkRxGoRangeObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		observable := rxgo.Range(0, 100)
@@ -87,7 +82,6 @@ func BenchmarkRxGoRangeObservable(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo just observable
 func BenchmarkRxGoJustObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		observable := rxgo.Just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
@@ -96,7 +90,6 @@ func BenchmarkRxGoJustObservable(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo create observable
 func BenchmarkRxGoCreateObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		observable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
@@ -110,7 +103,6 @@ func BenchmarkRxGoCreateObservable(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo concurrent subscribers
 func BenchmarkRxGoObservableConcurrentSubscribers(b *testing.B) {
 	observable := rxgo.Just(1, 2, 3, 4, 5)
 
@@ -123,7 +115,6 @@ func BenchmarkRxGoObservableConcurrentSubscribers(b *testing.B) {
 	})
 }
 
-// Benchmark memory allocations for rxgo observable
 func BenchmarkRxGoObservableMemoryAllocations(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -133,7 +124,6 @@ func BenchmarkRxGoObservableMemoryAllocations(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo string vs int performance
 func BenchmarkRxGoObservableStringData(b *testing.B) {
 	data := []string{"hello", "world", "benchmark", "test", "performance", "observable", "reactive", "streams"}
 
@@ -150,7 +140,6 @@ func BenchmarkRxGoObservableStringData(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo struct data handling
 func BenchmarkRxGoObservableStructData(b *testing.B) {
 	type TestStruct struct {
 		ID    int
@@ -179,7 +168,6 @@ func BenchmarkRxGoObservableStructData(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo error handling
 func BenchmarkRxGoObservableErrorHandling(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		observable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
@@ -190,7 +178,6 @@ func BenchmarkRxGoObservableErrorHandling(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo context cancellation
 func BenchmarkRxGoObservableContextCancellation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
@@ -214,7 +201,6 @@ func BenchmarkRxGoObservableContextCancellation(b *testing.B) {
 	}
 }
 
-// AtomicSubscriber for benchmarks
 type RxGoAtomicSubscriber struct {
 	doNext func(next int)
 }
@@ -229,7 +215,6 @@ func (s *RxGoAtomicSubscriber) OnCompleted() {}
 
 func (s *RxGoAtomicSubscriber) OnError(e error) {}
 
-// Benchmark for atomic operations in rxgo subscribers
 func BenchmarkRxGoAtomicSubscriber(b *testing.B) {
 	var counter atomic.Int64
 
@@ -247,7 +232,6 @@ func BenchmarkRxGoAtomicSubscriber(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo data types comparison
 func BenchmarkRxGoObservableDataTypes(b *testing.B) {
 	b.Run("Int", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -274,7 +258,6 @@ func BenchmarkRxGoObservableDataTypes(b *testing.B) {
 	})
 }
 
-// Benchmark for rxgo different dataset sizes
 func BenchmarkRxGoObservableDatasetSizes(b *testing.B) {
 	sizes := []int{10, 100, 1000}
 
@@ -300,7 +283,6 @@ func BenchmarkRxGoObservableDatasetSizes(b *testing.B) {
 	}
 }
 
-// Benchmark for rxgo backpressure strategies
 func BenchmarkRxGoBackpressureStrategies(b *testing.B) {
 	b.Run("Buffer", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
