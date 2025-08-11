@@ -73,6 +73,6 @@ func getGID() uint64 {
 	b := make([]byte, 64)
 	b = b[:runtime.Stack(b, false)]
 	var id uint64
-	fmt.Sscanf(string(b), "goroutine %d", &id)
+	_, _ = fmt.Sscanf(string(b), "goroutine %d", &id)
 	return id
 }
