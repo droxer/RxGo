@@ -65,17 +65,21 @@
 				
 				<option value="file4">github.com/droxer/RxGo/internal/publisher/subscription.go (0.0%)</option>
 				
-				<option value="file5">github.com/droxer/RxGo/internal/scheduler/eventloop.go (3.3%)</option>
+				<option value="file5">github.com/droxer/RxGo/internal/scheduler/adapter.go (0.0%)</option>
 				
-				<option value="file6">github.com/droxer/RxGo/internal/scheduler/scheduler.go (85.7%)</option>
+				<option value="file6">github.com/droxer/RxGo/internal/scheduler/eventloop.go (0.0%)</option>
 				
-				<option value="file7">github.com/droxer/RxGo/internal/scheduler/threadpool.go (7.1%)</option>
+				<option value="file7">github.com/droxer/RxGo/internal/scheduler/scheduler.go (0.0%)</option>
 				
-				<option value="file8">github.com/droxer/RxGo/pkg/observable/bridge.go (0.0%)</option>
+				<option value="file8">github.com/droxer/RxGo/internal/scheduler/threadpool.go (0.0%)</option>
 				
-				<option value="file9">github.com/droxer/RxGo/pkg/observable/observable.go (15.6%)</option>
+				<option value="file9">github.com/droxer/RxGo/pkg/observable/observable.go (0.0%)</option>
 				
-				<option value="file10">github.com/droxer/RxGo/pkg/rxgo/rxgo.go (0.0%)</option>
+				<option value="file10">github.com/droxer/RxGo/pkg/observable/scheduler.go (0.0%)</option>
+				
+				<option value="file11">github.com/droxer/RxGo/pkg/reactive/publisher.go (0.0%)</option>
+				
+				<option value="file12">github.com/droxer/RxGo/pkg/rxgo/rxgo.go (0.0%)</option>
 				
 				</select>
 			</div>
@@ -97,7 +101,7 @@ import (
         "sync"
         "time"
 
-        "github.com/droxer/RxGo/pkg/observable"
+        "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 type BackpressureSubscriber struct {
@@ -105,20 +109,11 @@ type BackpressureSubscriber struct {
         received []int
         mu       sync.Mutex
         wg       *sync.WaitGroup
-        requests chan int
 }
 
 func (s *BackpressureSubscriber) Start() <span class="cov0" title="0">{
         fmt.Printf("[%s] Starting subscription\n", s.name)
-        // Start requesting items with backpressure
-        go func() </span><span class="cov0" title="0">{
-                for i := 0; i &lt; 3; i++ </span><span class="cov0" title="0">{
-                        time.Sleep(200 * time.Millisecond)
-                        s.requests &lt;- 2 // Request 2 items
-                        fmt.Printf("[%s] Requested 2 more items\n", s.name)
-                }</span>
-        }()
-}
+}</span>
 
 func (s *BackpressureSubscriber) OnNext(value int) <span class="cov0" title="0">{
         s.mu.Lock()
@@ -144,33 +139,16 @@ func main() <span class="cov0" title="0">{
         wg.Add(1)
 
         subscriber := &amp;BackpressureSubscriber{
-                name:     "Backpressure",
-                wg:       &amp;wg,
-                requests: make(chan int, 10),
+                name: "Backpressure",
+                wg:   &amp;wg,
         }
 
-        // Create observable that respects backpressure through channel buffering
-        observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
-                defer sub.OnCompleted()
-
-                // Simulate controlled emission based on consumer speed
-                items := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-                for _, item := range items </span><span class="cov0" title="0">{
-                        select </span>{
-                        case &lt;-ctx.Done():<span class="cov0" title="0">
-                                sub.OnError(ctx.Err())
-                                return</span>
-                        default:<span class="cov0" title="0">
-                                sub.OnNext(item)
-                                time.Sleep(50 * time.Millisecond)</span> // Simulate producer speed
-                        }
-                }
-        })
-
-        <span class="cov0" title="0">observable.Subscribe(context.Background(), subscriber)
+        // Create observable
+        obs := rxgo.Range(1, 10)
+        obs.Subscribe(context.Background(), subscriber)
         wg.Wait()
-        fmt.Println("Backpressure example completed!")</span>
-}
+        fmt.Println("Backpressure example completed!")
+}</span>
 </pre>
 		
 		<pre class="file" id="file1" style="display: none">package main
@@ -181,6 +159,7 @@ import (
         "time"
 
         "github.com/droxer/RxGo/pkg/observable"
+        "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 // IntSubscriber demonstrates type-safe subscriber with generics
@@ -209,17 +188,17 @@ func main() <span class="cov0" title="0">{
 
         // Example 1: Basic usage with Just
         fmt.Println("\n1. Using Just():")
-        justObservable := observable.Just(1, 2, 3, 4, 5)
+        justObservable := rxgo.Just(1, 2, 3, 4, 5)
         justObservable.Subscribe(context.Background(), &amp;IntSubscriber{name: "Just"})
 
         // Example 2: Range observable
         fmt.Println("\n2. Using Range():")
-        rangeObservable := observable.Range(10, 5)
+        rangeObservable := rxgo.Range(10, 5)
         rangeObservable.Subscribe(context.Background(), &amp;IntSubscriber{name: "Range"})
 
         // Example 3: Create with custom logic
         fmt.Println("\n3. Using Create():")
-        customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
+        customObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
                 for i := 0; i &lt; 3; i++ </span><span class="cov0" title="0">{
                         select </span>{
                         case &lt;-ctx.Done():<span class="cov0" title="0">
@@ -238,7 +217,7 @@ func main() <span class="cov0" title="0">{
         ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
         defer cancel()
 
-        contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
+        contextObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
                 for i := 0; i &lt; 5; i++ </span><span class="cov0" title="0">{
                         select </span>{
                         case &lt;-ctx.Done():<span class="cov0" title="0">
@@ -266,6 +245,7 @@ import (
         "time"
 
         "github.com/droxer/RxGo/pkg/observable"
+        "github.com/droxer/RxGo/pkg/rxgo"
 )
 
 type ContextAwareSubscriber struct {
@@ -298,7 +278,7 @@ func main() <span class="cov0" title="0">{
         subscriber := &amp;ContextAwareSubscriber{}
 
         // Create observable that respects context cancellation
-        observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
+        observable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) </span><span class="cov0" title="0">{
                 defer sub.OnCompleted()
                 for i := 1; i &lt;= 100; i++ </span><span class="cov0" title="0">{
                         select </span>{
@@ -536,7 +516,42 @@ func (s *ReactiveSubscription) DecrementRequested() int64 <span class="cov0" tit
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package scheduler
+		<pre class="file" id="file5" style="display: none">// Package scheduler provides internal scheduler implementations for RxGo
+package scheduler
+
+import "time"
+
+// Adapter adapts internal scheduler to pkg/observable Scheduler interface
+type Adapter struct {
+        s Scheduler
+}
+
+// NewAdapter creates a new scheduler adapter
+func NewAdapter(s Scheduler) *Adapter <span class="cov0" title="0">{
+        return &amp;Adapter{s: s}
+}</span>
+
+// Schedule schedules a task to run
+func (a *Adapter) Schedule(run func()) <span class="cov0" title="0">{
+        a.s.Schedule(func() </span><span class="cov0" title="0">{
+                run()
+        }</span>)
+}
+
+// ScheduleAt schedules a task to run after a delay
+func (a *Adapter) ScheduleAt(run func(), delay time.Duration) <span class="cov0" title="0">{
+        a.s.ScheduleAt(func() </span><span class="cov0" title="0">{
+                run()
+        }</span>, delay)
+}
+
+// ToObservableScheduler adapts internal scheduler to observable scheduler
+func ToObservableScheduler(s Scheduler) *Adapter <span class="cov0" title="0">{
+        return NewAdapter(s)
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package scheduler
 
 import (
         "fmt"
@@ -550,7 +565,7 @@ type eventLoopScheduler struct {
         quit            chan bool
 }
 
-func newEventLoopScheduler(maxWorkers int) Scheduler <span class="cov8" title="1">{
+func newEventLoopScheduler(maxWorkers int) Scheduler <span class="cov0" title="0">{
         return &amp;eventLoopScheduler{
                 workers:         make([]*poolWorker, maxWorkers),
                 fixedWorkerPool: make(chan chan job, maxWorkers),
@@ -646,7 +661,7 @@ func (p *poolWorker) stop() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package scheduler
+		<pre class="file" id="file7" style="display: none">package scheduler
 
 import (
         "runtime"
@@ -672,22 +687,22 @@ var (
         IO          Scheduler
 )
 
-func init() <span class="cov8" title="1">{
+func init() <span class="cov0" title="0">{
         Computation = newEventLoopScheduler(maxParallelism())
         IO = newThreadPoolScheduler(time.Second * 120)
 }</span>
 
-func maxParallelism() int <span class="cov8" title="1">{
+func maxParallelism() int <span class="cov0" title="0">{
         maxProcs := runtime.GOMAXPROCS(0)
         numCpu := runtime.NumCPU()
         if maxProcs &lt; numCpu </span><span class="cov0" title="0">{
                 return maxProcs
         }</span>
-        <span class="cov8" title="1">return numCpu</span>
+        <span class="cov0" title="0">return numCpu</span>
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package scheduler
+		<pre class="file" id="file8" style="display: none">package scheduler
 
 import (
         "fmt"
@@ -700,7 +715,7 @@ type threadPoolScheduler struct {
         quit       chan bool
 }
 
-func newThreadPoolScheduler(ttl time.Duration) *threadPoolScheduler <span class="cov8" title="1">{
+func newThreadPoolScheduler(ttl time.Duration) *threadPoolScheduler <span class="cov0" title="0">{
         return &amp;threadPoolScheduler{
                 workerPool: newCachedThreadPool(ttl),
                 jobQueue:   make(chan job),
@@ -737,7 +752,7 @@ type cachedThreadPool struct {
         jobChanQueue chan chan job
 }
 
-func newCachedThreadPool(ttl time.Duration) *cachedThreadPool <span class="cov8" title="1">{
+func newCachedThreadPool(ttl time.Duration) *cachedThreadPool <span class="cov0" title="0">{
         return &amp;cachedThreadPool{
                 ttl:          ttl,
                 jobChanQueue: make(chan chan job, 10),
@@ -805,111 +820,16 @@ func (t *threadWorker) stop() <span class="cov0" title="0">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package observable
-
-import (
-        "context"
-
-        "github.com/droxer/RxGo/internal/publisher"
-)
-
-// BridgeSubscriber adapts the new Reactive Streams Subscriber to the old Subscriber interface
-type BridgeSubscriber[T any] struct {
-        oldSubscriber Subscriber[T]
-        subscription  publisher.Subscription
-}
-
-func NewBridgeSubscriber[T any](oldSub Subscriber[T]) *BridgeSubscriber[T] <span class="cov0" title="0">{
-        return &amp;BridgeSubscriber[T]{
-                oldSubscriber: oldSub,
-        }
-}</span>
-
-func (bs *BridgeSubscriber[T]) OnSubscribe(s publisher.Subscription) <span class="cov0" title="0">{
-        bs.subscription = s
-        bs.oldSubscriber.Start()
-        // Auto-request unlimited for backward compatibility
-        s.Request(1 &lt;&lt; 62) // Max int64 value
-}</span>
-
-func (bs *BridgeSubscriber[T]) OnNext(t T) <span class="cov0" title="0">{
-        bs.oldSubscriber.OnNext(t)
-}</span>
-
-func (bs *BridgeSubscriber[T]) OnError(err error) <span class="cov0" title="0">{
-        bs.oldSubscriber.OnError(err)
-}</span>
-
-func (bs *BridgeSubscriber[T]) OnComplete() <span class="cov0" title="0">{
-        bs.oldSubscriber.OnCompleted()
-}</span>
-
-// ObservablePublisher bridges old Observable to new Publisher
-func ObservablePublisher[T any](obs *Observable[T]) publisher.Publisher[T] <span class="cov0" title="0">{
-        return publisher.NewReactivePublisher(func(ctx context.Context, sub publisher.ReactiveSubscriber[T]) </span><span class="cov0" title="0">{
-                // Create bridge subscriber to convert ReactiveSubscriber to old Subscriber
-                bridge := &amp;bridgeFromReactive[T]{
-                        reactiveSubscriber: sub,
-                        ctx:                ctx,
-                }
-
-                // Use old Observable with the bridge
-                obs.onSubscribe(ctx, bridge)
-        }</span>)
-}
-
-// bridgeFromReactive adapts ReactiveSubscriber to old Subscriber interface
-type bridgeFromReactive[T any] struct {
-        reactiveSubscriber publisher.ReactiveSubscriber[T]
-        ctx                context.Context
-        subscription       publisher.Subscription
-}
-
-func (br *bridgeFromReactive[T]) Start() <span class="cov0" title="0">{
-        // This is called by the old Observable system
-        // We need to bridge from old to new
-        br.reactiveSubscriber.OnSubscribe(br.subscription)
-}</span>
-
-func (br *bridgeFromReactive[T]) OnNext(t T) <span class="cov0" title="0">{
-        br.reactiveSubscriber.OnNext(t)
-}</span>
-
-func (br *bridgeFromReactive[T]) OnError(err error) <span class="cov0" title="0">{
-        br.reactiveSubscriber.OnError(err)
-}</span>
-
-func (br *bridgeFromReactive[T]) OnCompleted() <span class="cov0" title="0">{
-        br.reactiveSubscriber.OnComplete()
-}</span>
-
-// PublisherObservable bridges new Publisher to old Observable
-type PublisherObservable[T any] struct {
-        publisher publisher.Publisher[T]
-}
-
-func NewPublisherObservable[T any](p publisher.Publisher[T]) *PublisherObservable[T] <span class="cov0" title="0">{
-        return &amp;PublisherObservable[T]{publisher: p}
-}</span>
-
-func (po *PublisherObservable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) <span class="cov0" title="0">{
-        // Create bridge subscriber to convert from old Subscriber to new ReactiveSubscriber
-        bridge := NewBridgeSubscriber[T](sub)
-        po.publisher.Subscribe(ctx, bridge)
-}</span>
-</pre>
-		
-		<pre class="file" id="file9" style="display: none">package observable
+		<pre class="file" id="file9" style="display: none">// Package observable provides the main Observable API for RxGo
+package observable
 
 import (
         "context"
         "fmt"
         "runtime/debug"
-
-        "github.com/droxer/RxGo/internal/scheduler"
 )
 
-// Subscriber is an interface for backward compatibility
+// Subscriber defines the interface for receiving values from an Observable
 type Subscriber[T any] interface {
         Start()
         OnNext(next T)
@@ -917,35 +837,36 @@ type Subscriber[T any] interface {
         OnError(e error)
 }
 
-// Create creates a new Observable with the given OnSubscribe function.
-func Create[T any](on OnSubscribe[T]) *Observable[T] <span class="cov8" title="1">{
-        return &amp;Observable[T]{onSubscribe: on}
-}</span>
-
-// OnSubscribe defines the function signature for creating an Observable.
+// OnSubscribe defines the function signature for creating an Observable
 type OnSubscribe[T any] func(ctx context.Context, sub Subscriber[T])
 
-// Observable represents a stream of values that can be observed.
+// Observable represents a stream of values that can be observed
+// This is the primary API for reactive programming in RxGo
 type Observable[T any] struct {
         onSubscribe OnSubscribe[T]
 }
 
-// Subscribe starts the Observable and begins emitting values to the Subscriber.
-func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) <span class="cov8" title="1">{
+// Create creates a new Observable with the given OnSubscribe function
+func Create[T any](on OnSubscribe[T]) *Observable[T] <span class="cov0" title="0">{
+        return &amp;Observable[T]{onSubscribe: on}
+}</span>
+
+// Subscribe starts the Observable and begins emitting values to the Subscriber
+func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) <span class="cov0" title="0">{
         if sub == nil </span><span class="cov0" title="0">{
                 return
         }</span>
 
         // Ensure context is not nil
-        <span class="cov8" title="1">if ctx == nil </span><span class="cov0" title="0">{
+        <span class="cov0" title="0">if ctx == nil </span><span class="cov0" title="0">{
                 ctx = context.Background()
         }</span>
 
         // Start the subscriber
-        <span class="cov8" title="1">sub.Start()
+        <span class="cov0" title="0">sub.Start()
 
         // Ensure panic recovery
-        defer func() </span><span class="cov8" title="1">{
+        defer func() </span><span class="cov0" title="0">{
                 if r := recover(); r != nil </span><span class="cov0" title="0">{
                         debug.PrintStack()
                         sub.OnError(fmt.Errorf("panic in observable: %v", r))
@@ -953,10 +874,10 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) <span 
         }()
 
         // Execute the subscription
-        <span class="cov8" title="1">o.onSubscribe(ctx, sub)</span>
+        <span class="cov0" title="0">o.onSubscribe(ctx, sub)</span>
 }
 
-// Just creates an Observable that emits the provided values.
+// Just creates an Observable that emits the provided values
 func Just[T any](values ...T) *Observable[T] <span class="cov0" title="0">{
         return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
                 defer sub.OnCompleted()
@@ -972,7 +893,7 @@ func Just[T any](values ...T) *Observable[T] <span class="cov0" title="0">{
         })
 }
 
-// Range creates an Observable that emits integers in the specified range.
+// Range creates an Observable that emits integers in the specified range
 func Range(start, count int) *Observable[int] <span class="cov0" title="0">{
         return Create(func(ctx context.Context, sub Subscriber[int]) </span><span class="cov0" title="0">{
                 defer sub.OnCompleted()
@@ -991,8 +912,45 @@ func Range(start, count int) *Observable[int] <span class="cov0" title="0">{
         })
 }
 
-// ObserveOn schedules the Observable to emit its values on the specified scheduler.
-func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] <span class="cov0" title="0">{
+// Empty creates an Observable that completes without emitting any items
+func Empty[T any]() *Observable[T] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                sub.OnCompleted()
+        }</span>)
+}
+
+// Error creates an Observable that immediately signals an error
+func Error[T any](err error) *Observable[T] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                sub.OnError(err)
+        }</span>)
+}
+
+// Never creates an Observable that never signals any event
+func Never[T any]() *Observable[T] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                &lt;-ctx.Done()
+        }</span>)
+}
+
+// FromSlice creates an Observable from a slice of values
+func FromSlice[T any](items []T) *Observable[T] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                defer sub.OnCompleted()
+                for _, item := range items </span><span class="cov0" title="0">{
+                        select </span>{
+                        case &lt;-ctx.Done():<span class="cov0" title="0">
+                                sub.OnError(ctx.Err())
+                                return</span>
+                        default:<span class="cov0" title="0">
+                                sub.OnNext(item)</span>
+                        }
+                }
+        })
+}
+
+// ObserveOn schedules the Observable to emit its values on the specified scheduler
+func (o *Observable[T]) ObserveOn(scheduler Scheduler) *Observable[T] <span class="cov0" title="0">{
         return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
                 o.Subscribe(ctx, &amp;observeOnSubscriber[T]{
                         scheduler: scheduler,
@@ -1003,9 +961,8 @@ func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] 
 }
 
 // observeOnSubscriber wraps a subscriber for scheduling
-
 type observeOnSubscriber[T any] struct {
-        scheduler scheduler.Scheduler
+        scheduler Scheduler
         sub       Subscriber[T]
         ctx       context.Context
         started   bool
@@ -1046,36 +1003,310 @@ func (o *observeOnSubscriber[T]) OnCompleted() <span class="cov0" title="0">{
                 <span class="cov0" title="0">o.sub.OnCompleted()</span>
         })
 }
+
+// Map transforms each value emitted by the Observable
+func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[R]) </span><span class="cov0" title="0">{
+                source.Subscribe(ctx, &amp;mapSubscriber[T, R]{
+                        sub:       sub,
+                        transform: transform,
+                })
+        }</span>)
+}
+
+// Filter filters values emitted by the Observable
+func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] <span class="cov0" title="0">{
+        return Create(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                source.Subscribe(ctx, &amp;filterSubscriber[T]{
+                        sub:       sub,
+                        predicate: predicate,
+                })
+        }</span>)
+}
+
+// mapSubscriber implements the mapping transformation
+type mapSubscriber[T, R any] struct {
+        sub       Subscriber[R]
+        transform func(T) R
+}
+
+func (m *mapSubscriber[T, R]) Start()            <span class="cov0" title="0">{ m.sub.Start() }</span>
+func (m *mapSubscriber[T, R]) OnNext(t T)        <span class="cov0" title="0">{ m.sub.OnNext(m.transform(t)) }</span>
+func (m *mapSubscriber[T, R]) OnError(err error) <span class="cov0" title="0">{ m.sub.OnError(err) }</span>
+func (m *mapSubscriber[T, R]) OnCompleted()      <span class="cov0" title="0">{ m.sub.OnCompleted() }</span>
+
+// filterSubscriber implements the filtering transformation
+type filterSubscriber[T any] struct {
+        sub       Subscriber[T]
+        predicate func(T) bool
+}
+
+func (f *filterSubscriber[T]) Start() <span class="cov0" title="0">{ f.sub.Start() }</span>
+func (f *filterSubscriber[T]) OnNext(t T) <span class="cov0" title="0">{
+        if f.predicate(t) </span><span class="cov0" title="0">{
+                f.sub.OnNext(t)
+        }</span>
+}
+func (f *filterSubscriber[T]) OnError(err error) <span class="cov0" title="0">{ f.sub.OnError(err) }</span>
+func (f *filterSubscriber[T]) OnCompleted()      <span class="cov0" title="0">{ f.sub.OnCompleted() }</span>
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">// Package rxgo provides the main entry point for the RxGo library.
-package rxgo
+		<pre class="file" id="file10" style="display: none">package observable
+
+import "sync"
+
+// Scheduler defines an interface for scheduling work
+type Scheduler interface {
+        Schedule(task func())
+}
+
+// ImmediateScheduler runs tasks immediately on the calling goroutine
+type ImmediateScheduler struct{}
+
+func NewImmediateScheduler() *ImmediateScheduler <span class="cov0" title="0">{
+        return &amp;ImmediateScheduler{}
+}</span>
+
+func (s *ImmediateScheduler) Schedule(task func()) <span class="cov0" title="0">{
+        task()
+}</span>
+
+// NewThreadScheduler runs each task on a new goroutine
+type NewThreadScheduler struct{}
+
+func NewNewThreadScheduler() *NewThreadScheduler <span class="cov0" title="0">{
+        return &amp;NewThreadScheduler{}
+}</span>
+
+func (s *NewThreadScheduler) Schedule(task func()) <span class="cov0" title="0">{
+        go task()
+}</span>
+
+// SingleThreadScheduler runs tasks sequentially on a single goroutine
+type SingleThreadScheduler struct {
+        tasks chan func()
+        wg    sync.WaitGroup
+}
+
+func NewSingleThreadScheduler() *SingleThreadScheduler <span class="cov0" title="0">{
+        s := &amp;SingleThreadScheduler{
+                tasks: make(chan func(), 100),
+        }
+        go s.run()
+        return s
+}</span>
+
+func (s *SingleThreadScheduler) Schedule(task func()) <span class="cov0" title="0">{
+        select </span>{
+        case s.tasks &lt;- task:<span class="cov0" title="0"></span>
+        default:<span class="cov0" title="0"></span>
+                // Channel full, drop task or handle appropriately
+        }
+}
+
+func (s *SingleThreadScheduler) run() <span class="cov0" title="0">{
+        defer s.wg.Done()
+        for task := range s.tasks </span><span class="cov0" title="0">{
+                task()
+        }</span>
+}
+
+func (s *SingleThreadScheduler) Close() <span class="cov0" title="0">{
+        close(s.tasks)
+        s.wg.Wait()
+}</span>
+
+// TrampolineScheduler runs tasks on the current goroutine but allows yielding
+type TrampolineScheduler struct {
+        tasks []func()
+}
+
+func NewTrampolineScheduler() *TrampolineScheduler <span class="cov0" title="0">{
+        return &amp;TrampolineScheduler{}
+}</span>
+
+func (s *TrampolineScheduler) Schedule(task func()) <span class="cov0" title="0">{
+        s.tasks = append(s.tasks, task)
+}</span>
+
+func (s *TrampolineScheduler) Execute() <span class="cov0" title="0">{
+        for len(s.tasks) &gt; 0 </span><span class="cov0" title="0">{
+                task := s.tasks[0]
+                s.tasks = s.tasks[1:]
+                task()
+        }</span>
+}
+
+func (s *TrampolineScheduler) Clear() <span class="cov0" title="0">{
+        s.tasks = nil
+}</span>
+
+// DefaultScheduler is the default scheduler implementation
+var DefaultScheduler Scheduler = NewImmediateScheduler()
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package reactive
 
 import (
         "context"
 
         "github.com/droxer/RxGo/internal/publisher"
-        "github.com/droxer/RxGo/pkg/observable"
 )
 
-// NewReactivePublisher creates a new Publisher with Reactive Streams compliance
-func NewReactivePublisher[T any](onSubscribe func(ctx context.Context, sub publisher.ReactiveSubscriber[T])) publisher.Publisher[T] <span class="cov0" title="0">{
-        return publisher.NewReactivePublisher(onSubscribe)
+// Publisher represents a provider of a potentially unbounded number of sequenced elements,
+// publishing them according to the demand received from its Subscriber(s).
+type Publisher[T any] interface {
+        Subscribe(ctx context.Context, s Subscriber[T])
+}
+
+// Subscriber is a consumer of elements published by a Publisher.
+type Subscriber[T any] interface {
+        OnSubscribe(s Subscription)
+        OnNext(t T)
+        OnError(err error)
+        OnComplete()
+}
+
+// Subscription represents a one-to-one lifecycle of a Subscriber subscribing to a Publisher.
+type Subscription interface {
+        Request(n int64)
+        Cancel()
+}
+
+// Processor represents a processing stage that is both a Subscriber and a Publisher.
+type Processor[T, R any] interface {
+        Publisher[R]
+        Subscriber[T]
+}
+
+// NewPublisher creates a new Publisher with Reactive Streams compliance
+func NewPublisher[T any](onSubscribe func(ctx context.Context, sub Subscriber[T])) Publisher[T] <span class="cov0" title="0">{
+        return &amp;publisherAdapter[T]{
+                onSubscribe: onSubscribe,
+        }
 }</span>
 
 // FromSlice creates a Publisher from a slice of values
-func FromSlice[T any](items []T) publisher.Publisher[T] <span class="cov0" title="0">{
-        return publisher.FromSlice(items)
+func FromSlice[T any](items []T) Publisher[T] <span class="cov0" title="0">{
+        return &amp;publisherAdapter[T]{
+                onSubscribe: func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                        bridge := &amp;subscriberBridge[T]{sub: sub}
+                        internalPub := publisher.FromSlice(items)
+                        internalPub.Subscribe(ctx, bridge)
+                }</span>,
+        }
+}
+
+// Range creates a Publisher that emits a range of integers
+func Range(start, count int) Publisher[int] <span class="cov0" title="0">{
+        return &amp;publisherAdapter[int]{
+                onSubscribe: func(ctx context.Context, sub Subscriber[int]) </span><span class="cov0" title="0">{
+                        bridge := &amp;subscriberBridge[int]{sub: sub}
+                        internalPub := publisher.RangePublisher(start, count)
+                        internalPub.Subscribe(ctx, bridge)
+                }</span>,
+        }
+}
+
+// Empty creates a Publisher that completes without emitting any items
+func Empty[T any]() Publisher[T] <span class="cov0" title="0">{
+        return NewPublisher(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                sub.OnSubscribe(&amp;emptySubscription{})
+                sub.OnComplete()
+        }</span>)
+}
+
+// Error creates a Publisher that immediately signals an error
+func Error[T any](err error) Publisher[T] <span class="cov0" title="0">{
+        return NewPublisher(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                sub.OnSubscribe(&amp;emptySubscription{})
+                sub.OnError(err)
+        }</span>)
+}
+
+// Never creates a Publisher that never signals any event
+func Never[T any]() Publisher[T] <span class="cov0" title="0">{
+        return NewPublisher(func(ctx context.Context, sub Subscriber[T]) </span><span class="cov0" title="0">{
+                sub.OnSubscribe(&amp;emptySubscription{})
+                &lt;-ctx.Done()
+        }</span>)
+}
+
+// Just creates a Publisher that emits the provided values
+func Just[T any](values ...T) Publisher[T] <span class="cov0" title="0">{
+        return FromSlice(values)
 }</span>
 
-// RangePublisher creates a Publisher that emits a range of integers
-func RangePublisher(start, count int) publisher.Publisher[int] <span class="cov0" title="0">{
-        return publisher.RangePublisher(start, count)
+// publisherAdapter adapts the reactive API to use internal publishers
+
+type publisherAdapter[T any] struct {
+        onSubscribe func(ctx context.Context, sub Subscriber[T])
+}
+
+func (a *publisherAdapter[T]) Subscribe(ctx context.Context, sub Subscriber[T]) <span class="cov0" title="0">{
+        a.onSubscribe(ctx, sub)
 }</span>
 
-// Create creates an Observable using the legacy API
-func Create[T any](onSubscribe func(ctx context.Context, sub observable.Subscriber[T])) *observable.Observable[T] <span class="cov0" title="0">{
-        return observable.Create(onSubscribe)
+// subscriberBridge bridges between reactive.Subscriber and publisher.ReactiveSubscriber
+
+type subscriberBridge[T any] struct {
+        sub Subscriber[T]
+}
+
+func (b *subscriberBridge[T]) OnSubscribe(s publisher.Subscription) <span class="cov0" title="0">{
+        b.sub.OnSubscribe(&amp;subscriptionBridge{internal: s})
+}</span>
+
+func (b *subscriberBridge[T]) OnNext(t T) <span class="cov0" title="0">{
+        b.sub.OnNext(t)
+}</span>
+
+func (b *subscriberBridge[T]) OnError(err error) <span class="cov0" title="0">{
+        b.sub.OnError(err)
+}</span>
+
+func (b *subscriberBridge[T]) OnComplete() <span class="cov0" title="0">{
+        b.sub.OnComplete()
+}</span>
+
+// subscriptionBridge bridges between reactive.Subscription and publisher.Subscription
+
+type subscriptionBridge struct {
+        internal publisher.Subscription
+}
+
+func (b *subscriptionBridge) Request(n int64) <span class="cov0" title="0">{
+        b.internal.Request(n)
+}</span>
+
+func (b *subscriptionBridge) Cancel() <span class="cov0" title="0">{
+        b.internal.Cancel()
+}</span>
+
+// emptySubscription is a simple subscription that does nothing
+
+type emptySubscription struct{}
+
+func (e *emptySubscription) Request(n int64) {<span class="cov0" title="0">}</span>
+func (e *emptySubscription) Cancel()         {<span class="cov0" title="0">}</span>
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">// Package rxgo provides the main entry point for the RxGo library.
+// This package provides a unified API for both Observable and Reactive Streams patterns.
+package rxgo
+
+import (
+        "context"
+
+        "github.com/droxer/RxGo/pkg/observable"
+        "github.com/droxer/RxGo/pkg/reactive"
+)
+
+// Observable API
+
+// Create creates a new Observable with the given OnSubscribe function
+func Create[T any](on observable.OnSubscribe[T]) *observable.Observable[T] <span class="cov0" title="0">{
+        return observable.Create(on)
 }</span>
 
 // Just creates an Observable that emits the provided values
@@ -1086,6 +1317,63 @@ func Just[T any](values ...T) *observable.Observable[T] <span class="cov0" title
 // Range creates an Observable that emits integers in the specified range
 func Range(start, count int) *observable.Observable[int] <span class="cov0" title="0">{
         return observable.Range(start, count)
+}</span>
+
+// FromSlice creates an Observable from a slice of values
+func FromSlice[T any](items []T) *observable.Observable[T] <span class="cov0" title="0">{
+        return observable.FromSlice(items)
+}</span>
+
+// Empty creates an Observable that completes without emitting any items
+func Empty[T any]() *observable.Observable[T] <span class="cov0" title="0">{
+        return observable.Empty[T]()
+}</span>
+
+// Error creates an Observable that immediately signals an error
+func Error[T any](err error) *observable.Observable[T] <span class="cov0" title="0">{
+        return observable.Error[T](err)
+}</span>
+
+// Never creates an Observable that never signals any event
+func Never[T any]() *observable.Observable[T] <span class="cov0" title="0">{
+        return observable.Never[T]()
+}</span>
+
+// Reactive Streams API
+
+// NewPublisher creates a new Publisher with Reactive Streams compliance
+func NewPublisher[T any](onSubscribe func(ctx context.Context, sub reactive.Subscriber[T])) reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.NewPublisher(onSubscribe)
+}</span>
+
+// RangePublisher creates a Publisher that emits a range of integers
+func RangePublisher(start, count int) reactive.Publisher[int] <span class="cov0" title="0">{
+        return reactive.Range(start, count)
+}</span>
+
+// FromSlicePublisher creates a Publisher from a slice of values
+func FromSlicePublisher[T any](items []T) reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.FromSlice(items)
+}</span>
+
+// EmptyPublisher creates a Publisher that completes without emitting any items
+func EmptyPublisher[T any]() reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.Empty[T]()
+}</span>
+
+// ErrorPublisher creates a Publisher that immediately signals an error
+func ErrorPublisher[T any](err error) reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.Error[T](err)
+}</span>
+
+// NeverPublisher creates a Publisher that never signals any event
+func NeverPublisher[T any]() reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.Never[T]()
+}</span>
+
+// JustPublisher creates a Publisher that emits the provided values
+func JustPublisher[T any](values ...T) reactive.Publisher[T] <span class="cov0" title="0">{
+        return reactive.Just(values...)
 }</span>
 </pre>
 		

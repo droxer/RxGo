@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
-
-	"github.com/droxer/RxGo/internal/scheduler"
 )
 
 // Subscriber defines the interface for receiving values from an Observable
@@ -130,7 +128,7 @@ func FromSlice[T any](items []T) *Observable[T] {
 }
 
 // ObserveOn schedules the Observable to emit its values on the specified scheduler
-func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] {
+func (o *Observable[T]) ObserveOn(scheduler Scheduler) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		o.Subscribe(ctx, &observeOnSubscriber[T]{
 			scheduler: scheduler,
@@ -142,7 +140,7 @@ func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] 
 
 // observeOnSubscriber wraps a subscriber for scheduling
 type observeOnSubscriber[T any] struct {
-	scheduler scheduler.Scheduler
+	scheduler Scheduler
 	sub       Subscriber[T]
 	ctx       context.Context
 	started   bool
