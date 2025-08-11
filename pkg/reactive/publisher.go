@@ -90,7 +90,6 @@ func Just[T any](values ...T) Publisher[T] {
 	return FromSlice(values)
 }
 
-
 type publisherAdapter[T any] struct {
 	onSubscribe func(ctx context.Context, sub Subscriber[T])
 }
@@ -98,7 +97,6 @@ type publisherAdapter[T any] struct {
 func (a *publisherAdapter[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	a.onSubscribe(ctx, sub)
 }
-
 
 type subscriberBridge[T any] struct {
 	sub Subscriber[T]
@@ -120,7 +118,6 @@ func (b *subscriberBridge[T]) OnComplete() {
 	b.sub.OnComplete()
 }
 
-
 type subscriptionBridge struct {
 	internal publisher.Subscription
 }
@@ -132,7 +129,6 @@ func (b *subscriptionBridge) Request(n int64) {
 func (b *subscriptionBridge) Cancel() {
 	b.internal.Cancel()
 }
-
 
 type emptySubscription struct{}
 

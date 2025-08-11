@@ -49,11 +49,11 @@ func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s ReactiveSubscrib
 		panic("subscriber cannot be nil")
 	}
 
-		subscription := &reactiveSubscription{}
+	subscription := &reactiveSubscription{}
 
-		s.OnSubscribe(subscription)
+	s.OnSubscribe(subscription)
 
-		go func() {
+	go func() {
 		p.processWithBackpressure(ctx, s, subscription)
 	}()
 }
