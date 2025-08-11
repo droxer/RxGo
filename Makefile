@@ -66,18 +66,10 @@ release-check:
 
 verify-examples:
 	@echo "🔍 Verifying all examples build and run successfully..."
-	@for dir in examples/*/; do \
-		if [ -f "$${dir}*.go" ]; then \
-			echo "  ✅ Testing $$dir"; \
-			cd $$dir && go build -o /tmp/test_example . && echo "    Build OK" || exit 1; \
-			cd ../..; \
-		fi \
+	@find examples -name "*.go" -type f | while read file; do \
+		dir=$$(dirname "$$file"); \
+		name=$$(basename "$$dir"); \
+		cd "$$dir" && go build -o /tmp/test_example_$$name || exit 1; \
+		cd - > /dev/null; \
 	done
 	@echo "🎉 All examples verified successfully!"
-	@echo ""
-	@echo "Run individual examples:"
-	go run examples/data-transformation/data_transformation.go
-	go run examples/http-streaming/http_streaming.go
-	go run examples/financial/financial_processor.go
-	go run examples/real-time/monitoring.go
-

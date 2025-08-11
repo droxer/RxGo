@@ -75,6 +75,7 @@ Comprehensive documentation is available in the [docs](./docs/) directory:
 - **[Data Transformation](./docs/data-transformation.md)** - Transform and process data streams
 - **[Architecture](./docs/architecture.md)** - Package structure and API choices
 - **[API Reference](./docs/api-reference.md)** - Complete API documentation
+- **[Schedulers](./docs/schedulers.md)** - Execution context control with different scheduler types
 ## Performance Considerations
 
 ### Optimization Features
