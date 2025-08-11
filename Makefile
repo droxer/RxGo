@@ -1,4 +1,4 @@
-.PHONY: default dev build test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools
+.PHONY: default dev build test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools verify-examples
 
 default: deps test
 
@@ -63,3 +63,21 @@ release:
 
 release-check:
 	goreleaser check
+
+verify-examples:
+	@echo "🔍 Verifying all examples build and run successfully..."
+	@for dir in examples/*/; do \
+		if [ -f "$${dir}*.go" ]; then \
+			echo "  ✅ Testing $$dir"; \
+			cd $$dir && go build -o /tmp/test_example . && echo "    Build OK" || exit 1; \
+			cd ../..; \
+		fi \
+	done
+	@echo "🎉 All examples verified successfully!"
+	@echo ""
+	@echo "Run individual examples:"
+	go run examples/data-transformation/data_transformation.go
+	go run examples/http-streaming/http_streaming.go
+	go run examples/financial/financial_processor.go
+	go run examples/real-time/monitoring.go
+

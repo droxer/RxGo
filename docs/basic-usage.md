@@ -186,11 +186,3 @@ func main() {
     fmt.Println("\n=== All examples completed ===")
 }
 ```
-
-## Output
-
-```
-Processing user: Bob (ID: 2, Age: 30)
-Processing user: Charlie (ID: 3, Age: 35)
-User processing completed!
-```
