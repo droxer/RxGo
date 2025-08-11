@@ -1,10 +1,12 @@
 # Basic Usage
 
-This guide demonstrates the simple Observable API using the unified `rxgo` package.
+This guide demonstrates the basic Observable API using both `rxgo` and `observable` packages, consistent with actual examples.
 
 ## Creating Observables
 
 ### Using Just
+
+Create observable from literal values:
 
 ```go
 package main
@@ -16,120 +18,61 @@ import (
     "github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// Simple subscriber implementation
-type IntSubscriber struct{}
+type IntSubscriber struct {
+    name string
+}
 
-func (s *IntSubscriber) Start() {}
-func (s *IntSubscriber) OnNext(value int) { fmt.Println(value) }
-func (s *IntSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
-func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
+func (s *IntSubscriber) Start() {
+    fmt.Printf("[%s] Starting subscription\n", s.name)
+}
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Printf("[%s] Received: %d\n", s.name, value)
+}
+func (s *IntSubscriber) OnError(err error) {
+    fmt.Printf("[%s] Error: %v\n", s.name, err)
+}
+func (s *IntSubscriber) OnCompleted() {
+    fmt.Printf("[%s] Completed\n", s.name)
+}
 
 func main() {
-    // Create observable from literal values
-    obs := rxgo.Just(1, 2, 3, 4, 5)
-    obs.Subscribe(context.Background(), &IntSubscriber{})
+    // Using Just to create observable
+    justObservable := rxgo.Just(1, 2, 3, 4, 5)
+    justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 }
 ```
 
 ### Using Range
 
+Create observable from range of integers:
+
 ```go
 // Create observable from range of integers
-obs := rxgo.Range(1, 10) // Emits 1, 2, 3, ..., 10
-obs.Subscribe(context.Background(), &IntSubscriber{})
+rangeObservable := rxgo.Range(10, 5) // Emits 10, 11, 12, 13, 14
+rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 ```
 
-### Using Create
+### Using Create with Custom Logic
+
+Create custom observable with your own logic:
 
 ```go
+import "github.com/droxer/RxGo/pkg/observable"
+
 // Create custom observable
-obs := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[string]) {
-    messages := []string{"hello", "world", "from", "rxgo"}
-    
-    for _, msg := range messages {
+customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    for i := 0; i < 3; i++ {
         select {
         case <-ctx.Done():
             sub.OnError(ctx.Err())
             return
         default:
-            sub.OnNext(msg)
+            sub.OnNext(i * 10)
         }
     }
     sub.OnCompleted()
 })
-```
-
-### From Slice
-
-```go
-// Create observable from slice
-numbers := []int{10, 20, 30, 40, 50}
-obs := rxgo.FromSlice(numbers)
-obs.Subscribe(context.Background(), &IntSubscriber{})
-```
-
-## Data Transformations
-
-### Map Operation
-
-Transform each value in the stream:
-
-```go
-// Map integers to their squares
-numbers := rxgo.Range(1, 5)
-squares := rxgo.Map(numbers, func(x int) int {
-    return x * x
-})
-
-// Output: 1, 4, 9, 16, 25
-squares.Subscribe(context.Background(), &IntSubscriber{})
-```
-
-### Filter Operation
-
-Filter values based on predicate:
-
-```go
-// Filter even numbers
-evens := rxgo.Filter(rxgo.Range(1, 10), func(x int) bool {
-    return x%2 == 0
-})
-
-// Output: 2, 4, 6, 8, 10
-evens.Subscribe(context.Background(), &IntSubscriber{})
-```
-
-### Chain Operations
-
-Combine multiple operations:
-
-```go
-// Chain map and filter operations
-result := rxgo.Filter(
-    rxgo.Map(rxgo.Range(1, 10), func(x int) int { return x * 2 }),
-    func(x int) bool { return x > 10 },
-)
-
-// Output: 12, 14, 16, 18, 20
-result.Subscribe(context.Background(), &IntSubscriber{})
-```
-
-## Error Handling
-
-### Error Observable
-
-```go
-// Create observable that immediately emits error
-obs := rxgo.Error[string](errors.New("something went wrong"))
-obs.Subscribe(context.Background(), &StringSubscriber{})
-```
-
-### Empty Observable
-
-```go
-// Create observable that completes without emitting values
-obs := rxgo.Empty[string]()
-obs.Subscribe(context.Background(), &StringSubscriber{})
+customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 ```
 
 ## Context Cancellation
@@ -137,29 +80,30 @@ obs.Subscribe(context.Background(), &StringSubscriber{})
 Use context for graceful cancellation:
 
 ```go
-ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+import "time"
+
+ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 defer cancel()
 
-// Infinite stream that respects context cancellation
-obs := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
-    for i := 0; ; i++ {
+// Observable that respects context cancellation
+contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    for i := 0; i < 5; i++ {
         select {
         case <-ctx.Done():
             sub.OnError(ctx.Err())
             return
         default:
-            sub.OnNext(i)
-            time.Sleep(100 * time.Millisecond)
+            sub.OnNext(i * 100)
         }
     }
+    sub.OnCompleted()
 })
-
-obs.Subscribe(ctx, &IntSubscriber{})
+contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
 ```
 
 ## Complete Example
 
-Here's a complete example combining multiple concepts:
+Here's a complete example combining multiple concepts as shown in the actual basic example:
 
 ```go
 package main
@@ -169,45 +113,77 @@ import (
     "fmt"
     "time"
     
+    "github.com/droxer/RxGo/pkg/observable"
     "github.com/droxer/RxGo/pkg/rxgo"
 )
 
-type User struct {
-    ID   int
-    Name string
-    Age  int
+type IntSubscriber struct {
+    name string
 }
 
-type UserSubscriber struct{}
-
-func (s *UserSubscriber) Start() {}
-func (s *UserSubscriber) OnNext(user User) {
-    fmt.Printf("Processing user: %s (ID: %d, Age: %d)\n", user.Name, user.ID, user.Age)
+func (s *IntSubscriber) Start() {
+    fmt.Printf("[%s] Starting subscription\n", s.name)
 }
-func (s *UserSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
-func (s *UserSubscriber) OnCompleted() { fmt.Println("User processing completed!") }
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Printf("[%s] Received: %d\n", s.name, value)
+}
+func (s *IntSubscriber) OnError(err error) {
+    fmt.Printf("[%s] Error: %v\n", s.name, err)
+}
+func (s *IntSubscriber) OnCompleted() {
+    fmt.Printf("[%s] Completed\n", s.name)
+}
 
 func main() {
-    // Create users observable
-    users := rxgo.Just(
-        User{ID: 1, Name: "Alice", Age: 25},
-        User{ID: 2, Name: "Bob", Age: 30},
-        User{ID: 3, Name: "Charlie", Age: 35},
-        User{ID: 4, Name: "Diana", Age: 28},
-    )
+    fmt.Println("=== RxGo Basic Example ===")
 
-    // Filter adults (age >= 30)
-    adults := rxgo.Filter(users, func(u User) bool {
-        return u.Age >= 30
+    // Example 1: Basic usage with Just
+    fmt.Println("\n1. Using Just():")
+    justObservable := rxgo.Just(1, 2, 3, 4, 5)
+    justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
+
+    // Example 2: Range observable
+    fmt.Println("\n2. Using Range():")
+    rangeObservable := rxgo.Range(10, 5)
+    rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+
+    // Example 3: Create with Custom Logic
+    fmt.Println("\n3. Using Create():")
+    customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+        for i := 0; i < 3; i++ {
+            select {
+            case <-ctx.Done():
+                sub.OnError(ctx.Err())
+                return
+            default:
+                sub.OnNext(i * 10)
+            }
+        }
+        sub.OnCompleted()
     })
+    customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 
-    // Transform to user names
-    names := rxgo.Map(adults, func(u User) string {
-        return u.Name
+    // Example 4: With context cancellation
+    fmt.Println("\n4. With context cancellation:")
+    ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+    defer cancel()
+
+    contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+        for i := 0; i < 5; i++ {
+            select {
+            case <-ctx.Done():
+                sub.OnError(ctx.Err())
+                return
+            default:
+                sub.OnNext(i * 100)
+            }
+        }
+        sub.OnCompleted()
     })
+    contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
 
-    // Subscribe and process
-    names.Subscribe(context.Background(), &UserSubscriber{})
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("\n=== All examples completed ===")
 }
 ```
 

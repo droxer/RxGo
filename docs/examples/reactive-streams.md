@@ -1,10 +1,14 @@
-# Reactive Streams API (Advanced)
+# Reactive Streams API
 
-This document contains advanced usage examples using the full Reactive Streams 1.0.3 compliant API with backpressure support.
+This document demonstrates the Reactive Streams API using both `rxgo` and `observable` packages, consistent with actual examples.
 
-## 1. Reactive Streams Publisher
+## Basic Reactive Streams Usage
 
-Full Reactive Streams compliance with backpressure and demand control:
+The actual examples show a simplified approach using the Observable API. Here's how the Reactive Streams concepts map to the actual implementations:
+
+## Using Range
+
+Create and process a range of values:
 
 ```go
 package main
@@ -12,45 +16,78 @@ package main
 import (
     "context"
     "fmt"
-    "time"
-    
+
     "github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// LoggingSubscriber implementation for Reactive Streams
-type LoggingSubscriber[T any] struct {
+type IntSubscriber struct {
     name string
 }
 
-func (s *LoggingSubscriber[T]) OnSubscribe(sub rxgo.Subscription) {
-    fmt.Printf("[%s] Subscribed, requesting 3 items\n", s.name)
-    sub.Request(3) // Backpressure control
+func (s *IntSubscriber) Start() {
+    fmt.Printf("[%s] Starting subscription\n", s.name)
 }
-
-func (s *LoggingSubscriber[T]) OnNext(value T) {
-    fmt.Printf("[%s] Received: %v\n", s.name, value)
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Printf("[%s] Received: %d\n", s.name, value)
 }
-
-func (s *LoggingSubscriber[T]) OnError(err error) {
+func (s *IntSubscriber) OnError(err error) {
     fmt.Printf("[%s] Error: %v\n", s.name, err)
 }
-
-func (s *LoggingSubscriber[T]) OnComplete() {
+func (s *IntSubscriber) OnCompleted() {
     fmt.Printf("[%s] Completed\n", s.name)
 }
 
 func main() {
-    publisher := rxgo.RangePublisher(1, 10)
-    subscriber := &LoggingSubscriber[int]{name: "Demo"}
-    publisher.Subscribe(context.Background(), subscriber)
-    
-    time.Sleep(100 * time.Millisecond)
+    // Create observable from range
+    obs := rxgo.Range(1, 10)
+    obs.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 }
 ```
 
-## 2. Custom Publisher Creation
+## Using Just
 
-Create custom publishers with full backpressure support:
+Create observable from literal values:
+
+```go
+// Create observable from literal values
+obs := rxgo.Just(100, 200, 300, 400, 500)
+obs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
+```
+
+## Custom Observable Creation
+
+Create custom observables with context support:
+
+```go
+import "github.com/droxer/RxGo/pkg/observable"
+
+// Custom observable creation
+customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    defer sub.OnCompleted()
+    
+    values := []int{1, 2, 3, 4, 5}
+    for _, v := range values {
+        select {
+        case <-ctx.Done():
+            sub.OnError(ctx.Err())
+            return
+        default:
+            sub.OnNext(v * 10)
+        }
+    }
+})
+```
+
+## Key Concepts
+
+- **Observable as Publisher**: The `rxgo.Range()` and `rxgo.Just()` functions act as publishers
+- **Subscriber Interface**: The actual examples use a simple subscriber interface with `Start()`, `OnNext()`, `OnError()`, and `OnCompleted()` methods
+- **Context Support**: All observables support context cancellation for graceful shutdown
+- **Synchronous Processing**: The actual examples show synchronous processing patterns
+
+## Complete Example
+
+Here's a complete reactive streams example:
 
 ```go
 package main
@@ -59,57 +96,41 @@ import (
     "context"
     "fmt"
     "time"
-    
+
     "github.com/droxer/RxGo/pkg/rxgo"
 )
 
-// CustomPublisher demonstrates creating a reactive publisher
-func CustomPublisher() rxgo.Publisher[string] {
-    return rxgo.NewPublisher(func(ctx context.Context, sub rxgo.SubscriberReactive[string]) {
-        messages := []string{"Hello", "World", "from", "RxGo"}
-        
-        for _, msg := range messages {
-            select {
-            case <-ctx.Done():
-                sub.OnError(ctx.Err())
-                return
-            default:
-                sub.OnNext(msg)
-                time.Sleep(50 * time.Millisecond)
-            }
-        }
-        sub.OnComplete()
-    })
+type IntSubscriber struct {
+    name string
+}
+
+func (s *IntSubscriber) Start() {
+    fmt.Printf("[%s] Starting subscription\n", s.name)
+}
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Printf("[%s] Received: %d\n", s.name, value)
+}
+func (s *IntSubscriber) OnError(err error) {
+    fmt.Printf("[%s] Error: %v\n", s.name, err)
+}
+func (s *IntSubscriber) OnCompleted() {
+    fmt.Printf("[%s] Completed\n", s.name)
 }
 
 func main() {
-    publisher := CustomPublisher()
-    subscriber := &LoggingSubscriber[string]{name: "Custom"}
-    
-    publisher.Subscribe(context.Background(), subscriber)
-    time.Sleep(500 * time.Millisecond)
-}
-```
+    fmt.Println("=== Reactive Streams Example ===")
 
-## 3. FromSlice Publisher
+    // Example 1: Range publisher
+    fmt.Println("\n1. Range Publisher:")
+    rangeObs := rxgo.Range(1, 5)
+    rangeObs.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 
-Create publishers from existing slices:
+    // Example 2: Just publisher
+    fmt.Println("\n2. Just Publisher:")
+    justObs := rxgo.Just(10, 20, 30, 40, 50)
+    justObs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    
-    "github.com/droxer/RxGo/pkg/rxgo"
-)
-
-func main() {
-    data := []int{100, 200, 300, 400, 500}
-    publisher := rxgo.FromSlicePublisher(data)
-    
-    subscriber := &LoggingSubscriber[int]{name: "FromSlice"}
-    publisher.Subscribe(context.Background(), subscriber)
+    time.Sleep(100 * time.Millisecond)
+    fmt.Println("\n=== Reactive Streams completed ===")
 }
 ```

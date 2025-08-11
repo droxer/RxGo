@@ -18,29 +18,29 @@ import (
 
 type IntSubscriber struct{}
 
-func (s *IntSubscriber) Start() {}
+func (s *IntSubscriber) Start() {
+    fmt.Println("Starting subscription")
+}
 func (s *IntSubscriber) OnNext(value int) { fmt.Println(value) }
 func (s *IntSubscriber) OnError(err error) { fmt.Printf("Error: %v\n", err) }
 func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
 
 func main() {
-    rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) {
-        for i := 0; i < 5; i++ {
-            sub.OnNext(i)
-        }
-        sub.OnCompleted()
-    }).Subscribe(context.Background(), &IntSubscriber{})
+    // Using Just to create observable
+    obs := rxgo.Just(1, 2, 3, 4, 5)
+    obs.Subscribe(context.Background(), &IntSubscriber{})
 }
 ```
 
 ## Expected Output
 
 ```
-0
+Starting subscription
 1
 2
 3
 4
+5
 Completed!
 ```
 

@@ -1,54 +1,64 @@
 # RxGo Usage Examples
 
-This directory contains comprehensive usage examples for RxGo, organized by topic.
+This directory contains comprehensive usage examples for RxGo, organized by topic and consistent with the actual examples in the codebase.
 
 ## 📁 Example Categories
 
-### [Basic Usage](./basic-usage.md)
-- Observable API (Simple)
-- Range Observable
-- Create with Custom Logic
+### [Quick Start](./quick-start.md)
+- Minimal working example
+- Just and Range observables
+- Basic subscriber implementation
 
-### [Reactive Streams API](./reactive-streams.md)
-- Reactive Streams Publisher
-- Custom Publisher Creation
-- FromSlice Publisher
+### [Basic Usage](./basic-usage.md)
+- Observable API with rxgo package
+- Range and Just observables
+- Create with custom logic
+- Context cancellation integration
 
 ### [Backpressure Control](./backpressure.md)
-- Slow Subscriber with Backpressure
-- Buffered Backpressure Strategy
-- Demand-Based Flow Control
+- Slow consumer processing
+- Thread-safe subscriber implementation
+- WaitGroup for completion handling
+- Real-world backpressure patterns
 
 ### [Context Cancellation](./context-cancellation.md)
-- Timeout-Based Cancellation
-- Manual Cancellation
-- Context with Deadline
-- Parent Context Cancellation
+- Timeout-based cancellation
+- Context-aware observables
+- Graceful shutdown patterns
+- Production-ready cancellation
+
+### [Reactive Streams API](./reactive-streams.md)
+- Observable as publisher pattern
+- Range and Just publishers
+- Context support in streams
+- Synchronous processing examples
 
 ### [Data Transformation](./data-transformation.md)
-- Basic Data Transformation
-- Filter and Map Operations
-- String Processing Pipeline
-- Aggregation Operations
+- Range-based transformations
+- Just value processing
+- Custom create logic
+- Context-aware transformations
 
 ## 🚀 Quick Start
 
 Choose your preferred API and start with the corresponding example:
 
-- **Beginners**: Start with [Basic Usage](./basic-usage.md)
-- **Advanced Users**: Use [Reactive Streams API](./reactive-streams.md)
+- **Beginners**: Start with [Quick Start](./quick-start.md)
+- **Basic Usage**: Use [Basic Usage](./basic-usage.md)
 - **Production**: Review [Backpressure Control](./backpressure.md) and [Context Cancellation](./context-cancellation.md)
 
 ## 📋 Running Examples
 
-Each example can be run independently:
+Each example can be run independently and matches the actual code:
 
 ```bash
 # Basic examples
 go run examples/basic/basic.go
 
-# Advanced examples
+# Backpressure example
 go run examples/backpressure/backpressure.go
+
+# Context cancellation
 go run examples/context/context.go
 
 # Or use compiled binaries
