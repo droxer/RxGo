@@ -31,7 +31,7 @@ func (s *IntSubscriber) OnCompleted() {
 }
 
 func main() {
-	fmt.Println("=== RxGo Modern Example ===")
+	fmt.Println("=== RxGo Basic Example ===")
 
 	// Example 1: Basic usage with Just
 	fmt.Println("\n1. Using Just():")

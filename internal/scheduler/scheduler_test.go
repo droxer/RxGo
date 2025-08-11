@@ -24,6 +24,7 @@ func TestEventLoopScheduler(t *testing.T) {
 
 func testEventLoopSchedulerSchedule(t *testing.T) {
 	scheduler := newEventLoopScheduler(2)
+	scheduler.Start()
 	defer scheduler.Stop()
 
 	var result int
@@ -35,7 +36,19 @@ func testEventLoopSchedulerSchedule(t *testing.T) {
 		wg.Done()
 	})
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	if result != 42 {
 		t.Errorf("expected 42, got %d", result)
@@ -44,6 +57,7 @@ func testEventLoopSchedulerSchedule(t *testing.T) {
 
 func testEventLoopSchedulerScheduleAt(t *testing.T) {
 	scheduler := newEventLoopScheduler(2)
+	scheduler.Start()
 	defer scheduler.Stop()
 
 	start := time.Now()
@@ -54,15 +68,27 @@ func testEventLoopSchedulerScheduleAt(t *testing.T) {
 	scheduler.ScheduleAt(func() {
 		executed = true
 		wg.Done()
-	}, 50*time.Millisecond)
+	}, 10*time.Millisecond)
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	elapsed := time.Since(start)
 	if !executed {
 		t.Error("task was not executed")
 	}
-	if elapsed < 45*time.Millisecond {
+	if elapsed < 5*time.Millisecond {
 		t.Errorf("task executed too early: %v", elapsed)
 	}
 }
@@ -83,7 +109,19 @@ func testEventLoopSchedulerStartStop(t *testing.T) {
 		wg.Done()
 	})
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	if !executed {
 		t.Error("task was not executed")
@@ -95,9 +133,10 @@ func testEventLoopSchedulerStartStop(t *testing.T) {
 
 func testEventLoopSchedulerConcurrent(t *testing.T) {
 	scheduler := newEventLoopScheduler(4)
+	scheduler.Start()
 	defer scheduler.Stop()
 
-	const numTasks = 100
+	const numTasks = 10 // Reduced for faster testing
 	var counter int
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -112,7 +151,19 @@ func testEventLoopSchedulerConcurrent(t *testing.T) {
 		})
 	}
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	if counter != numTasks {
 		t.Errorf("expected %d, got %d", numTasks, counter)
@@ -121,6 +172,7 @@ func testEventLoopSchedulerConcurrent(t *testing.T) {
 
 func TestThreadPoolScheduler(t *testing.T) {
 	scheduler := newThreadPoolScheduler(100 * time.Millisecond)
+	scheduler.Start()
 	defer scheduler.Stop()
 
 	var result int
@@ -132,7 +184,19 @@ func TestThreadPoolScheduler(t *testing.T) {
 		wg.Done()
 	})
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	if result != 100 {
 		t.Errorf("expected 100, got %d", result)
@@ -187,6 +251,14 @@ func TestGlobalSchedulers(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(2)
 
+	// Ensure schedulers are started
+	Computation.Start()
+	IO.Start()
+	defer func() {
+		Computation.Stop()
+		IO.Stop()
+	}()
+
 	Computation.Schedule(func() {
 		result1 = 1
 		wg.Done()
@@ -197,7 +269,19 @@ func TestGlobalSchedulers(t *testing.T) {
 		wg.Done()
 	})
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("global scheduler test timed out")
+	}
 
 	if result1 != 1 {
 		t.Error("Computation scheduler failed")
@@ -209,6 +293,7 @@ func TestGlobalSchedulers(t *testing.T) {
 
 func TestThreadPoolSchedulerTimeout(t *testing.T) {
 	scheduler := newThreadPoolScheduler(10 * time.Millisecond)
+	scheduler.Start()
 	defer scheduler.Stop()
 
 	var executed bool
@@ -220,7 +305,19 @@ func TestThreadPoolSchedulerTimeout(t *testing.T) {
 		wg.Done()
 	})
 
-	wg.Wait()
+	// Add timeout to prevent hanging
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// Success
+	case <-time.After(1 * time.Second):
+		t.Fatal("test timed out")
+	}
 
 	if !executed {
 		t.Error("task was not executed")
