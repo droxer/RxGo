@@ -37,16 +37,6 @@ check-security:
 bench:
 	go test -bench=. -benchmem ./...
 
-doc:
-	@echo "📚 Generating documentation..."
-	go doc -all ./pkg/observable
-	go doc -all ./internal/publisher
-	go doc -all .
-
-doc-serve:
-	@echo "🌐 Starting documentation server..."
-	godoc -http=:6060
-
 clean:
 	rm -rf bin/
 	rm -f coverage.out coverage.html

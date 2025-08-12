@@ -51,7 +51,7 @@ func (s *FinancialProcessor) OnNext(trade Trade) {
 	}
 	s.portfolio.Holdings[trade.Symbol] += trade.Volume
 	s.portfolio.Cash -= tradeValue
-	
+
 	totalValue := s.portfolio.Cash
 	for symbol, shares := range s.portfolio.Holdings {
 		if symbol == trade.Symbol {
@@ -60,7 +60,7 @@ func (s *FinancialProcessor) OnNext(trade Trade) {
 			totalValue += 100.0 * float64(shares)
 		}
 	}
-	
+
 	var riskLevel string
 	if trade.Volume > 1000 {
 		riskLevel = "HIGH"
