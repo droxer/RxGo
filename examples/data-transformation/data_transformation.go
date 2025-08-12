@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/droxer/RxGo/pkg/observable"
 	"github.com/droxer/RxGo/pkg/rxgo"
 )
 
@@ -123,27 +124,70 @@ func (s *NumberCruncher) OnCompleted() {
 	fmt.Printf("[%s] Number crunching completed!\n", s.name)
 }
 
+// SchedulerProcessor demonstrates scheduler usage in data processing
+func SchedulerProcessor(scheduler observable.Scheduler, name string, data []User) {
+	fmt.Printf("\n[%s] Processing with %s scheduler\n", name, scheduler)
+
+	start := time.Now()
+	processor := &UserSubscriber{name: name}
+
+	users := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[User]) {
+		for _, user := range data {
+			select {
+			case <-ctx.Done():
+				sub.OnError(ctx.Err())
+				return
+			default:
+				scheduler.Schedule(func() {
+					sub.OnNext(user)
+				})
+				time.Sleep(10 * time.Millisecond)
+			}
+		}
+		sub.OnCompleted()
+	})
+
+	users.Subscribe(context.Background(), processor)
+
+	if name == "SingleThread" {
+		defer scheduler.(*observable.SingleThreadScheduler).Close()
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	fmt.Printf("[%s] Completed in %v\n", name, time.Since(start))
+}
+
 func main() {
 	fmt.Println("=== Real-World Data Transformation Examples ===")
 
+	// Sample data
+	users := []User{
+		{ID: 1, Name: "Alice", Email: "alice@example.com", Age: 28},
+		{ID: 2, Name: "Bob", Email: "bob@example.com", Age: 35},
+		{ID: 3, Name: "Charlie", Email: "charlie@example.com", Age: 42},
+		{ID: 4, Name: "Diana", Email: "diana@example.com", Age: 19},
+		{ID: 5, Name: "Eve", Email: "eve@example.com", Age: 67},
+	}
+
 	fmt.Println("\n1. User Data Processing:")
-	users := rxgo.Just(
-		User{ID: 1, Name: "Alice", Email: "alice@example.com", Age: 28},
-		User{ID: 2, Name: "Bob", Email: "bob@example.com", Age: 35},
-		User{ID: 3, Name: "Charlie", Email: "charlie@example.com", Age: 42},
-		User{ID: 4, Name: "Diana", Email: "diana@example.com", Age: 19},
-		User{ID: 5, Name: "Eve", Email: "eve@example.com", Age: 67},
-	)
-	users.Subscribe(context.Background(), &UserSubscriber{name: "UserProcessor"})
+	rxgo.Just(users...).Subscribe(context.Background(), &UserSubscriber{name: "UserProcessor"})
 
 	fmt.Println("\n2. String Processing:")
-	strings := rxgo.Just("hello", "world", "level", "racecar", "Go")
-	strings.Subscribe(context.Background(), &StringProcessor{name: "TextProcessor"})
+	rxgo.Just("hello", "world", "level", "racecar", "Go").Subscribe(context.Background(), &StringProcessor{name: "TextProcessor"})
 
 	fmt.Println("\n3. Number Analysis:")
-	numbers := rxgo.Range(1, 8)
-	numbers.Subscribe(context.Background(), &NumberCruncher{name: "MathProcessor"})
+	rxgo.Range(1, 8).Subscribe(context.Background(), &NumberCruncher{name: "MathProcessor"})
 
-	time.Sleep(100 * time.Millisecond)
+	fmt.Println("\n4. Scheduler Comparison:")
+	schedulers := map[string]observable.Scheduler{
+		"Immediate":    observable.NewImmediateScheduler(),
+		"NewThread":    observable.NewNewThreadScheduler(),
+		"SingleThread": observable.NewSingleThreadScheduler(),
+	}
+
+	for name, scheduler := range schedulers {
+		SchedulerProcessor(scheduler, name+"-User", users)
+	}
+
 	fmt.Println("\n=== All transformation examples completed ===")
 }

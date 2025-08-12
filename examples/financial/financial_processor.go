@@ -123,5 +123,62 @@ func main() {
 	trades.Subscribe(context.Background(), processor)
 
 	time.Sleep(5 * time.Second)
+
+	// Demonstrate scheduler usage
+	fmt.Println("\n--- Scheduler Performance Comparison ---")
+
+	// High-volume data for performance testing
+	highVolumeData := []Trade{
+		{Symbol: "AAPL", Price: 175.25, Volume: 15000, Timestamp: time.Now()},
+		{Symbol: "GOOGL", Price: 2850.50, Volume: 2500, Timestamp: time.Now().Add(1 * time.Minute)},
+		{Symbol: "MSFT", Price: 340.75, Volume: 20000, Timestamp: time.Now().Add(2 * time.Minute)},
+		{Symbol: "TSLA", Price: 250.30, Volume: 7500, Timestamp: time.Now().Add(3 * time.Minute)},
+		{Symbol: "AMZN", Price: 145.80, Volume: 12000, Timestamp: time.Now().Add(4 * time.Minute)},
+		{Symbol: "NVDA", Price: 450.25, Volume: 8500, Timestamp: time.Now().Add(5 * time.Minute)},
+	}
+
+	// Demonstrate different scheduler strategies
+	demonstrateScheduler := func(scheduler observable.Scheduler, name string, data []Trade) time.Duration {
+		start := time.Now()
+		processor := NewFinancialProcessor(name+"-Engine", 10000.0)
+
+		trades := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
+			for _, trade := range data {
+				select {
+				case <-ctx.Done():
+					sub.OnError(ctx.Err())
+					return
+				default:
+					scheduler.Schedule(func() {
+						sub.OnNext(trade)
+					})
+					time.Sleep(50 * time.Millisecond)
+				}
+			}
+			sub.OnCompleted()
+		})
+
+		trades.Subscribe(context.Background(), processor)
+
+		if name == "SingleThread" {
+			defer scheduler.(*observable.SingleThreadScheduler).Close()
+		}
+
+		time.Sleep(time.Duration(len(data)) * 100 * time.Millisecond)
+		return time.Since(start)
+	}
+
+	fmt.Println("Processing high-volume trades with different schedulers:")
+	schedulers := map[string]observable.Scheduler{
+		"Immediate":    observable.NewImmediateScheduler(),
+		"NewThread":    observable.NewNewThreadScheduler(),
+		"SingleThread": observable.NewSingleThreadScheduler(),
+	}
+
+	for name, scheduler := range schedulers {
+		elapsed := demonstrateScheduler(scheduler, name, highVolumeData)
+		fmt.Printf("  %s: %v\n", name, elapsed)
+	}
+
 	fmt.Println("\n=== Financial trading completed ===")
 }
