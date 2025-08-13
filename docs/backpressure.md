@@ -198,11 +198,24 @@ const (
 )
 ```
 
+### Reactive Streams 1.0.4 Compliant Publishers
+
+**New Compliant API:**
+- `NewCompliantRangePublisher(start, end int) Publisher[int]` - Reactive Streams 1.0.4 compliant
+- `NewCompliantFromSlicePublisher[T any](items []T) Publisher[T]` - Reactive Streams 1.0.4 compliant
+- `NewCompliantBufferedPublisher[T any](source func(ctx context.Context, sub Subscriber[T])) Publisher[T]` - Reactive Streams 1.0.4 compliant
+
 ### Publisher Builders
 
 - `RangePublisherWithConfig(start, count int, config BackpressureConfig) Publisher[int]`
 - `FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T]`
 - `NewBufferedPublisher[T any](config BackpressureConfig, source func(ctx context.Context, sub Subscriber[T])) Publisher[T]`
+
+### Processors (New)
+
+- `NewMapProcessor[T, R](transform func(T) R) Processor[T, R]`
+- `NewFilterProcessor[T](predicate func(T) bool) Processor[T, T]`
+- `NewFlatMapProcessor[T, R](transform func(T) Publisher[R]) Processor[T, R]`
 
 ### Complete Examples
 

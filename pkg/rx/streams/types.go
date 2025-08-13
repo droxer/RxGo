@@ -26,3 +26,10 @@ type Subscription interface {
 	Request(n int64)
 	Cancel()
 }
+
+// Processor represents a processing stage that is both a Subscriber and Publisher
+// This interface is part of the Reactive Streams specification 1.0.4
+type Processor[T any, R any] interface {
+	Subscriber[T]
+	Publisher[R]
+}

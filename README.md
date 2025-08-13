@@ -27,16 +27,20 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 - **Backpressure support** - Full demand-based flow control
 - **Non-blocking guarantees** - Async processing with context cancellation
 
-### **✅ Backpressure Strategies**
-- **Buffer** - Queue items when producer is faster than consumer
-- **Drop** - Drop new items when buffer is full
-- **Latest** - Keep only the latest item when buffer is full
-- **Error** - Signal error when buffer overflows
+### **✅ Reactive Streams 1.0.4 Compliant Implementation**
+- **Full specification compliance** - Complete Reactive Streams 1.0.4 implementation
+- **Demand tracking** - Publishers respect requested demand (Rule 1.1)
+- **Sequential signaling** - All signals properly serialized (Rule 1.3, 2.7)
+- **Thread safety** - Memory visibility guarantees across goroutines
+- **Processor support** - Transforming stages with Map/Filter/FlatMap processors
+- **Proper cancellation** - Resource cleanup on subscription cancellation
+- **Error handling** - IllegalArgumentException for invalid requests (Rule 3.9)
 
 ## Quick Start
 
 ### Simple Usage
 
+#### Classic Observable API
 ```go
 package main
 
@@ -63,6 +67,53 @@ func main() {
             fmt.Printf("Error: %v\n", err)
         },
     ))
+}
+```
+
+#### Reactive Streams 1.0.4 Compliant API
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    
+    "github.com/droxer/RxGo/pkg/rx/streams"
+)
+
+// Custom subscriber implementing Subscriber interface
+type MySubscriber struct {
+    processed int
+}
+
+func (s *MySubscriber) OnSubscribe(sub streams.Subscription) {
+    sub.Request(5) // Request exactly 5 items
+}
+
+func (s *MySubscriber) OnNext(value int) {
+    fmt.Printf("Processing: %d\n", value)
+    s.processed++
+    time.Sleep(100 * time.Millisecond) // Simulate processing
+}
+
+func (s *MySubscriber) OnError(err error) {
+    fmt.Printf("Error: %v\n", err)
+}
+
+func (s *MySubscriber) OnComplete() {
+    fmt.Printf("Completed! Processed %d items\n", s.processed)
+}
+
+func main() {
+    // Create compliant publisher
+    publisher := streams.NewCompliantRangePublisher(1, 10)
+    subscriber := &MySubscriber{}
+    
+    ctx := context.Background()
+    publisher.Subscribe(ctx, subscriber)
+    
+    // Will only process 5 items due to demand limit
 }
 ```
 
@@ -102,29 +153,30 @@ filtered.Subscribe(context.Background(), subscriber)
 
 ### Installation
 
-### Latest Version
+#### Latest Version
 ```bash
 go get github.com/droxer/RxGo@latest
 ```
 
-### Go Modules
+#### Go Modules
 Add to your `go.mod`:
 ```go
 require github.com/droxer/RxGo latest
 ```
 
-### Requirements
+#### Requirements
 - Go 1.23 or higher (for generics support)
 
 ## Architecture
 
-RxGo provides a **modular, clean architecture** that combines intuitive reactive programming with full Reactive Streams 1.0.4 compliance. The library is organized into focused subpackages for maximum flexibility and clarity.
+RxGo provides a **modular, clean architecture** that combines intuitive reactive programming with **full Reactive Streams 1.0.4 compliance**. The library is organized into focused subpackages for maximum flexibility and clarity.
 
 ### Package Overview
 - **`pkg/rx`** - Core Observable API with type-safe generics
 - **`pkg/rx/scheduler`** - Advanced scheduling with 5 scheduler types
 - **`pkg/rx/operators`** - Data transformation operators
-- **`pkg/rx/streams`** - Full Reactive Streams 1.0.4 compliance
+- **`pkg/rx/streams`** - **Full Reactive Streams 1.0.4 compliance** with compliant implementations
+- **`pkg/rx/processors`** - Transforming stages (Map, Filter, FlatMap) for processor chains
 
 For complete architectural details, see [Architecture Documentation](./docs/architecture.md).
 
@@ -135,7 +187,7 @@ Comprehensive documentation is available in the [docs](./docs/) directory:
 - **[Quick Start](./docs/quick-start.md)** - Get started in 5 minutes
 - **[Architecture](./docs/architecture.md)** - Package structure and design decisions
 - **[Basic Usage](./docs/basic-usage.md)** - Simple Observable API examples
-- **[Reactive Streams API](./docs/reactive-streams.md)** - Full Reactive Streams 1.0.4 compliance
+- **[Reactive Streams API](./docs/reactive-streams.md)** - Full Reactive Streams 1.0.4 compliance with compliant implementations
 - **[Backpressure Control](./docs/backpressure.md)** - Handle producer/consumer speed mismatches
 - **[Context Cancellation](./docs/context-cancellation.md)** - Graceful cancellation using Go context
 - **[Data Transformation](./docs/data-transformation.md)** - Transform and process data streams
