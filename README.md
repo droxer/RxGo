@@ -15,46 +15,86 @@ Reactive Extensions for Go with full Reactive Streams 1.0.4 compliance.
 
 ## Quick Start
 
-```bash
-go get github.com/droxer/RxGo@latest
-```
-
-```go
-import "github.com/droxer/RxGo/pkg/rx"
-
-// Simple usage
-rx.Just(1, 2, 3).Subscribe(context.Background(), 
-    rx.NewSubscriber(
-        func(v int) { fmt.Printf("Got %d\n", v) },
-        func() { fmt.Println("Done") },
-        func(err error) { fmt.Printf("Error: %v\n", err) },
-    ))
-```
-
-## Quick Start
+Install the library:
 
 ```bash
 go get github.com/droxer/RxGo@latest
 ```
 
-```go
-import "github.com/droxer/RxGo/pkg/rx"
+### Usage Example
 
-// Simple usage
-rx.Just(1, 2, 3).Subscribe(context.Background(), 
-    rx.NewSubscriber(
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/droxer/RxGo/pkg/rx"
+)
+
+func main() {
+    obs := rx.Just(1, 2, 3, 4, 5)
+    obs.Subscribe(context.Background(), rx.NewSubscriber(
         func(v int) { fmt.Printf("Got %d\n", v) },
         func() { fmt.Println("Done") },
         func(err error) { fmt.Printf("Error: %v\n", err) },
     ))
+}
+```
+
+**Output:**
+```
+Got 1
+Got 2
+Got 3
+Got 4
+Got 5
+Done
+```
+
+### Backpressure Strategies
+
+Handle producer/consumer speed mismatches with four strategies:
+
+```go
+import "github.com/droxer/RxGo/pkg/rx/streams"
+
+// Buffer - keep all items in bounded buffer
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 100,
+})
+
+// Drop - discard new items when full
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Drop,
+    BufferSize: 50,
+})
+
+// Latest - keep only latest item
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Latest,
+    BufferSize: 1,
+})
+
+// Error - signal error on overflow
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Error,
+    BufferSize: 10,
+})
 ```
 
 ## Documentation
 
-- [Quick Start](./docs/quick-start.md)
-- [Reactive Streams](./docs/reactive-streams.md)
-- [Backpressure](./docs/backpressure.md)
-- [API Reference](./docs/api-reference.md)
+- [Basic Usage](./docs/basic-usage.md) - Simple Observable API examples
+- [Reactive Streams](./docs/reactive-streams.md) - Full Reactive Streams 1.0.4 compliance
+- [Backpressure](./docs/backpressure.md) - Handle producer/consumer speed mismatches
+- [Data Transformation](./docs/data-transformation.md) - Transform and process data streams
+- [Context Cancellation](./docs/context-cancellation.md) - Graceful cancellation using Go context
+- [Schedulers](./docs/schedulers.md) - Execution context control
+- [Architecture](./docs/architecture.md) - Package structure and design decisions
+- [API Reference](./docs/api-reference.md) - Complete API documentation
 
 ## Contributing
 
