@@ -1,17 +1,19 @@
 package scheduler
 
 import (
-	"fmt"
 	"time"
 )
 
+// CachedThreadScheduler provides a dynamic thread pool with caching
+// Workers are created on-demand and cached for reuse based on TTL
 type CachedThreadScheduler struct {
 	workerPool *cachedThreadPool
 	jobQueue   chan job
 	quit       chan bool
+	started    bool
 }
 
-func NewCachedThreadScheduler(ttl time.Duration) *CachedThreadScheduler {
+func NewCachedThreadScheduler(ttl time.Duration) Scheduler {
 	return &CachedThreadScheduler{
 		workerPool: newCachedThreadPool(ttl),
 		jobQueue:   make(chan job),
@@ -20,10 +22,19 @@ func NewCachedThreadScheduler(ttl time.Duration) *CachedThreadScheduler {
 }
 
 func (cts *CachedThreadScheduler) Start() {
+	if cts.started {
+		return
+	}
+	cts.started = true
 	go cts.run()
 }
 
 func (cts *CachedThreadScheduler) Stop() {
+	if !cts.started {
+		return
+	}
+	cts.started = false
+	close(cts.quit)
 }
 
 func (cts *CachedThreadScheduler) Schedule(run Runnable) {
@@ -31,18 +42,50 @@ func (cts *CachedThreadScheduler) Schedule(run Runnable) {
 		run: run,
 	}
 
+	// Auto-start if not already started
+	if !cts.started {
+		cts.Start()
+	}
+
 	cts.jobQueue <- job
 }
 
 func (cts *CachedThreadScheduler) ScheduleAt(run Runnable, delay time.Duration) {
+	job := job{
+		run:   run,
+		delay: delay,
+	}
+
+	// Auto-start if not already started
+	if !cts.started {
+		cts.Start()
+	}
+
+	cts.jobQueue <- job
 }
 
 func (cts *CachedThreadScheduler) run() {
-	for job := range cts.jobQueue {
-		cts.workerPool.get() <- job
+	for {
+		select {
+		case job := <-cts.jobQueue:
+			cts.workerPool.get() <- job
+		case <-cts.quit:
+			return
+		}
 	}
 }
 
+// IOScheduler returns a CachedThreadScheduler optimized for IO-bound tasks
+func IOScheduler() Scheduler {
+	return NewCachedThreadScheduler(120 * time.Second)
+}
+
+// NewThreadScheduler creates a new thread for each task
+func NewThreadScheduler() Scheduler {
+	return NewCachedThreadScheduler(0)
+}
+
+// cachedThreadPool for CachedThreadScheduler
 type cachedThreadPool struct {
 	ttl          time.Duration
 	jobChanQueue chan chan job
@@ -66,6 +109,7 @@ func (c *cachedThreadPool) get() chan job {
 	}
 }
 
+// threadWorker for CachedThreadScheduler
 type threadWorker struct {
 	ttl          time.Duration
 	timer        *time.Timer
@@ -86,24 +130,27 @@ func newThreadWorker(ttl time.Duration, jobChanQueue chan chan job) *threadWorke
 
 func (t *threadWorker) start() {
 	go func() {
+		// Never expire if TTL is 0
+		if t.ttl > 0 {
+			t.timer.Reset(t.ttl)
+		}
+
 		for {
 			t.jobChanQueue <- t.jobChan
 
 			select {
 			case job := <-t.jobChan:
 				time.Sleep(job.delay)
-				func() {
-					defer func() {
-						if r := recover(); r != nil {
-							fmt.Printf("Thread worker recovered from panic: %v\n", r)
-						}
-					}()
-					job.run()
-				}()
-				t.timer.Reset(t.ttl)
+				job.run()
+				// Reset timer only if TTL > 0
+				if t.ttl > 0 {
+					t.timer.Reset(t.ttl)
+				}
 			case <-t.timer.C:
-				t.stop()
-				return
+				if t.ttl > 0 {
+					t.stop()
+					return
+				}
 			case <-t.quit:
 				return
 			}

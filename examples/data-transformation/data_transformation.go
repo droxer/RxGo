@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
 // User represents a user entity
@@ -124,7 +125,7 @@ func (s *NumberCruncher) OnCompleted() {
 }
 
 // SchedulerProcessor demonstrates scheduler usage in data processing
-func SchedulerProcessor(scheduler rx.Scheduler, name string, data []User) {
+func SchedulerProcessor(scheduler scheduler.Scheduler, name string, data []User) {
 	fmt.Printf("\n[%s] Processing with %s scheduler\n", name, scheduler)
 
 	start := time.Now()
@@ -147,10 +148,6 @@ func SchedulerProcessor(scheduler rx.Scheduler, name string, data []User) {
 	})
 
 	users.Subscribe(context.Background(), processor)
-
-	if name == "SingleThread" {
-		defer scheduler.(*rx.SingleThreadScheduler).Close()
-	}
 
 	time.Sleep(100 * time.Millisecond)
 	fmt.Printf("[%s] Completed in %v\n", name, time.Since(start))
@@ -178,10 +175,10 @@ func main() {
 	rx.Range(1, 8).Subscribe(context.Background(), &NumberCruncher{name: "MathProcessor"})
 
 	fmt.Println("\n4. Scheduler Comparison:")
-	schedulers := map[string]rx.Scheduler{
-		"Immediate":    rx.NewImmediateScheduler(),
-		"NewThread":    rx.NewNewThreadScheduler(),
-		"SingleThread": rx.NewSingleThreadScheduler(),
+	schedulers := map[string]scheduler.Scheduler{
+		"Immediate":    scheduler.Trampoline,
+		"NewThread":    scheduler.NewThread,
+		"SingleThread": scheduler.SingleThread,
 	}
 
 	for name, scheduler := range schedulers {

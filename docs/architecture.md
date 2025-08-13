@@ -1,78 +1,160 @@
-# Package Structure
+# Architecture & Package Structure
 
-This document describes the new clean package structure for RxGo v0.1.1.
+This document describes the clean, modular architecture of RxGo, including the package structure and API design choices.
 
 ## Overview
 
-RxGo has been refactored into a clean, modular structure with no backward compatibility constraints. The new structure provides clear separation between different APIs and internal implementations.
+RxGo provides a modular, clean API that combines the best of both worlds:
 
-## Package Layout
+- **Simple Observable API** - Clean, intuitive reactive programming
+- **Full Reactive Streams 1.0.4 Compliance** - Built-in backpressure support
+- **Modular Package Structure** - Organized into logical subpackages
+- **Flexible Imports** - Use what you need, when you need it
 
-```
-RxGo/
-├── pkg/
-│   └── rx/             # Unified API (recommended)
-├── internal/
-│   ├── publisher/      # Internal publisher implementations
-│   ├── scheduler/      # Scheduler implementations  
-│   ├── subscriber/     # Subscriber implementations
-│   └── backpressure/   # Backpressure strategies
-├── examples/
-├── benchmarks/
-└── docs/
-```
+## Package Structure
 
-## API Choices
+The library is organized into clean, focused subpackages:
 
-### 1. Unified Rx API (Recommended)
-**Import:** `github.com/droxer/RxGo/pkg/rx`
+### Core Packages
 
-Provides a clean, unified interface for both Observable and Reactive Streams patterns:
+#### `github.com/droxer/RxGo/pkg/rx`
+- **Purpose**: Core Observable API and basic reactive programming
+- **Key Features**:
+  - `Observable[T]` - Main observable type with generics support
+  - `Subscriber[T]` - Functional subscriber interface
+  - `Just()`, `Range()`, `Create()` - Observable creation functions
+  - Context-based cancellation support
+  - Type-safe throughout with Go generics
 
-```go
-// Observable operations
-obs := rx.Just(1, 2, 3)
-obs := rx.Range(1, 10)
-obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) { ... })
-```
+#### `github.com/droxer/RxGo/pkg/rx/scheduler`
+- **Purpose**: Advanced threading and execution control
+- **Key Features**:
+  - `Scheduler` interface - Unified scheduling abstraction
+  - **Trampoline** - Immediate execution for lightweight operations
+  - **NewThread** - New goroutine for each task
+  - **SingleThread** - Sequential processing on dedicated goroutine
+  - **Computation** - Fixed thread pool for CPU-bound work
+  - **IO** - Cached thread pool for I/O-bound work
 
-## Key Changes from Legacy Structure
+#### `github.com/droxer/RxGo/pkg/rx/operators`
+- **Purpose**: Data transformation and processing operators
+- **Key Features**:
+  - `Map()` - Transform values using functions
+  - `Filter()` - Filter values based on predicates
+  - `ObserveOn()` - Schedule observable emissions on specific schedulers
+  - Type-safe operators with generics
 
-### Removed Packages
-- `pkg/scheduler` → moved to `internal/scheduler`
-- `pkg/subscriber` → moved to `internal/subscriber` 
-- `pkg/publisher` → moved to `internal/publisher`
-- All legacy internal structures
+#### `github.com/droxer/RxGo/pkg/rx/streams`
+- **Purpose**: Full Reactive Streams 1.0.4 compliance
+- **Key Features**:
+  - `Publisher[T]` - Type-safe data source with demand control
+  - `ReactiveSubscriber[T]` - Complete subscriber interface with lifecycle
+  - `Subscription` - Request/cancel control with backpressure
+  - `Processor[T,R]` - Transforming publisher
+  - Full backpressure support with multiple strategies
 
-### New Structure Benefits
-1. **Clean API boundaries** - No internal package dependencies in public API
-2. **Type safety** - Full generics support throughout
-3. **Modular design** - Each package has a single, clear purpose
-4. **No backward compatibility** constraints - Clean slate for future development
-5. **Unified vs specialized** - Choose the right API for your use case
+## Design Principles
 
-## Migration Guide
+### 1. Modularity
+Each package has a single, well-defined responsibility:
+- `rx/` - Core reactive concepts
+- `scheduler/` - Execution control
+- `operators/` - Data transformation
+- `streams/` - Reactive Streams specification
 
-### From Legacy to New Structure
+### 2. Type Safety
+Full generics support throughout the API:
+- Type-safe Observable creation and processing
+- Compile-time type checking
+- No interface{} or reflection usage
 
-**New (recommended):**
+### 3. Context Integration
+Native Go context support:
+- Graceful cancellation using `context.Context`
+- Goroutine leak prevention
+- Timeout and deadline support
+
+### 4. Performance
+Optimized for Go's concurrency model:
+- Zero-allocation signal delivery where possible
+- Lock-free data structures
+- Efficient goroutine management
+- Bounded buffers to prevent memory issues
+
+## Usage Patterns
+
+### Simple Usage
 ```go
 import "github.com/droxer/RxGo/pkg/rx"
 
-obs := rx.Just(1, 2, 3)  // Clean unified API
+obs := rx.Just(1, 2, 3, 4, 5)
+obs.Subscribe(ctx, subscriber)
 ```
 
-## Internal Architecture
+### With Schedulers
+```go
+import (
+    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/scheduler"
+    "github.com/droxer/RxGo/pkg/rx/operators"
+)
 
-The internal packages provide the actual implementations but are not exposed in the public API. This allows for:
+obs := rx.Range(1, 10)
+transformed := operators.ObserveOn(obs, scheduler.Computation)
+transformed.Subscribe(ctx, subscriber)
+```
 
-- **Implementation flexibility** - Internal changes don't break public API
-- **Performance optimization** - Can optimize without API changes
-- **Clean abstractions** - Public APIs are clean and focused
-- **Testing** - Internal packages can be tested independently
+### Full Reactive Streams
+```go
+import "github.com/droxer/RxGo/pkg/rx/streams"
+
+publisher := streams.NewPublisher[int]()
+subscriber := streams.NewReactiveSubscriber[int](
+    func(v int) { fmt.Println("Received:", v) },
+    func() { fmt.Println("Completed") },
+    func(err error) { fmt.Println("Error:", err) },
+)
+publisher.Subscribe(subscriber)
+```
+
+## Migration Guide
+
+### From Legacy Structure
+The new structure replaces the old fragmented packages:
+- `pkg/observable` → `pkg/rx`
+- `pkg/scheduler` → `pkg/rx/scheduler`
+- `pkg/rxgo` → `pkg/rx/streams`
+
+### Import Updates
+Update your imports from:
+```go
+import "github.com/droxer/RxGo/pkg/observable"
+import "github.com/droxer/RxGo/pkg/scheduler"
+```
+
+To:
+```go
+import "github.com/droxer/RxGo/pkg/rx"
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+```
 
 ## Best Practices
 
-1. **Use `pkg/rx`** for all applications - provides the cleanest unified experience
-2. **Never import from `internal/`** - these are implementation details
-3. **Use context cancellation** for all long-running operations
+### Package Selection
+- Use `pkg/rx` for simple reactive programming
+- Use `pkg/rx/scheduler` for advanced thread control
+- Use `pkg/rx/operators` for data transformation
+- Use `pkg/rx/streams` for production systems with backpressure
+
+### Performance Guidelines
+- Always use context cancellation for long-running streams
+- Implement proper backpressure with `Request(n)` calls
+- Use bounded buffers to prevent memory exhaustion
+- Prefer the Reactive Streams API for production use
+
+### Thread Safety
+All packages are designed to be thread-safe:
+- Concurrent subscription support
+- Safe scheduler usage across goroutines
+- Atomic operations where appropriate
+- No shared mutable state

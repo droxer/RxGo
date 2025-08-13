@@ -1,17 +1,38 @@
 // Package rx provides the main RxGo API for reactive programming.
 //
-// This package offers a clean and simplified interface for working with
-// reactive streams in Go. It includes all necessary components:
+// This package offers a comprehensive reactive programming library for Go
+// with full Reactive Streams 1.0.4 compliance and backpressure support.
 //
-// - Observable: The main reactive type for handling streams of data
-// - Scheduler: Threading and execution control
-// - Operators: Map, Filter, and other transformation utilities
+// Package Structure:
 //
-// Usage:
+// - rx/          : Core Observable API and main entry points
+// - rx/scheduler : Advanced threading and execution control
+// - rx/streams   : Reactive Streams 1.0.4 compliant Publisher/Subscriber interfaces
+// - rx/operators : Data transformation operators like Map, Filter, ObserveOn
 //
-//  // Create an observable
-//  obs := rx.Just(1, 2, 3, 4, 5)
+// Features:
+// - Reactive Streams 1.0.4 compliance with backpressure
+// - Context-based cancellation support
+// - Multiple scheduler types: Computation, IO, NewThread, SingleThread, Trampoline
+// - Fixed and cached thread pool implementations
+// - Type-safe generics throughout
 //
-//  // Use with scheduler
-//  obs.ObserveOn(rx.Computation).Subscribe(ctx, subscriber)
+// Quick Start:
+//
+//	import "github.com/droxer/RxGo/pkg/rx"
+//	import "github.com/droxer/RxGo/pkg/rx/operators"
+//	import "github.com/droxer/RxGo/pkg/rx/scheduler"
+//
+//	// Basic observable
+//	obs := rx.Just(1, 2, 3, 4, 5)
+//	obs.ObserveOn(scheduler.Computation).Subscribe(ctx, subscriber)
+//
+//	// Using operators
+//	transformed := operators.Map(obs, func(x int) int { return x * 2 })
+//	filtered := operators.Filter(transformed, func(x int) bool { return x > 5 })
+//
+//	// Reactive Streams Publisher
+//	import "github.com/droxer/RxGo/pkg/rx/streams"
+//	publisher := streams.RangePublisher(1, 10)
+//	publisher.Subscribe(ctx, subscriber)
 package rx

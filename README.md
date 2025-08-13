@@ -70,24 +70,35 @@ func main() {
 ### With Schedulers
 
 ```go
+import (
+	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/rx/operators"
+	"github.com/droxer/RxGo/pkg/rx/scheduler"
+)
+
 // Use with different schedulers
 obs := rx.Range(1, 10)
 
 // Process on computation scheduler
-obs.ObserveOn(rx.Computation).Subscribe(ctx, subscriber)
+operators.ObserveOn(obs, scheduler.Computation).Subscribe(ctx, subscriber)
 
 // Process on IO scheduler
-obs.ObserveOn(rx.IO).Subscribe(ctx, subscriber)
+operators.ObserveOn(obs, scheduler.IO).Subscribe(ctx, subscriber)
 ```
 
 ### Data Transformation
 
 ```go
+import (
+	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/rx/operators"
+)
+
 // Map and Filter operations
-rx.Range(1, 10).
-    Map(func(x int) int { return x * x }).
-    Filter(func(x int) bool { return x > 10 }).
-    Subscribe(context.Background(), subscriber)
+obs := rx.Range(1, 10)
+transformed := operators.Map(obs, func(x int) int { return x * x })
+filtered := operators.Filter(transformed, func(x int) bool { return x > 10 })
+filtered.Subscribe(context.Background(), subscriber)
 ```
 
 ### Installation
@@ -106,27 +117,31 @@ require github.com/droxer/RxGo latest
 ### Requirements
 - Go 1.23 or higher (for generics support)
 
-## API Overview
+## Architecture
 
-RxGo provides a clean, unified API that combines the best of both worlds:
+RxGo provides a **modular, clean architecture** that combines intuitive reactive programming with full Reactive Streams 1.0.4 compliance. The library is organized into focused subpackages for maximum flexibility and clarity.
 
-- **Simple Observable API** - Clean, intuitive reactive programming
-- **Full Reactive Streams 1.0.4 Compliance** - Built-in backpressure support
-- **Unified Package Structure** - Everything in a single `rx` package
+### Package Overview
+- **`pkg/rx`** - Core Observable API with type-safe generics
+- **`pkg/rx/scheduler`** - Advanced scheduling with 5 scheduler types
+- **`pkg/rx/operators`** - Data transformation operators
+- **`pkg/rx/streams`** - Full Reactive Streams 1.0.4 compliance
+
+For complete architectural details, see [Architecture Documentation](./docs/architecture.md).
 
 ## Documentation
 
 Comprehensive documentation is available in the [docs](./docs/) directory:
 
-- **[Quick Start](./docs/quick-start.md)** - Simple example to get you started
+- **[Quick Start](./docs/quick-start.md)** - Get started in 5 minutes
+- **[Architecture](./docs/architecture.md)** - Package structure and design decisions
 - **[Basic Usage](./docs/basic-usage.md)** - Simple Observable API examples
-- **[Reactive Streams API](./docs/reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
+- **[Reactive Streams API](./docs/reactive-streams.md)** - Full Reactive Streams 1.0.4 compliance
 - **[Backpressure Control](./docs/backpressure.md)** - Handle producer/consumer speed mismatches
 - **[Context Cancellation](./docs/context-cancellation.md)** - Graceful cancellation using Go context
 - **[Data Transformation](./docs/data-transformation.md)** - Transform and process data streams
-- **[Architecture](./docs/architecture.md)** - Package structure and API choices
-- **[API Reference](./docs/api-reference.md)** - Complete API documentation
 - **[Schedulers](./docs/schedulers.md)** - Execution context control with different scheduler types
+- **[API Reference](./docs/api-reference.md)** - Complete API documentation
 ## Performance Considerations
 
 ### Optimization Features

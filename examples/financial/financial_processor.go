@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
 // Trade represents a financial transaction
@@ -137,7 +138,7 @@ func main() {
 	}
 
 	// Demonstrate different scheduler strategies
-	demonstrateScheduler := func(scheduler rx.Scheduler, name string, data []Trade) time.Duration {
+	demonstrateScheduler := func(scheduler scheduler.Scheduler, name string, data []Trade) time.Duration {
 		start := time.Now()
 		processor := NewFinancialProcessor(name+"-Engine", 10000.0)
 
@@ -159,19 +160,15 @@ func main() {
 
 		trades.Subscribe(context.Background(), processor)
 
-		if name == "SingleThread" {
-			defer scheduler.(*rx.SingleThreadScheduler).Close()
-		}
-
 		time.Sleep(time.Duration(len(data)) * 100 * time.Millisecond)
 		return time.Since(start)
 	}
 
 	fmt.Println("Processing high-volume trades with different schedulers:")
-	schedulers := map[string]rx.Scheduler{
-		"Immediate":    rx.NewImmediateScheduler(),
-		"NewThread":    rx.NewNewThreadScheduler(),
-		"SingleThread": rx.NewSingleThreadScheduler(),
+	schedulers := map[string]scheduler.Scheduler{
+		"Immediate":    scheduler.Trampoline,
+		"NewThread":    scheduler.NewThread,
+		"SingleThread": scheduler.SingleThread,
 	}
 
 	for name, scheduler := range schedulers {

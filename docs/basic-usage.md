@@ -1,6 +1,17 @@
 # Basic Usage
 
-This guide demonstrates the basic Observable API using both `rxgo` and `observable` packages, consistent with actual examples.
+This guide demonstrates the basic Observable API using the reorganized package structure.
+
+## Package Imports
+
+```go
+import (
+    "context"
+    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/operators"
+    "github.com/droxer/RxGo/pkg/rx/scheduler"
+)
+```
 
 ## Creating Observables
 
@@ -57,9 +68,9 @@ rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 Create custom observable with your own logic:
 
 ```go
+// Create custom observable
 import "github.com/droxer/RxGo/pkg/rx"
 
-// Create custom observable
 customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
     for i := 0; i < 3; i++ {
         select {
@@ -75,6 +86,47 @@ customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) 
 customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 ```
 
+## Using Operators
+
+### Map and Filter Operations
+
+```go
+import (
+    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/operators"
+)
+
+// Transform data using operators
+obs := rx.Range(1, 10)
+transformed := operators.Map(obs, func(x int) int { return x * 2 })
+filtered := operators.Filter(transformed, func(x int) bool { return x > 10 })
+filtered.Subscribe(context.Background(), &IntSubscriber{name: "Operators"})
+```
+
+## Using Schedulers
+
+### With Different Schedulers
+
+```go
+import (
+    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/operators"
+    "github.com/droxer/RxGo/pkg/rx/scheduler"
+)
+
+// Use different schedulers
+obs := rx.Range(1, 5)
+
+// Computation scheduler for CPU-bound work
+operators.ObserveOn(obs, scheduler.Computation).Subscribe(ctx, subscriber)
+
+// IO scheduler for IO-bound work
+operators.ObserveOn(obs, scheduler.IO).Subscribe(ctx, subscriber)
+
+// Single thread for sequential processing
+operators.ObserveOn(obs, scheduler.SingleThread).Subscribe(ctx, subscriber)
+```
+
 ## Context Cancellation
 
 Use context for graceful cancellation:
@@ -86,7 +138,7 @@ ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 defer cancel()
 
 // Observable that respects context cancellation
-contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+contextObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
     for i := 0; i < 5; i++ {
         select {
         case <-ctx.Done():
@@ -103,7 +155,7 @@ contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
 
 ## Complete Example
 
-Here's a complete example combining multiple concepts as shown in the actual basic example:
+Here's a complete example combining multiple concepts:
 
 ```go
 package main
@@ -114,6 +166,8 @@ import (
     "time"
     
     "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/operators"
+    "github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
 type IntSubscriber struct {
@@ -146,21 +200,14 @@ func main() {
     rangeObservable := rx.Range(10, 5)
     rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 
-    // Example 3: Create with Custom Logic
-    fmt.Println("\n3. Using Create():")
-    customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
-        for i := 0; i < 3; i++ {
-            select {
-            case <-ctx.Done():
-                sub.OnError(ctx.Err())
-                return
-            default:
-                sub.OnNext(i * 10)
-            }
-        }
-        sub.OnCompleted()
-    })
-    customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
+    // Example 3: Using operators
+    fmt.Println("\n3. Using operators:")
+    obs := rx.Range(1, 5)
+    transformed := operators.Map(obs, func(x int) int { return x * 10 })
+    filtered := operators.Filter(transformed, func(x int) bool { return x > 20 })
+    operators.ObserveOn(filtered, scheduler.Computation).Subscribe(
+        context.Background(), 
+        &IntSubscriber{name: "Operators"})
 
     // Example 4: With context cancellation
     fmt.Println("\n4. With context cancellation:")
