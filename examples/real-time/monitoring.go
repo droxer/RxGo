@@ -7,8 +7,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/observable"
-	"github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // SensorData represents IoT sensor readings
@@ -141,7 +140,7 @@ func main() {
 	}
 
 	// Create temperature monitoring stream
-	tempStream := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[SensorData]) {
+	tempStream := rx.Create(func(ctx context.Context, sub rx.Subscriber[SensorData]) {
 		for _, device := range devices {
 			data := sensorSimulator(ctx, device.id, device.location)
 			for _, reading := range data {

@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/observable"
-	"github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // User represents a user entity
@@ -125,13 +124,13 @@ func (s *NumberCruncher) OnCompleted() {
 }
 
 // SchedulerProcessor demonstrates scheduler usage in data processing
-func SchedulerProcessor(scheduler observable.Scheduler, name string, data []User) {
+func SchedulerProcessor(scheduler rx.Scheduler, name string, data []User) {
 	fmt.Printf("\n[%s] Processing with %s scheduler\n", name, scheduler)
 
 	start := time.Now()
 	processor := &UserSubscriber{name: name}
 
-	users := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[User]) {
+	users := rx.Create(func(ctx context.Context, sub rx.Subscriber[User]) {
 		for _, user := range data {
 			select {
 			case <-ctx.Done():
@@ -150,7 +149,7 @@ func SchedulerProcessor(scheduler observable.Scheduler, name string, data []User
 	users.Subscribe(context.Background(), processor)
 
 	if name == "SingleThread" {
-		defer scheduler.(*observable.SingleThreadScheduler).Close()
+		defer scheduler.(*rx.SingleThreadScheduler).Close()
 	}
 
 	time.Sleep(100 * time.Millisecond)
@@ -170,19 +169,19 @@ func main() {
 	}
 
 	fmt.Println("\n1. User Data Processing:")
-	rxgo.Just(users...).Subscribe(context.Background(), &UserSubscriber{name: "UserProcessor"})
+	rx.Just(users...).Subscribe(context.Background(), &UserSubscriber{name: "UserProcessor"})
 
 	fmt.Println("\n2. String Processing:")
-	rxgo.Just("hello", "world", "level", "racecar", "Go").Subscribe(context.Background(), &StringProcessor{name: "TextProcessor"})
+	rx.Just("hello", "world", "level", "racecar", "Go").Subscribe(context.Background(), &StringProcessor{name: "TextProcessor"})
 
 	fmt.Println("\n3. Number Analysis:")
-	rxgo.Range(1, 8).Subscribe(context.Background(), &NumberCruncher{name: "MathProcessor"})
+	rx.Range(1, 8).Subscribe(context.Background(), &NumberCruncher{name: "MathProcessor"})
 
 	fmt.Println("\n4. Scheduler Comparison:")
-	schedulers := map[string]observable.Scheduler{
-		"Immediate":    observable.NewImmediateScheduler(),
-		"NewThread":    observable.NewNewThreadScheduler(),
-		"SingleThread": observable.NewSingleThreadScheduler(),
+	schedulers := map[string]rx.Scheduler{
+		"Immediate":    rx.NewImmediateScheduler(),
+		"NewThread":    rx.NewNewThreadScheduler(),
+		"SingleThread": rx.NewSingleThreadScheduler(),
 	}
 
 	for name, scheduler := range schedulers {

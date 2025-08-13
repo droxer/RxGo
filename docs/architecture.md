@@ -11,9 +11,7 @@ RxGo has been refactored into a clean, modular structure with no backward compat
 ```
 RxGo/
 ├── pkg/
-│   ├── rxgo/           # Unified API (recommended)
-│   ├── observable/     # Observable API (simple)
-│   └── reactive/       # Reactive Streams API (full spec)
+│   └── rx/             # Unified API (recommended)
 ├── internal/
 │   ├── publisher/      # Internal publisher implementations
 │   ├── scheduler/      # Scheduler implementations  
@@ -26,43 +24,16 @@ RxGo/
 
 ## API Choices
 
-### 1. Unified RxGo API (Recommended)
-**Import:** `github.com/droxer/RxGo/pkg/rxgo`
+### 1. Unified Rx API (Recommended)
+**Import:** `github.com/droxer/RxGo/pkg/rx`
 
 Provides a clean, unified interface for both Observable and Reactive Streams patterns:
 
 ```go
 // Observable operations
-obs := rxgo.Just(1, 2, 3)
-obs := rxgo.Range(1, 10)
-obs := rxgo.Create(func(ctx context.Context, sub rxgo.Subscriber[int]) { ... })
-
-// Reactive Streams operations  
-publisher := rxgo.RangePublisher(1, 10)
-publisher := rxgo.JustPublisher("hello", "world")
-publisher := rxgo.NewPublisher(func(ctx context.Context, sub rxgo.SubscriberReactive[string]) { ... })
-```
-
-### 2. Observable API (Simple)
-**Import:** `github.com/droxer/RxGo/pkg/observable`
-
-Simple, callback-based API for basic reactive programming:
-
-```go
-obs := observable.Just(1, 2, 3)
-obs := observable.Range(1, 10)
-obs := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) { ... })
-```
-
-### 3. Reactive Streams API (Full Spec)
-**Import:** `github.com/droxer/RxGo/pkg/reactive`
-
-Full Reactive Streams 1.0.3 compliance with backpressure support:
-
-```go
-publisher := reactive.Just(1, 2, 3)
-publisher := reactive.Range(1, 10)
-publisher := reactive.NewPublisher(func(ctx context.Context, sub reactive.Subscriber[int]) { ... })
+obs := rx.Just(1, 2, 3)
+obs := rx.Range(1, 10)
+obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) { ... })
 ```
 
 ## Key Changes from Legacy Structure
@@ -84,20 +55,11 @@ publisher := reactive.NewPublisher(func(ctx context.Context, sub reactive.Subscr
 
 ### From Legacy to New Structure
 
-**Old (backward compatibility not maintained):**
-```go
-import "github.com/droxer/RxGo/pkg/observable"
-
-obs := observable.Just(1, 2, 3)
-```
-
 **New (recommended):**
 ```go
-import "github.com/droxer/RxGo/pkg/rxgo"
+import "github.com/droxer/RxGo/pkg/rx"
 
-obs := rxgo.Just(1, 2, 3)  // Unified API
-// OR
-obs := observable.Just(1, 2, 3)  // Direct Observable API
+obs := rx.Just(1, 2, 3)  // Clean unified API
 ```
 
 ## Internal Architecture
@@ -111,8 +73,6 @@ The internal packages provide the actual implementations but are not exposed in 
 
 ## Best Practices
 
-1. **Use `pkg/rxgo`** for most applications - provides the cleanest experience
-2. **Use `pkg/observable`** when you need only the simple Observable API
-3. **Use `pkg/reactive`** when you need full Reactive Streams compliance
-4. **Never import from `internal/`** - these are implementation details
-5. **Use context cancellation** for all long-running operations
+1. **Use `pkg/rx`** for all applications - provides the cleanest unified experience
+2. **Never import from `internal/`** - these are implementation details
+3. **Use context cancellation** for all long-running operations

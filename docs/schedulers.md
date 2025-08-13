@@ -30,7 +30,7 @@ The `ImmediateScheduler` executes work synchronously on the calling goroutine. T
 - No concurrency benefits
 
 ```go
-scheduler := observable.NewImmediateScheduler()
+scheduler := rx.NewImmediateScheduler()
 scheduler.Schedule(func() {
     fmt.Println("Executed immediately")
 })
@@ -53,7 +53,7 @@ The `NewThreadScheduler` creates a new goroutine for each unit of work, providin
 - Higher memory overhead
 
 ```go
-scheduler := observable.NewNewThreadScheduler()
+scheduler := rx.NewNewThreadScheduler()
 scheduler.Schedule(func() {
     fmt.Println("Executed on new goroutine")
 })
@@ -76,7 +76,7 @@ The `SingleThreadScheduler` uses a single dedicated goroutine to execute all sch
 - Predictable execution order
 
 ```go
-scheduler := observable.NewSingleThreadScheduler()
+scheduler := rx.NewSingleThreadScheduler()
 defer scheduler.Close() // Important: always close when done
 
 scheduler.Schedule(func() {
@@ -104,7 +104,7 @@ The `TrampolineScheduler` queues work for later execution on the current gorouti
 - Non-blocking scheduling
 
 ```go
-scheduler := observable.NewTrampolineScheduler()
+scheduler := rx.NewTrampolineScheduler()
 scheduler.Schedule(func() {
     fmt.Println("Queued task 1")
 })
@@ -225,7 +225,7 @@ Use `ImmediateScheduler` for deterministic tests:
 
 ```go
 func TestMyFunction(t *testing.T) {
-    scheduler := observable.NewImmediateScheduler()
+    scheduler := rx.NewImmediateScheduler()
     result := myFunction(scheduler)
     // Result is immediately available
     assert.Equal(t, expected, result)
@@ -293,20 +293,20 @@ func (w *WorkStealingScheduler) Schedule(task func()) {
 Create a decision tree for your application:
 
 ```go
-func selectScheduler(workloadType string) observable.Scheduler {
+func selectScheduler(workloadType string) rx.Scheduler {
     switch workloadType {
     case "CPU-intensive":
-        return observable.NewNewThreadScheduler()
+        return rx.NewNewThreadScheduler()
     case "IO-bound":
-        return observable.NewNewThreadScheduler()
+        return rx.NewNewThreadScheduler()
     case "ordered":
-        return observable.NewSingleThreadScheduler()
+        return rx.NewSingleThreadScheduler()
     case "lightweight":
-        return observable.NewImmediateScheduler()
+        return rx.NewImmediateScheduler()
     case "batch":
-        return observable.NewTrampolineScheduler()
+        return rx.NewTrampolineScheduler()
     default:
-        return observable.NewImmediateScheduler()
+        return rx.NewImmediateScheduler()
     }
 }
 ```

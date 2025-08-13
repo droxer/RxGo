@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/observable"
-	"github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // Trade represents a financial transaction
@@ -104,7 +103,7 @@ func main() {
 	processor := NewFinancialProcessor("TradeEngine", 10000.0)
 
 	// Simulate real-time trading data
-	trades := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
+	trades := rx.Create(func(ctx context.Context, sub rx.Subscriber[Trade]) {
 		data := generateMarketData(ctx)
 
 		for _, trade := range data {
@@ -138,11 +137,11 @@ func main() {
 	}
 
 	// Demonstrate different scheduler strategies
-	demonstrateScheduler := func(scheduler observable.Scheduler, name string, data []Trade) time.Duration {
+	demonstrateScheduler := func(scheduler rx.Scheduler, name string, data []Trade) time.Duration {
 		start := time.Now()
 		processor := NewFinancialProcessor(name+"-Engine", 10000.0)
 
-		trades := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
+		trades := rx.Create(func(ctx context.Context, sub rx.Subscriber[Trade]) {
 			for _, trade := range data {
 				select {
 				case <-ctx.Done():
@@ -161,7 +160,7 @@ func main() {
 		trades.Subscribe(context.Background(), processor)
 
 		if name == "SingleThread" {
-			defer scheduler.(*observable.SingleThreadScheduler).Close()
+			defer scheduler.(*rx.SingleThreadScheduler).Close()
 		}
 
 		time.Sleep(time.Duration(len(data)) * 100 * time.Millisecond)
@@ -169,10 +168,10 @@ func main() {
 	}
 
 	fmt.Println("Processing high-volume trades with different schedulers:")
-	schedulers := map[string]observable.Scheduler{
-		"Immediate":    observable.NewImmediateScheduler(),
-		"NewThread":    observable.NewNewThreadScheduler(),
-		"SingleThread": observable.NewSingleThreadScheduler(),
+	schedulers := map[string]rx.Scheduler{
+		"Immediate":    rx.NewImmediateScheduler(),
+		"NewThread":    rx.NewNewThreadScheduler(),
+		"SingleThread": rx.NewSingleThreadScheduler(),
 	}
 
 	for name, scheduler := range schedulers {

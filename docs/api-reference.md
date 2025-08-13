@@ -2,7 +2,7 @@
 
 ## Core Interfaces
 
-### Observable API (Simple)
+### Unified Rx API (Recommended)
 
 #### Observable[T] struct
 ```go
@@ -23,33 +23,6 @@ type Subscriber[T any] interface {
 }
 ```
 
-### Reactive Streams API (Full Spec)
-
-#### Publisher[T] Interface
-```go
-type Publisher[T any] interface {
-    Subscribe(ctx context.Context, s SubscriberReactive[T])
-}
-```
-
-#### SubscriberReactive[T] Interface
-```go
-type SubscriberReactive[T any] interface {
-    OnSubscribe(s Subscription)
-    OnNext(t T)
-    OnError(err error)
-    OnComplete()
-}
-```
-
-#### Subscription Interface
-```go
-type Subscription interface {
-    Request(n int64)
-    Cancel()
-}
-```
-
 ## Constants
 
 ```go
@@ -62,12 +35,9 @@ const (
 
 | Function | Description | Example |
 |----------|-------------|---------|
-| `rxgo.Just[T](values...)` | Create from literal values | `rxgo.Just(1, 2, 3)` |
-| `rxgo.Range(start, count)` | Integer sequence observable | `rxgo.Range(1, 10)` |
-| `rxgo.Create[T](fn)` | Custom observable creation | `rxgo.Create(customProducer)` |
-| `rxgo.RangePublisher(start, count)` | Integer sequence publisher | `rxgo.RangePublisher(1, 10)` |
-| `rxgo.FromSlicePublisher[T](slice)` | Create publisher from slice | `rxgo.FromSlicePublisher([]int{1, 2, 3})` |
-| `rxgo.NewPublisher[T](fn)` | Custom publisher creation | `rxgo.NewPublisher(customProducer)` |
+| `rx.Just[T](values...)` | Create from literal values | `rx.Just(1, 2, 3)` |
+| `rx.Range(start, count)` | Integer sequence observable | `rx.Range(1, 10)` |
+| `rx.Create[T](fn)` | Custom observable creation | `rx.Create(customProducer)` |
 
 ## Package Structure
 

@@ -15,7 +15,7 @@ import (
     "sync"
     "time"
 
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type BackpressureSubscriber struct {
@@ -58,7 +58,7 @@ func main() {
     }
 
     // Create observable
-    obs := rxgo.Range(1, 10)
+    obs := rx.Range(1, 10)
     obs.Subscribe(context.Background(), subscriber)
     wg.Wait()
     fmt.Println("Backpressure example completed!")

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/observable"
-	"github.com/droxer/RxGo/pkg/rxgo"
+	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // APIResponse represents a mock API response
@@ -68,7 +67,7 @@ func mockAPIStream(ctx context.Context) []APIResponse {
 func main() {
 	fmt.Println("=== HTTP Streaming Example ===")
 
-	apiStream := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[APIResponse]) {
+	apiStream := rx.Create(func(ctx context.Context, sub rx.Subscriber[APIResponse]) {
 		data := mockAPIStream(ctx)
 
 		for _, item := range data {

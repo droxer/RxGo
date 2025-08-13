@@ -17,7 +17,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type IntSubscriber struct {
@@ -39,7 +39,7 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
     // Create observable from range
-    obs := rxgo.Range(1, 10)
+    obs := rx.Range(1, 10)
     obs.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 }
 ```
@@ -50,7 +50,7 @@ Create observable from literal values:
 
 ```go
 // Create observable from literal values
-obs := rxgo.Just(100, 200, 300, 400, 500)
+obs := rx.Just(100, 200, 300, 400, 500)
 obs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 ```
 
@@ -59,10 +59,10 @@ obs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 Create custom observables with context support:
 
 ```go
-import "github.com/droxer/RxGo/pkg/observable"
+import "github.com/droxer/RxGo/pkg/rx"
 
 // Custom observable creation
-customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
     defer sub.OnCompleted()
     
     values := []int{1, 2, 3, 4, 5}
@@ -97,7 +97,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type IntSubscriber struct {
@@ -122,12 +122,12 @@ func main() {
 
     // Example 1: Range publisher
     fmt.Println("\n1. Range Publisher:")
-    rangeObs := rxgo.Range(1, 5)
+    rangeObs := rx.Range(1, 5)
     rangeObs.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 
     // Example 2: Just publisher
     fmt.Println("\n2. Just Publisher:")
-    justObs := rxgo.Just(10, 20, 30, 40, 50)
+    justObs := rx.Just(10, 20, 30, 40, 50)
     justObs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 
     time.Sleep(100 * time.Millisecond)

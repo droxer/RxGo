@@ -1,10 +1,7 @@
-// Package observable provides the main Observable API for RxGo
-package observable
+package rx
 
 import (
 	"context"
-	"fmt"
-	"runtime/debug"
 )
 
 // Subscriber defines the interface for receiving values from an Observable
@@ -19,7 +16,6 @@ type Subscriber[T any] interface {
 type OnSubscribe[T any] func(ctx context.Context, sub Subscriber[T])
 
 // Observable represents a stream of values that can be observed
-// This is the primary API for reactive programming in RxGo
 type Observable[T any] struct {
 	onSubscribe OnSubscribe[T]
 }
@@ -40,13 +36,6 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	}
 
 	sub.Start()
-
-	defer func() {
-		if r := recover(); r != nil {
-			debug.PrintStack()
-			sub.OnError(fmt.Errorf("panic in observable: %v", r))
-		}
-	}()
 
 	o.onSubscribe(ctx, sub)
 }
@@ -134,6 +123,26 @@ func (o *Observable[T]) ObserveOn(scheduler Scheduler) *Observable[T] {
 	})
 }
 
+// Map transforms each value emitted by the Observable
+func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
+	return Create(func(ctx context.Context, sub Subscriber[R]) {
+		source.Subscribe(ctx, &mapSubscriber[T, R]{
+			sub:       sub,
+			transform: transform,
+		})
+	})
+}
+
+// Filter filters values emitted by the Observable
+func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] {
+	return Create(func(ctx context.Context, sub Subscriber[T]) {
+		source.Subscribe(ctx, &filterSubscriber[T]{
+			sub:       sub,
+			predicate: predicate,
+		})
+	})
+}
+
 type observeOnSubscriber[T any] struct {
 	scheduler Scheduler
 	sub       Subscriber[T]
@@ -177,26 +186,6 @@ func (o *observeOnSubscriber[T]) OnCompleted() {
 	})
 }
 
-// Map transforms each value emitted by the Observable
-func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
-	return Create(func(ctx context.Context, sub Subscriber[R]) {
-		source.Subscribe(ctx, &mapSubscriber[T, R]{
-			sub:       sub,
-			transform: transform,
-		})
-	})
-}
-
-// Filter filters values emitted by the Observable
-func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] {
-	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		source.Subscribe(ctx, &filterSubscriber[T]{
-			sub:       sub,
-			predicate: predicate,
-		})
-	})
-}
-
 type mapSubscriber[T, R any] struct {
 	sub       Subscriber[R]
 	transform func(T) R
@@ -220,3 +209,40 @@ func (f *filterSubscriber[T]) OnNext(t T) {
 }
 func (f *filterSubscriber[T]) OnError(err error) { f.sub.OnError(err) }
 func (f *filterSubscriber[T]) OnCompleted()      { f.sub.OnCompleted() }
+
+// NewSubscriber creates a simple subscriber from functions
+func NewSubscriber[T any](
+	onNext func(T),
+	onCompleted func(),
+	onError func(error),
+) Subscriber[T] {
+	return &simpleSubscriber[T]{
+		onNext:      onNext,
+		onCompleted: onCompleted,
+		onError:     onError,
+	}
+}
+
+type simpleSubscriber[T any] struct {
+	onNext      func(T)
+	onCompleted func()
+	onError     func(error)
+	started     bool
+}
+
+func (s *simpleSubscriber[T]) Start() { s.started = true }
+func (s *simpleSubscriber[T]) OnNext(t T) {
+	if s.onNext != nil {
+		s.onNext(t)
+	}
+}
+func (s *simpleSubscriber[T]) OnCompleted() {
+	if s.onCompleted != nil {
+		s.onCompleted()
+	}
+}
+func (s *simpleSubscriber[T]) OnError(err error) {
+	if s.onError != nil {
+		s.onError(err)
+	}
+}

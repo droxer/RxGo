@@ -13,7 +13,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type IntSubscriber struct{}
@@ -27,7 +27,7 @@ func (s *IntSubscriber) OnCompleted() { fmt.Println("Completed!") }
 
 func main() {
     // Using Just to create observable
-    obs := rxgo.Just(1, 2, 3, 4, 5)
+    obs := rx.Just(1, 2, 3, 4, 5)
     obs.Subscribe(context.Background(), &IntSubscriber{})
 }
 ```
@@ -49,7 +49,7 @@ Completed!
 For more detailed examples and advanced usage patterns, see:
 
 - **[Basic Usage](./basic-usage.md)** - Simple Observable API examples
-- **[Reactive Streams API](./reactive-streams.md)** - Full Reactive Streams 1.0.3 compliance
+- **[Reactive Streams API](./reactive-streams.md)** - Full Reactive Streams 1.0.4 compliance
 - **[Backpressure Control](./backpressure.md)** - Handle producer/consumer speed mismatches
 - **[Context Cancellation](./context-cancellation.md)** - Graceful cancellation using Go context
 - **[Data Transformation](./data-transformation.md)** - Transform and process data streams
@@ -66,6 +66,6 @@ Or create your own Go file with the code above and run:
 
 ```bash
 go mod init my-project
-go get github.com/droxer/RxGo@v0.1.1
+go get github.com/droxer/RxGo@latest
 go run main.go
 ```

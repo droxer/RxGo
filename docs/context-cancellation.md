@@ -14,8 +14,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/droxer/RxGo/pkg/observable"
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type ContextAwareSubscriber struct {
@@ -48,7 +47,7 @@ func main() {
     subscriber := &ContextAwareSubscriber{}
 
     // Create observable that respects context cancellation
-    observable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
         defer sub.OnCompleted()
         for i := 1; i <= 100; i++ {
             select {

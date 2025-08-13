@@ -36,22 +36,71 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 
 ## Quick Start
 
+### Simple Usage
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    
+    "github.com/droxer/RxGo/pkg/rx"
+)
+
+func main() {
+    // Create an observable
+    obs := rx.Just(1, 2, 3, 4, 5)
+    
+    // Subscribe with a functional subscriber
+    obs.Subscribe(context.Background(), rx.NewSubscriber(
+        func(v int) {
+            fmt.Printf("Received: %d\n", v)
+        },
+        func() {
+            fmt.Println("Completed!")
+        },
+        func(err error) {
+            fmt.Printf("Error: %v\n", err)
+        },
+    ))
+}
+```
+
+### With Schedulers
+
+```go
+// Use with different schedulers
+obs := rx.Range(1, 10)
+
+// Process on computation scheduler
+obs.ObserveOn(rx.Computation).Subscribe(ctx, subscriber)
+
+// Process on IO scheduler
+obs.ObserveOn(rx.IO).Subscribe(ctx, subscriber)
+```
+
+### Data Transformation
+
+```go
+// Map and Filter operations
+rx.Range(1, 10).
+    Map(func(x int) int { return x * x }).
+    Filter(func(x int) bool { return x > 10 }).
+    Subscribe(context.Background(), subscriber)
+```
+
 ### Installation
 
 ### Latest Version
 ```bash
-go get github.com/droxer/RxGo@v0.1.1
+go get github.com/droxer/RxGo@latest
 ```
 
 ### Go Modules
 Add to your `go.mod`:
 ```go
-require github.com/droxer/RxGo v0.1.1
-```
-
-### Latest Development
-```bash
-go get github.com/droxer/RxGo@latest
+require github.com/droxer/RxGo latest
 ```
 
 ### Requirements
@@ -59,10 +108,11 @@ go get github.com/droxer/RxGo@latest
 
 ## API Overview
 
-RxGo provides two compatible APIs:
+RxGo provides a clean, unified API that combines the best of both worlds:
 
-1. **Observable API** - Simple, callback-based approach
-2. **Reactive Streams API** - Full specification compliance with backpressure
+- **Simple Observable API** - Clean, intuitive reactive programming
+- **Full Reactive Streams 1.0.4 Compliance** - Built-in backpressure support
+- **Unified Package Structure** - Everything in a single `rx` package
 
 ## Documentation
 

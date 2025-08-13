@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/droxer/RxGo/pkg/observable"
+	"github.com/droxer/RxGo/pkg/rx"
 )
 
 type TestSubscriber[T any] struct {
@@ -39,7 +39,7 @@ func (t *TestSubscriber[T]) OnError(e error) {
 
 func BenchmarkObservableCreation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := observable.Just(1, 2, 3, 4, 5)
+		observable := rx.Just(1, 2, 3, 4, 5)
 		_ = observable
 	}
 }
@@ -49,7 +49,7 @@ func BenchmarkObservableWithSubscriber(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		observable := observable.Just(1, 2, 3, 4, 5)
+		observable := rx.Just(1, 2, 3, 4, 5)
 		observable.Subscribe(context.Background(), subscriber)
 	}
 }
@@ -62,7 +62,7 @@ func BenchmarkObservableLargeDataset(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
@@ -75,7 +75,7 @@ func BenchmarkObservableLargeDataset(b *testing.B) {
 
 func BenchmarkRangeObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := observable.Range(0, 100)
+		observable := rx.Range(0, 100)
 		subscriber := &TestSubscriber[int]{}
 		observable.Subscribe(context.Background(), subscriber)
 	}
@@ -83,7 +83,7 @@ func BenchmarkRangeObservable(b *testing.B) {
 
 func BenchmarkJustObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := observable.Just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+		observable := rx.Just(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 		subscriber := &TestSubscriber[int]{}
 		observable.Subscribe(context.Background(), subscriber)
 	}
@@ -91,7 +91,7 @@ func BenchmarkJustObservable(b *testing.B) {
 
 func BenchmarkCreateObservable(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 			for j := 0; j < 100; j++ {
 				sub.OnNext(j)
 			}
@@ -103,7 +103,7 @@ func BenchmarkCreateObservable(b *testing.B) {
 }
 
 func BenchmarkObservableConcurrentSubscribers(b *testing.B) {
-	observable := observable.Just(1, 2, 3, 4, 5)
+	observable := rx.Just(1, 2, 3, 4, 5)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -117,7 +117,7 @@ func BenchmarkObservableConcurrentSubscribers(b *testing.B) {
 func BenchmarkObservableMemoryAllocations(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		observable := observable.Just(1, 2, 3, 4, 5)
+		observable := rx.Just(1, 2, 3, 4, 5)
 		subscriber := &TestSubscriber[int]{}
 		observable.Subscribe(context.Background(), subscriber)
 	}
@@ -128,7 +128,7 @@ func BenchmarkObservableStringData(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[string]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[string]) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
@@ -156,7 +156,7 @@ func BenchmarkObservableStructData(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[TestStruct]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[TestStruct]) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
@@ -169,7 +169,7 @@ func BenchmarkObservableStructData(b *testing.B) {
 
 func BenchmarkObservableErrorHandling(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 			sub.OnError(fmt.Errorf("test error"))
 		})
 		subscriber := &TestSubscriber[int]{}
@@ -181,7 +181,7 @@ func BenchmarkObservableContextCancellation(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+		observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 			for j := 0; j < 100; j++ {
 				select {
 				case <-ctx.Done():
@@ -217,7 +217,7 @@ func (s *AtomicSubscriber) OnError(e error) {}
 func BenchmarkAtomicSubscriber(b *testing.B) {
 	var counter atomic.Int64
 
-	observable := observable.Range(0, 1000)
+	observable := rx.Range(0, 1000)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -234,7 +234,7 @@ func BenchmarkAtomicSubscriber(b *testing.B) {
 func BenchmarkObservableDataTypes(b *testing.B) {
 	b.Run("Int", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			observable := observable.Just(1, 2, 3, 4, 5)
+			observable := rx.Just(1, 2, 3, 4, 5)
 			subscriber := &TestSubscriber[int]{}
 			observable.Subscribe(context.Background(), subscriber)
 		}
@@ -242,7 +242,7 @@ func BenchmarkObservableDataTypes(b *testing.B) {
 
 	b.Run("Float64", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			observable := observable.Just(1.0, 2.0, 3.0, 4.0, 5.0)
+			observable := rx.Just(1.0, 2.0, 3.0, 4.0, 5.0)
 			subscriber := &TestSubscriber[float64]{}
 			observable.Subscribe(context.Background(), subscriber)
 		}
@@ -250,7 +250,7 @@ func BenchmarkObservableDataTypes(b *testing.B) {
 
 	b.Run("String", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			observable := observable.Just("a", "b", "c", "d", "e")
+			observable := rx.Just("a", "b", "c", "d", "e")
 			subscriber := &TestSubscriber[string]{}
 			observable.Subscribe(context.Background(), subscriber)
 		}
@@ -269,7 +269,7 @@ func BenchmarkObservableDatasetSizes(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				observable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+				observable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
 					for _, v := range data {
 						sub.OnNext(v)
 					}

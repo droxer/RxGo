@@ -17,7 +17,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type IntSubscriber struct {
@@ -39,7 +39,7 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
     // Transform using Range
-    obs := rxgo.Range(1, 5)
+    obs := rx.Range(1, 5)
     obs.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 }
 ```
@@ -50,7 +50,7 @@ Create observable from literal values:
 
 ```go
 // Create observable from literal values and transform
-obs := rxgo.Just(10, 20, 30, 40, 50)
+obs := rx.Just(10, 20, 30, 40, 50)
 obs.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 ```
 
@@ -64,12 +64,11 @@ import (
     "fmt"
     "time"
 
-    "github.com/droxer/RxGo/pkg/observable"
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 // Custom transformation using Create
-customObservable := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
     defer sub.OnCompleted()
     for i := 1; i <= 100; i++ {
         select {
@@ -98,7 +97,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type ProcessingSubscriber struct {
@@ -127,7 +126,7 @@ func main() {
     fmt.Println("=== Data Transformation Example ===")
 
     // Transform numbers 1-10
-    numbers := rxgo.Range(1, 10)
+    numbers := rx.Range(1, 10)
     numbers.Subscribe(context.Background(), &ProcessingSubscriber{name: "Transformer"})
 
     time.Sleep(100 * time.Millisecond)
@@ -145,8 +144,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/droxer/RxGo/pkg/observable"
-    "github.com/droxer/RxGo/pkg/rxgo"
+    "github.com/droxer/RxGo/pkg/rx"
 )
 
 type ContextTransformer struct {
@@ -179,7 +177,7 @@ func main() {
     transformer := &ContextTransformer{}
 
     // Transform with context support
-    obs := rxgo.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
+    obs := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
         defer sub.OnCompleted()
         for i := 1; i <= 100; i++ {
             select {
@@ -201,9 +199,9 @@ func main() {
 ## Key Transformation Patterns
 
 ### 1. Simple Value Transformation
-- Use `rxgo.Range()` for sequential numbers
-- Use `rxgo.Just()` for literal values
-- Use `observable.Create()` for custom sequences
+- Use `rx.Range()` for sequential numbers
+- Use `rx.Just()` for literal values
+- Use `rx.Create()` for custom sequences
 
 ### 2. Context-Aware Processing
 - Always use context cancellation for production systems
