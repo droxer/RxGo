@@ -39,7 +39,7 @@ clean:
 	rm -rf bin/
 	rm -f coverage.out coverage.html
 
-check: fmt vet lint test test-coverage race check-security verify-examples
+check: fmt vet lint test race check-security verify-examples
 
  
 install-tools:

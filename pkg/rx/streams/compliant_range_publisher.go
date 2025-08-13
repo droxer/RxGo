@@ -12,7 +12,6 @@ type CompliantRangePublisher struct {
 	end   int
 }
 
-// NewCompliantRangePublisher creates a new compliant range publisher
 func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
 	return &CompliantRangePublisher{
 		compliantPublisher: newCompliantPublisher[int](),
@@ -21,13 +20,11 @@ func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
 	}
 }
 
-// Subscribe implements Publisher[int]
 func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber[int]) {
 	rp.compliantPublisher.subscribe(ctx, sub)
 	go rp.process(ctx)
 }
 
-// process handles the actual publishing logic with demand control
 func (rp *CompliantRangePublisher) process(ctx context.Context) {
 	defer rp.complete()
 
@@ -39,20 +36,17 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 	}
 
 	for i := rp.start; i <= rp.end; i++ {
-		// Check context cancellation
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
 
-		// Check if we have demand
 		subs := rp.getActiveSubscribers()
 		if len(subs) == 0 {
 			return
 		}
 
-		// Wait for demand from at least one subscriber
 		canEmit := false
 		for _, sub := range subs {
 			if sub.canEmit() {
@@ -62,7 +56,6 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 		}
 
 		if !canEmit {
-			// Wait for demand signal
 			select {
 			case <-rp.demandSignal:
 			case <-ctx.Done():
@@ -70,28 +63,18 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 			}
 		}
 
-		// Emit item with demand tracking
 		if !rp.emit(i) {
-			// No active subscribers or no demand
 			return
 		}
 	}
 }
 
-// CompliantRangePublisherWithConfig creates a compliant range publisher with backpressure config
-func CompliantRangePublisherWithConfig(start, end int, config BackpressureConfig) Publisher[int] {
-	// For now, ignore backpressure config in compliant version
-	// Future: integrate with buffered publisher
-	return NewCompliantRangePublisher(start, end)
-}
-
-// CompliantFromSlicePublisher implements a Reactive Streams 1.0.4 compliant slice publisher
+// CompliantFromSlicePublisher implements a Reactive Streams compliant slice publisher
 type CompliantFromSlicePublisher[T any] struct {
 	*compliantPublisher[T]
 	items []T
 }
 
-// NewCompliantFromSlicePublisher creates a new compliant slice publisher
 func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublisher[T] {
 	return &CompliantFromSlicePublisher[T]{
 		compliantPublisher: newCompliantPublisher[T](),
@@ -105,7 +88,6 @@ func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Sub
 	go sp.process(ctx)
 }
 
-// process handles the actual publishing logic with demand control
 func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 	defer sp.complete()
 
@@ -121,20 +103,17 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 	}
 
 	for _, item := range sp.items {
-		// Check context cancellation
 		select {
 		case <-ctx.Done():
 			return
 		default:
 		}
 
-		// Check if we have demand
 		subs := sp.getActiveSubscribers()
 		if len(subs) == 0 {
 			return
 		}
 
-		// Wait for demand from at least one subscriber
 		canEmit := false
 		for _, sub := range subs {
 			if sub.canEmit() {
@@ -144,7 +123,6 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 		}
 
 		if !canEmit {
-			// Wait for demand signal
 			select {
 			case <-sp.demandSignal:
 			case <-ctx.Done():
@@ -152,27 +130,18 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 			}
 		}
 
-		// Emit item with demand tracking
 		if !sp.emit(item) {
-			// No active subscribers or no demand
 			return
 		}
 	}
 }
 
-// CompliantFromSlicePublisherWithConfig creates a compliant slice publisher with backpressure config
-func CompliantFromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T] {
-	// For now, ignore backpressure config in compliant version
-	return NewCompliantFromSlicePublisher(items)
-}
-
-// CompliantBufferedPublisher implements a Reactive Streams 1.0.4 compliant buffered publisher
+// CompliantBufferedPublisher implements a Reactive Streams compliant buffered publisher
 type CompliantBufferedPublisher[T any] struct {
 	*compliantPublisher[T]
 	source func(context.Context, Subscriber[T])
 }
 
-// NewCompliantBufferedPublisher creates a new compliant buffered publisher
 func NewCompliantBufferedPublisher[T any](source func(context.Context, Subscriber[T])) *CompliantBufferedPublisher[T] {
 	return &CompliantBufferedPublisher[T]{
 		compliantPublisher: newCompliantPublisher[T](),
@@ -180,7 +149,6 @@ func NewCompliantBufferedPublisher[T any](source func(context.Context, Subscribe
 	}
 }
 
-// Subscribe implements Publisher[T]
 func (bp *CompliantBufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	bp.compliantPublisher.subscribe(ctx, sub)
 	go func() {
@@ -190,7 +158,6 @@ func (bp *CompliantBufferedPublisher[T]) Subscribe(ctx context.Context, sub Subs
 	}()
 }
 
-// bufferedSourceSubscriber adapts the source function to our compliant publisher
 type bufferedSourceSubscriber[T any] struct {
 	publisher *CompliantBufferedPublisher[T]
 }
@@ -211,26 +178,17 @@ func (bs *bufferedSourceSubscriber[T]) OnComplete() {
 	bs.publisher.complete()
 }
 
-// CompliantNewBufferedPublisher creates a compliant buffered publisher with config
-func CompliantNewBufferedPublisher[T any](config BackpressureConfig, source func(context.Context, Subscriber[T])) Publisher[T] {
-	// For now, ignore backpressure config in compliant version
-	return NewCompliantBufferedPublisher(source)
-}
-
 // CompliantBuilder provides fluent API for compliant publishers
 type CompliantBuilder[T any] struct{}
 
-// NewCompliantBuilder creates a new compliant builder
 func NewCompliantBuilder[T any]() *CompliantBuilder[T] {
 	return &CompliantBuilder[T]{}
 }
 
-// Range creates a compliant range publisher
 func (b *CompliantBuilder[T]) Range(start, end int) Publisher[int] {
 	return NewCompliantRangePublisher(start, end)
 }
 
-// FromSlice creates a compliant slice publisher
 func (b *CompliantBuilder[T]) FromSlice(items []T) Publisher[T] {
 	return NewCompliantFromSlicePublisher(items)
 }

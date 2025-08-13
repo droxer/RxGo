@@ -4,13 +4,12 @@ import (
 	"context"
 )
 
-// MapProcessor implements a Processor that transforms items using a mapping function
+// MapProcessor transforms items using a mapping function
 type MapProcessor[T any, R any] struct {
 	*compliantPublisher[R]
 	transform func(T) R
 }
 
-// NewMapProcessor creates a new MapProcessor
 func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 	return &MapProcessor[T, R]{
 		compliantPublisher: newCompliantPublisher[R](),
@@ -18,16 +17,12 @@ func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 	}
 }
 
-// Subscribe implements Publisher[R]
 func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 	p.compliantPublisher.subscribe(ctx, sub)
 }
 
 // OnSubscribe implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnSubscribe(s Subscription) {
-	// Forward subscription to upstream
-	// This would be connected to the upstream publisher
-	// In a real implementation, this would be set by the upstream
 }
 
 // OnNext implements Subscriber[T]
@@ -46,13 +41,12 @@ func (p *MapProcessor[T, R]) OnComplete() {
 	p.compliantPublisher.complete()
 }
 
-// FilterProcessor implements a Processor that filters items based on a predicate
+// FilterProcessor filters items based on a predicate
 type FilterProcessor[T any] struct {
 	*compliantPublisher[T]
 	predicate func(T) bool
 }
 
-// NewFilterProcessor creates a new FilterProcessor
 func NewFilterProcessor[T any](predicate func(T) bool) *FilterProcessor[T] {
 	return &FilterProcessor[T]{
 		compliantPublisher: newCompliantPublisher[T](),
@@ -60,7 +54,6 @@ func NewFilterProcessor[T any](predicate func(T) bool) *FilterProcessor[T] {
 	}
 }
 
-// Subscribe implements Publisher[T]
 func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	p.compliantPublisher.subscribe(ctx, sub)
 }
@@ -87,13 +80,12 @@ func (p *FilterProcessor[T]) OnComplete() {
 	p.compliantPublisher.complete()
 }
 
-// FlatMapProcessor implements a Processor that transforms items and flattens the results
+// FlatMapProcessor transforms items and flattens the results
 type FlatMapProcessor[T any, R any] struct {
 	*compliantPublisher[R]
 	transform func(T) Publisher[R]
 }
 
-// NewFlatMapProcessor creates a new FlatMapProcessor
 func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapProcessor[T, R] {
 	return &FlatMapProcessor[T, R]{
 		compliantPublisher: newCompliantPublisher[R](),
@@ -101,14 +93,11 @@ func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapP
 	}
 }
 
-// Subscribe implements Publisher[R]
 func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 	p.compliantPublisher.subscribe(ctx, sub)
 }
 
-// OnSubscribe implements Subscriber[T]
 func (p *FlatMapProcessor[T, R]) OnSubscribe(s Subscription) {
-	// Forward subscription to upstream
 }
 
 // OnNext implements Subscriber[T]
@@ -124,8 +113,6 @@ func (p *FlatMapProcessor[T, R]) OnError(err error) {
 
 // OnComplete implements Subscriber[T]
 func (p *FlatMapProcessor[T, R]) OnComplete() {
-	// Wait for all inner publishers to complete
-	// Implementation would track active publishers
 	p.compliantPublisher.complete()
 }
 
@@ -135,7 +122,6 @@ func (p *FlatMapProcessor[T, R]) newInnerSubscriber() Subscriber[R] {
 	}
 }
 
-// innerSubscriber handles inner publisher subscriptions
 type innerSubscriber[T any, R any] struct {
 	processor *FlatMapProcessor[T, R]
 }
@@ -156,25 +142,21 @@ func (s *innerSubscriber[T, R]) OnComplete() {
 	// Inner publisher completed
 }
 
-// ProcessorBuilder provides a fluent API for building processors
+// ProcessorBuilder provides fluent API for building processors
 type ProcessorBuilder[T any, R any] struct{}
 
-// NewProcessorBuilder creates a new processor builder
 func NewProcessorBuilder[T any, R any]() *ProcessorBuilder[T, R] {
 	return &ProcessorBuilder[T, R]{}
 }
 
-// Map creates a Map processor
 func (b *ProcessorBuilder[T, R]) Map(transform func(T) R) Processor[T, R] {
 	return NewMapProcessor(transform)
 }
 
-// Filter creates a Filter processor
 func (b *ProcessorBuilder[T, R]) Filter(predicate func(T) bool) Processor[T, T] {
 	return NewFilterProcessor(predicate)
 }
 
-// FlatMap creates a FlatMap processor
 func (b *ProcessorBuilder[T, R]) FlatMap(transform func(T) Publisher[R]) Processor[T, R] {
 	return NewFlatMapProcessor(transform)
 }

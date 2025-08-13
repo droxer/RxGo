@@ -1,7 +1,6 @@
 package streams
 
 // BackpressureStrategy defines how to handle buffer overflow scenarios
-// when producer is faster than consumer
 
 type BackpressureStrategy int
 

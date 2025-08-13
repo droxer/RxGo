@@ -15,7 +15,6 @@ type BufferedPublisher[T any] struct {
 	bufferFull chan struct{}
 }
 
-// NewBufferedPublisher creates a new buffered publisher with backpressure strategies
 func NewBufferedPublisher[T any](
 	config BackpressureConfig,
 	source func(ctx context.Context, sub Subscriber[T]),
@@ -28,7 +27,6 @@ func NewBufferedPublisher[T any](
 	}
 }
 
-// Subscribe implements the Publisher interface
 func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	if sub == nil {
 		panic("subscriber cannot be nil")
@@ -42,7 +40,7 @@ func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]
 	sub.OnSubscribe(subscription)
 }
 
-// bufferedSubscription implements Subscription for buffered publishers
+// bufferedSubscription implements Subscription
 type bufferedSubscription[T any] struct {
 	publisher *BufferedPublisher[T]
 	sub       Subscriber[T]
@@ -79,7 +77,6 @@ func (bp *BufferedPublisher[T]) processWithStrategy(ctx context.Context, sub *bu
 	}()
 }
 
-// strategySubscriber implements Subscriber interface for strategy handling
 type strategySubscriber[T any] struct {
 	publisher *BufferedPublisher[T]
 	sub       *bufferedSubscription[T]

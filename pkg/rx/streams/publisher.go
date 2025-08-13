@@ -13,14 +13,12 @@ type ReactivePublisher[T any] struct {
 	onSubscribe func(ctx context.Context, sub Subscriber[T])
 }
 
-// NewPublisher creates a new ReactivePublisher with backpressure support
 func NewPublisher[T any](onSubscribe func(ctx context.Context, sub Subscriber[T])) Publisher[T] {
 	return &ReactivePublisher[T]{
 		onSubscribe: onSubscribe,
 	}
 }
 
-// Subscribe implements the Publisher interface
 func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
 	if s == nil {
 		panic("subscriber cannot be nil")
@@ -38,7 +36,6 @@ func (p *ReactivePublisher[T]) processWithBackpressure(ctx context.Context, s Su
 	p.onSubscribe(ctx, s)
 }
 
-// FromSlicePublisher creates a Publisher from a slice of values
 func FromSlicePublisher[T any](items []T) Publisher[T] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[T]) {
 		defer sub.OnComplete()
@@ -55,7 +52,6 @@ func FromSlicePublisher[T any](items []T) Publisher[T] {
 	})
 }
 
-// RangePublisher creates a Publisher that emits a range of integers
 func RangePublisher(start, count int) Publisher[int] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnComplete()
@@ -76,8 +72,7 @@ func RangePublisher(start, count int) Publisher[int] {
 	})
 }
 
-// RangePublisherWithConfig creates a Publisher with backpressure strategies
-func RangePublisherWithConfig(start, count int, config BackpressureConfig) Publisher[int] {
+func RangePublishWithBackpressure(start, count int, config BackpressureConfig) Publisher[int] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
 		BufferSize: config.BufferSize,
@@ -100,8 +95,7 @@ func RangePublisherWithConfig(start, count int, config BackpressureConfig) Publi
 	})
 }
 
-// FromSlicePublisherWithConfig creates a Publisher from slice with backpressure strategies
-func FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T] {
+func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfig) Publisher[T] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
 		BufferSize: config.BufferSize,
@@ -120,7 +114,7 @@ func FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) P
 	})
 }
 
-// reactiveSubscription implements Subscription for reactive publishers
+// reactiveSubscription implements Subscription
 type reactiveSubscription struct {
 	cancelled atomic.Bool
 	requested atomic.Int64
@@ -140,14 +134,12 @@ func (s *reactiveSubscription) Cancel() {
 	s.cancelled.Store(true)
 }
 
-// ObservablePublisherAdapter adapts Observable to Publisher interface
 func ObservablePublisherAdapter[T any](obs *rx.Observable[T]) Publisher[T] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[T]) {
 		obs.Subscribe(ctx, &observableSubscriberAdapter[T]{sub: sub})
 	})
 }
 
-// observableSubscriberAdapter adapts Subscriber to the Observable Subscriber interface
 type observableSubscriberAdapter[T any] struct {
 	sub Subscriber[T]
 }

@@ -11,7 +11,7 @@ import (
 func TestBufferStrategy(t *testing.T) {
 	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-	publisher := FromSlicePublisherWithConfig(data, BackpressureConfig{
+	publisher := FromSlicePublishWithBackpressure(data, BackpressureConfig{
 		Strategy:   Buffer,
 		BufferSize: 5,
 	})
@@ -36,7 +36,7 @@ func TestBufferStrategy(t *testing.T) {
 func TestDropStrategy(t *testing.T) {
 	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-	publisher := FromSlicePublisherWithConfig(data, BackpressureConfig{
+	publisher := FromSlicePublishWithBackpressure(data, BackpressureConfig{
 		Strategy:   Drop,
 		BufferSize: 3,
 	})
@@ -53,7 +53,7 @@ func TestDropStrategy(t *testing.T) {
 func TestLatestStrategy(t *testing.T) {
 	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-	publisher := FromSlicePublisherWithConfig(data, BackpressureConfig{
+	publisher := FromSlicePublishWithBackpressure(data, BackpressureConfig{
 		Strategy:   Latest,
 		BufferSize: 2,
 	})
@@ -76,7 +76,7 @@ func TestLatestStrategy(t *testing.T) {
 func TestErrorStrategy(t *testing.T) {
 	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
-	publisher := FromSlicePublisherWithConfig(data, BackpressureConfig{
+	publisher := FromSlicePublishWithBackpressure(data, BackpressureConfig{
 		Strategy:   Error,
 		BufferSize: 1, // Very small buffer to ensure overflow
 	})
@@ -132,7 +132,7 @@ func (c *testCollector) wait() {
 }
 
 func TestRangePublisherWithConfig(t *testing.T) {
-	publisher := RangePublisherWithConfig(1, 5, BackpressureConfig{
+	publisher := RangePublishWithBackpressure(1, 5, BackpressureConfig{
 		Strategy:   Buffer,
 		BufferSize: 10,
 	})

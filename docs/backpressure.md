@@ -87,7 +87,7 @@ filterProcessor := streams.NewFilterProcessor(func(i int) bool {
 
 **Buffer Strategy** - Keeps all items in bounded buffer:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 10, streams.BackpressureConfig{
     Strategy:   streams.Buffer,
     BufferSize: 5,
 })
@@ -96,7 +96,7 @@ publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
 
 **Drop Strategy** - Discards new items when buffer is full:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 10, streams.BackpressureConfig{
     Strategy:   streams.Drop,
     BufferSize: 3,
 })
@@ -105,7 +105,7 @@ publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
 
 **Latest Strategy** - Keeps only the latest item:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 10, streams.BackpressureConfig{
     Strategy:   streams.Latest,
     BufferSize: 2,
 })
@@ -114,7 +114,7 @@ publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
 
 **Error Strategy** - Signals error on overflow:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 10, streams.BackpressureConfig{
     Strategy:   streams.Error,
     BufferSize: 2,
 })
@@ -140,8 +140,8 @@ const (
 ```
 
 ### Builders
-- `RangePublisherWithConfig(start, count int, config BackpressureConfig) Publisher[int]`
-- `FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T]`
+- `RangePublishWithBackpressure(start, count int, config BackpressureConfig) Publisher[int]`
+- `FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfig) Publisher[T]`
 
 ### Processors
 - `NewMapProcessor[T, R](transform func(T) R) Processor[T, R]`

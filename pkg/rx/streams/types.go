@@ -4,15 +4,12 @@ import (
 	"context"
 )
 
-// Publisher represents a Reactive Streams Publisher that can be subscribed to
-// This provides full Reactive Streams 1.0.4 compliance with backpressure support
+// Publisher represents a Reactive Streams Publisher
 type Publisher[T any] interface {
 	Subscribe(ctx context.Context, s Subscriber[T])
 }
 
 // Subscriber represents a Reactive Streams Subscriber
-// This is the modern, type-safe interface for subscribers
-// It follows the Reactive Streams specification 1.0.4
 type Subscriber[T any] interface {
 	OnSubscribe(s Subscription)
 	OnNext(t T)
@@ -21,14 +18,12 @@ type Subscriber[T any] interface {
 }
 
 // Subscription represents the link between Publisher and Subscriber
-// This interface is part of the Reactive Streams specification
 type Subscription interface {
 	Request(n int64)
 	Cancel()
 }
 
 // Processor represents a processing stage that is both a Subscriber and Publisher
-// This interface is part of the Reactive Streams specification 1.0.4
 type Processor[T any, R any] interface {
 	Subscriber[T]
 	Publisher[R]

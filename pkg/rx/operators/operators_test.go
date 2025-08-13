@@ -8,8 +8,6 @@ import (
 	"github.com/droxer/RxGo/pkg/rx"
 )
 
-// (moved to pkg/rx/testutil)
-
 func TestMap(t *testing.T) {
 	// Test basic mapping
 	sub := testutil.NewTestSubscriber[int]()

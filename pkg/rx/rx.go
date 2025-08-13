@@ -7,7 +7,6 @@ import (
 	"github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
-// ObserveOn schedules the Observable to emit its values on the specified scheduler
 func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		o.Subscribe(ctx, &observeOnSubscriber[T]{
@@ -18,7 +17,6 @@ func (o *Observable[T]) ObserveOn(scheduler scheduler.Scheduler) *Observable[T] 
 	})
 }
 
-// Schedule creates an Observable that emits a single value after a delay
 func Schedule[T any](value T, delay time.Duration) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		select {
@@ -35,7 +33,6 @@ func Schedule[T any](value T, delay time.Duration) *Observable[T] {
 	})
 }
 
-// Interval creates an Observable that emits sequential integers at specified intervals
 func Interval(interval time.Duration) *Observable[int] {
 	return Create(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnCompleted()

@@ -50,7 +50,6 @@ func Just[T any](values ...T) *Observable[T] {
 	})
 }
 
-// Range creates an Observable that emits integers in the specified range
 func Range(start, count int) *Observable[int] {
 	return Create(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnCompleted()
