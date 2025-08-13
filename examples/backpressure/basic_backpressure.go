@@ -10,8 +10,7 @@ import (
 
 // SlowConsumer demonstrates controlled consumption with backpressure
 func RunBasicExamples() {
-	fmt.Println("=== RxGo Backpressure Examples ===\n")
-
+	fmt.Println("=== RxGo Backpressure Examples ===")
 	// Example 1: Basic backpressure with controlled demand
 	basicBackpressure()
 
@@ -28,21 +27,21 @@ func basicBackpressure() {
 	fmt.Println("   Processing 100 items with demand of 5 items at a time")
 
 	publisher := streams.RangePublisher(1, 100)
-	
+
 	consumer := &controlledConsumer{
-		name:       "Consumer1",
-		demand:     5,
-		processed:  make([]int, 0),
+		name:      "Consumer1",
+		demand:    5,
+		processed: make([]int, 0),
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	// Wait for completion
 	<-consumer.done
-	
+
 	fmt.Printf("   ✅ Processed %d items in batches of %d\n", len(consumer.processed), consumer.demand)
 	fmt.Printf("   First batch: %v\n\n", consumer.processed[:5])
 }
@@ -53,7 +52,7 @@ func batchProcessing() {
 	fmt.Println("   Processing items in batches of 10")
 
 	publisher := streams.RangePublisher(1, 50)
-	
+
 	consumer := &batchConsumer{
 		batchSize: 10,
 		buffer:    make([]int, 0, 10),
@@ -64,10 +63,10 @@ func batchProcessing() {
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	// Wait for completion
 	<-consumer.done
-	
+
 	fmt.Printf("   ✅ Processed %d items in %d batches\n\n", 50, 50/10)
 }
 
@@ -77,7 +76,7 @@ func rateLimiting() {
 	fmt.Println("   Processing 1 item per second")
 
 	publisher := streams.RangePublisher(1, 10)
-	
+
 	consumer := &rateLimitedConsumer{
 		rate:      time.Second,
 		processed: make([]int, 0),
@@ -87,20 +86,20 @@ func rateLimiting() {
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	// Wait for completion
 	<-consumer.done
-	
+
 	fmt.Printf("   ✅ Processed %d items at 1 per second\n\n", len(consumer.processed))
 }
 
 // controlledConsumer implements backpressure with controlled demand
 type controlledConsumer struct {
-	name       string
-	demand     int64
-	processed  []int
-	sub        streams.Subscription
-	done       chan struct{}
+	name      string
+	demand    int64
+	processed []int
+	sub       streams.Subscription
+	done      chan struct{}
 }
 
 func (c *controlledConsumer) OnSubscribe(sub streams.Subscription) {
@@ -113,7 +112,7 @@ func (c *controlledConsumer) OnSubscribe(sub streams.Subscription) {
 func (c *controlledConsumer) OnNext(value int) {
 	c.processed = append(c.processed, value)
 	fmt.Printf("   📥 %s received: %d (total: %d)\n", c.name, value, len(c.processed))
-	
+
 	// Request next batch when current one is processed
 	if len(c.processed)%int(c.demand) == 0 {
 		c.sub.Request(c.demand)
@@ -147,7 +146,7 @@ func (b *batchConsumer) OnSubscribe(sub streams.Subscription) {
 
 func (b *batchConsumer) OnNext(value int) {
 	b.buffer = append(b.buffer, value)
-	
+
 	if len(b.buffer) >= int(b.batchSize) {
 		b.processBatch()
 		b.sub.Request(b.batchSize)
@@ -194,11 +193,11 @@ func (r *rateLimitedConsumer) OnNext(value int) {
 	if sinceLast < r.rate {
 		time.Sleep(r.rate - sinceLast)
 	}
-	
+
 	r.processed = append(r.processed, value)
 	r.lastTime = time.Now()
 	fmt.Printf("   ⏱️  Processed: %d at %v\n", value, r.lastTime.Format("15:04:05"))
-	
+
 	// Request next item
 	r.sub.Request(1)
 }

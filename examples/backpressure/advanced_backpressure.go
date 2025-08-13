@@ -11,8 +11,7 @@ import (
 
 // Advanced backpressure patterns
 func RunAdvancedExamples() {
-	fmt.Println("=== Advanced Backpressure Patterns ===\n")
-
+	fmt.Println("=== Advanced Backpressure Patterns ===")
 	// Example 1: Dynamic demand adjustment
 	dynamicDemand()
 
@@ -29,7 +28,7 @@ func dynamicDemand() {
 	fmt.Println("   Adjusting demand based on processing time")
 
 	publisher := streams.RangePublisher(1, 100)
-	
+
 	consumer := &dynamicDemandConsumer{
 		baseDemand:      10,
 		minDemand:       1,
@@ -41,7 +40,7 @@ func dynamicDemand() {
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	<-consumer.done
 	fmt.Printf("   ✅ Completed with dynamic demand adjustment\n\n")
 }
@@ -52,7 +51,7 @@ func bufferOverflow() {
 	fmt.Println("   Protecting against memory pressure")
 
 	publisher := streams.RangePublisher(1, 1000)
-	
+
 	consumer := &bufferedConsumer{
 		maxBuffer:    50,
 		buffer:       make([]int, 0, 50),
@@ -64,7 +63,7 @@ func bufferOverflow() {
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	<-consumer.done
 	fmt.Printf("   ✅ Completed with buffer overflow protection\n\n")
 }
@@ -75,20 +74,20 @@ func errorHandling() {
 	fmt.Println("   Handling errors while maintaining flow control")
 
 	publisher := streams.RangePublisher(1, 50)
-	
+
 	consumer := &errorHandlingConsumer{
-		maxRetries:    3,
-		currentRetry:  0,
-		errorCount:    0,
-		processed:     make([]int, 0),
-		retryDelays:   []time.Duration{100 * time.Millisecond, 500 * time.Millisecond, 1 * time.Second},
+		maxRetries:   3,
+		currentRetry: 0,
+		errorCount:   0,
+		processed:    make([]int, 0),
+		retryDelays:  []time.Duration{100 * time.Millisecond, 500 * time.Millisecond, 1 * time.Second},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	publisher.Subscribe(ctx, consumer)
-	
+
 	<-consumer.done
 	fmt.Printf("   ✅ Completed with %d errors handled\n\n", consumer.errorCount)
 }
@@ -112,25 +111,25 @@ func (d *dynamicDemandConsumer) OnSubscribe(sub streams.Subscription) {
 
 func (d *dynamicDemandConsumer) OnNext(value int) {
 	start := time.Now()
-	
+
 	// Simulate variable processing time
 	processingTime := time.Duration(value%3+1) * 50 * time.Millisecond
 	time.Sleep(processingTime)
-	
+
 	elapsed := time.Since(start)
-	
+
 	d.mu.Lock()
 	d.processingTimes = append(d.processingTimes, elapsed)
-	
+
 	// Adjust demand based on processing time
 	newDemand := d.calculateDemand()
 	if newDemand != d.baseDemand {
-		fmt.Printf("   📊 Adjusting demand from %d to %d (processing time: %v)\n", 
+		fmt.Printf("   📊 Adjusting demand from %d to %d (processing time: %v)\n",
 			d.baseDemand, newDemand, elapsed)
 		d.baseDemand = newDemand
 	}
 	d.mu.Unlock()
-	
+
 	d.sub.Request(1)
 }
 
@@ -138,14 +137,14 @@ func (d *dynamicDemandConsumer) calculateDemand() int64 {
 	if len(d.processingTimes) < 3 {
 		return d.baseDemand
 	}
-	
+
 	// Calculate average processing time
 	total := time.Duration(0)
 	for _, t := range d.processingTimes[len(d.processingTimes)-3:] {
 		total += t
 	}
 	average := total / 3
-	
+
 	// Adjust demand based on processing speed
 	if average < 100*time.Millisecond {
 		return min(d.baseDemand+5, d.maxDemand)
@@ -185,19 +184,19 @@ func (b *bufferedConsumer) OnSubscribe(sub streams.Subscription) {
 func (b *bufferedConsumer) OnNext(value int) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	
+
 	// Simulate memory usage
 	b.currentUsage += int64(len(fmt.Sprint(value)))
-	
+
 	// Check memory pressure
 	if b.currentUsage >= b.memoryLimit {
 		fmt.Printf("   🚨 Memory pressure detected (usage: %d/%d)\n", b.currentUsage, b.memoryLimit)
 		b.flushBuffer()
 		b.currentUsage = 0
 	}
-	
+
 	b.buffer = append(b.buffer, value)
-	
+
 	if len(b.buffer) >= int(b.maxBuffer) {
 		b.flushBuffer()
 	}
@@ -207,7 +206,7 @@ func (b *bufferedConsumer) flushBuffer() {
 	fmt.Printf("   📦 Flushing %d items from buffer\n", len(b.buffer))
 	// Process the buffer
 	b.buffer = b.buffer[:0]
-	
+
 	// Request more items
 	b.sub.Request(b.maxBuffer)
 }
@@ -246,28 +245,28 @@ func (e *errorHandlingConsumer) OnSubscribe(sub streams.Subscription) {
 func (e *errorHandlingConsumer) OnNext(value int) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	// Simulate occasional errors
 	if value%7 == 0 && e.currentRetry < e.maxRetries {
 		e.errorCount++
 		e.currentRetry++
-		
+
 		delay := e.retryDelays[minInt(e.currentRetry-1, len(e.retryDelays)-1)]
-		fmt.Printf("   ⚠️  Error processing %d, retrying in %v (attempt %d/%d)\n", 
+		fmt.Printf("   ⚠️  Error processing %d, retrying in %v (attempt %d/%d)\n",
 			value, delay, e.currentRetry, e.maxRetries)
-		
+
 		time.Sleep(delay)
-		
+
 		// Re-request the same item
 		e.sub.Request(1)
 		return
 	}
-	
+
 	// Reset retry count on success
 	e.currentRetry = 0
 	e.processed = append(e.processed, value)
 	fmt.Printf("   ✅ Processed %d successfully\n", value)
-	
+
 	// Request next item
 	e.sub.Request(1)
 }
