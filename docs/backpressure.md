@@ -1,89 +1,171 @@
 # Backpressure Control
 
-This document demonstrates how to handle producer/consumer speed mismatches using backpressure strategies, consistent with the actual backpressure example.
+This document demonstrates how to handle producer/consumer speed mismatches using backpressure strategies with RxGo's Reactive Streams implementation.
 
-## Basic Backpressure Example
+## Overview
 
-Handle slow consumers using controlled processing:
+RxGo provides full Reactive Streams 1.0.4 compliance with backpressure support through the `pkg/rx/streams` package. This enables demand-based flow control to prevent memory issues when producers outpace consumers.
+
+## Key Components
+
+- **Publisher[T]** - Type-safe data source with demand control
+- **Subscriber[T]** - Complete subscriber interface with lifecycle
+- **Subscription** - Request/cancel control with backpressure
+- **ReactivePublisher[T]** - Full implementation with backpressure
+
+## Quick Start
 
 ```go
-package main
-
 import (
     "context"
-    "fmt"
-    "sync"
-    "time"
-
-    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/rx/streams"
 )
 
-type BackpressureSubscriber struct {
-    name     string
-    received []int
-    mu       sync.Mutex
-    wg       *sync.WaitGroup
+// Create publisher with backpressure support
+publisher := streams.RangePublisher(1, 1000)
+
+// Subscribe with controlled demand
+consumer := &controlledConsumer{demand: 10}
+publisher.Subscribe(ctx, consumer)
+```
+
+## Examples
+
+### 1. Basic Backpressure
+
+**File**: `examples/backpressure/basic_backpressure.go`
+
+Controlled consumption with explicit demand:
+
+```go
+// Controlled consumer with backpressure
+type controlledConsumer struct {
+    demand    int64
+    processed []int
+    sub       streams.Subscription
 }
 
-func (s *BackpressureSubscriber) Start() {
-    fmt.Printf("[%s] Starting subscription\n", s.name)
+func (c *controlledConsumer) OnSubscribe(sub streams.Subscription) {
+    c.sub = sub
+    sub.Request(c.demand) // Request initial batch
 }
 
-func (s *BackpressureSubscriber) OnNext(value int) {
-    s.mu.Lock()
-    s.received = append(s.received, value)
-    s.mu.Unlock()
-    fmt.Printf("[%s] Processing: %d (total: %d)\n", s.name, value, len(s.received))
-    time.Sleep(100 * time.Millisecond) // Simulate slow processing
-}
-
-func (s *BackpressureSubscriber) OnError(err error) {
-    fmt.Printf("[%s] Error: %v\n", s.name, err)
-    s.wg.Done()
-}
-
-func (s *BackpressureSubscriber) OnCompleted() {
-    fmt.Printf("[%s] Completed, received %d items\n", s.name, len(s.received))
-    s.wg.Done()
-}
-
-func main() {
-    fmt.Println("=== Backpressure Example ===")
-    var wg sync.WaitGroup
-    wg.Add(1)
-
-    subscriber := &BackpressureSubscriber{
-        name: "Backpressure",
-        wg:   &wg,
+func (c *controlledConsumer) OnNext(value int) {
+    c.processed = append(c.processed, value)
+    
+    // Request next batch when current one is processed
+    if len(c.processed)%int(c.demand) == 0 {
+        c.sub.Request(c.demand)
     }
-
-    // Create observable
-    obs := rx.Range(1, 10)
-    obs.Subscribe(context.Background(), subscriber)
-    wg.Wait()
-    fmt.Println("Backpressure example completed!")
 }
 ```
 
-## Expected Output
+**Run**: `go run examples/backpressure/basic_backpressure.go`
 
-When you run this example, you'll see output like:
+### 2. Advanced Patterns
 
+**File**: `examples/backpressure/advanced_backpressure.go`
+
+#### Dynamic Demand Adjustment
+```go
+// Adjust demand based on processing speed
+func calculateDemand() int64 {
+    if averageProcessingTime < 100*time.Millisecond {
+        return min(currentDemand+5, maxDemand)
+    } else if averageProcessingTime > 300*time.Millisecond {
+        return max(currentDemand-2, minDemand)
+    }
+    return currentDemand
+}
 ```
-=== Backpressure Example ===
-[Backpressure] Starting subscription
-[Backpressure] Processing: 1 (total: 1)
-[Backpressure] Processing: 2 (total: 2)
-[Backpressure] Processing: 3 (total: 3)
-...
-[Backpressure] Processing: 10 (total: 10)
-[Backpressure] Completed, received 10 items
-Backpressure example completed!
+
+#### Buffer Overflow Protection
+```go
+// Monitor memory usage and apply backpressure
+if currentMemoryUsage >= memoryLimit {
+    flushBuffer()
+    sub.Request(smallBatchSize)
+}
 ```
 
-## Key Concepts
+**Run**: `go run examples/backpressure/advanced_backpressure.go`
 
-- **Controlled Processing**: The subscriber processes items at its own pace using simulated delays
-- **Thread Safety**: Uses mutex for safe concurrent access to shared state
-- **WaitGroup**: Ensures proper completion handling
-- **Real-world Application**: This pattern is useful when consumers are slower than producers
+### 3. Usage Patterns
+
+#### Simple Backpressure
+```go
+// Create publisher with backpressure support
+publisher := streams.RangePublisher(1, 100)
+
+// Subscribe with controlled demand
+consumer := &controlledConsumer{demand: 10}
+publisher.Subscribe(ctx, consumer)
+```
+
+#### Batch Processing
+```go
+// Process in batches of fixed size
+publisher := streams.RangePublisher(1, 1000)
+consumer := &batchConsumer{batchSize: 50}
+publisher.Subscribe(ctx, consumer)
+```
+
+#### Rate Limiting
+```go
+// Process at controlled rate
+consumer := &rateLimitedConsumer{
+    rate: time.Second,
+    sub:  sub,
+}
+```
+
+## Running All Examples
+
+```bash
+# Run all backpressure examples
+./examples/backpressure/run_all.sh
+
+# Or run individually
+go run examples/backpressure/basic_backpressure.go
+go run examples/backpressure/advanced_backpressure.go
+```
+
+## Key Concepts Demonstrated
+
+1. **Demand-based flow control** via `Subscription.Request(n int64)`
+2. **Memory pressure handling** with buffer management
+3. **Dynamic demand adjustment** based on processing metrics
+4. **Error recovery** while maintaining flow control
+5. **Rate limiting** with controlled consumption
+
+## Best Practices
+
+- **Start with moderate demand** (10-50 items) and adjust based on performance
+- **Monitor memory usage** to prevent buffer overflow
+- **Implement error handling** with retry mechanisms
+- **Use context cancellation** for graceful shutdown
+- **Test with different load patterns** to find optimal batch sizes
+
+## Performance Guidelines
+
+| Use Case | Recommended Demand | Memory Impact |
+|----------|-------------------|---------------|
+| CPU-intensive | 10-20 items | Low |
+| I/O-bound | 5-10 items | Medium |
+| Network calls | 1-5 items | High |
+| Batch processing | 50-100 items | Very High |
+
+## Integration with Schedulers
+
+Combine backpressure with schedulers for optimal performance:
+
+```go
+import (
+    "github.com/droxer/RxGo/pkg/rx/streams"
+    "github.com/droxer/RxGo/pkg/rx/scheduler"
+)
+
+// Use Computation scheduler for CPU-bound processing
+scheduler := scheduler.Computation
+consumer := &cpuBoundConsumer{scheduler: scheduler}
+```
