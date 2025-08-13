@@ -10,6 +10,7 @@ Reactive Extensions for Go with full Reactive Streams 1.0.4 compliance.
 - **Type-safe generics** - Full Go generics support
 - **Reactive Streams 1.0.4** - Complete specification compliance
 - **Backpressure strategies** - Buffer, Drop, Latest, Error
+- **Retry and backoff** - Fixed, Linear, Exponential backoff with configurable retry limits
 - **Context cancellation** - Graceful shutdown
 - **Thread-safe** - Safe concurrent access
 
@@ -90,6 +91,7 @@ publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfi
 - [Basic Usage](./docs/basic-usage.md) - Simple Observable API examples
 - [Reactive Streams](./docs/reactive-streams.md) - Full Reactive Streams 1.0.4 compliance
 - [Backpressure](./docs/backpressure.md) - Handle producer/consumer speed mismatches
+- [Retry and Backoff](./docs/retry-backoff.md) - Configurable retry with backoff strategies
 - [Data Transformation](./docs/data-transformation.md) - Transform and process data streams
 - [Context Cancellation](./docs/context-cancellation.md) - Graceful cancellation using Go context
 - [Schedulers](./docs/schedulers.md) - Execution context control
