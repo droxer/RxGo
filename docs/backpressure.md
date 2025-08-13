@@ -136,10 +136,7 @@ publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfi
 
 ```bash
 # Run comprehensive backpressure examples
-go run examples/backpressure/simple_demo.go
-
-# Run tests
-go test -v examples/backpressure/backpressure_test.go
+go run examples/backpressure/backpressure_examples.go
 ```
 
 ## Strategy Selection Guide
@@ -211,6 +208,4 @@ const (
 
 See the `examples/backpressure/` directory for complete working examples of all four strategies:
 
-- `main.go` - Comprehensive demonstration of all strategies
-- `backpressure_test.go` - Unit tests for each strategy
-- `backpressure_examples.go` - Detailed usage examples
+- `backpressure_examples.go` - Comprehensive demonstration of all strategies
