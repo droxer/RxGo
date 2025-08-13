@@ -117,26 +117,6 @@ subscriber := streams.NewReactiveSubscriber[int](
 publisher.Subscribe(subscriber)
 ```
 
-## Migration Guide
-
-### From Legacy Structure
-The new structure replaces the old fragmented packages:
-- `pkg/observable` → `pkg/rx`
-- `pkg/scheduler` → `pkg/rx/scheduler`
-- `pkg/rxgo` → `pkg/rx/streams`
-
-### Import Updates
-Update your imports from:
-```go
-import "github.com/droxer/RxGo/pkg/observable"
-import "github.com/droxer/RxGo/pkg/scheduler"
-```
-
-To:
-```go
-import "github.com/droxer/RxGo/pkg/rx"
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
-```
 
 ## Best Practices
 

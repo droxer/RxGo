@@ -226,8 +226,4 @@ go run examples/basic/basic.go
 
 # Run context-aware transformations
 go run examples/context/context.go
-
-# Run with custom transformations
-./bin/basic
-./bin/context
 ```

@@ -4,35 +4,63 @@ Schedulers in RxGo control **where** and **when** your code executes. They provi
 
 ## Overview
 
-RxGo provides four built-in schedulers, each optimized for specific use cases:
+RxGo provides five built-in schedulers, each optimized for specific use cases:
 
-- **Immediate**: Executes work synchronously on the calling goroutine
+- **Computation**: Fixed thread pool for CPU-bound work
+- **IO**: Cached thread pool for I/O-bound work
 - **NewThread**: Creates a new goroutine for each unit of work
 - **SingleThread**: Uses a single dedicated goroutine for sequential execution
-- **Trampoline**: Queues work for batch execution on the current goroutine
+- **Trampoline**: Executes work immediately on the current goroutine
 
 ## Scheduler Types
 
-### Immediate Scheduler
+### Computation Scheduler
 
-The `ImmediateScheduler` executes work synchronously on the calling goroutine. This is the most lightweight scheduler with zero overhead.
+The `Computation` scheduler uses a fixed-size thread pool optimized for CPU-bound work. It automatically sizes the pool based on available CPU cores.
 
 **Use Cases:**
-- Lightweight operations (logging, simple calculations)
-- Real-time UI updates where latency is critical
-- Testing and debugging scenarios
-- When work must complete before continuing
+- CPU-intensive operations (mathematical calculations, data processing)
+- Parallel algorithms and computations
+- Image processing and compression
+- Cryptographic operations
 
 **Characteristics:**
-- Zero context switching overhead
-- Blocks the calling goroutine
-- Executes immediately when scheduled
-- No concurrency benefits
+- Fixed thread pool size (number of CPU cores)
+- Optimized for CPU-bound operations
+- Prevents goroutine explosion
+- Efficient resource utilization
 
 ```go
-scheduler := rx.NewImmediateScheduler()
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
+scheduler := scheduler.Computation
 scheduler.Schedule(func() {
-    fmt.Println("Executed immediately")
+    fmt.Println("Executed on computation thread pool")
+})
+```
+
+### IO Scheduler
+
+The `IO` scheduler uses a cached thread pool that grows and shrinks based on demand, optimized for I/O-bound work.
+
+**Use Cases:**
+- Network requests and HTTP calls
+- Database operations and queries
+- File system operations
+- Time-consuming I/O operations
+
+**Characteristics:**
+- Cached thread pool with automatic sizing
+- Optimized for blocking I/O operations
+- Handles bursty workloads efficiently
+- Unbounded thread creation (within limits)
+
+```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
+scheduler := scheduler.IO
+scheduler.Schedule(func() {
+    fmt.Println("Executed on IO thread pool")
 })
 ```
 
@@ -53,7 +81,9 @@ The `NewThreadScheduler` creates a new goroutine for each unit of work, providin
 - Higher memory overhead
 
 ```go
-scheduler := rx.NewNewThreadScheduler()
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
+scheduler := scheduler.NewThread
 scheduler.Schedule(func() {
     fmt.Println("Executed on new goroutine")
 })
@@ -76,9 +106,9 @@ The `SingleThreadScheduler` uses a single dedicated goroutine to execute all sch
 - Predictable execution order
 
 ```go
-scheduler := rx.NewSingleThreadScheduler()
-defer scheduler.Close() // Important: always close when done
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
 
+scheduler := scheduler.SingleThread
 scheduler.Schedule(func() {
     fmt.Println("Task 1")
 })
@@ -104,36 +134,37 @@ The `TrampolineScheduler` queues work for later execution on the current gorouti
 - Non-blocking scheduling
 
 ```go
-scheduler := rx.NewTrampolineScheduler()
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
+scheduler := scheduler.Trampoline
 scheduler.Schedule(func() {
-    fmt.Println("Queued task 1")
+    fmt.Println("Executed immediately")
 })
-scheduler.Schedule(func() {
-    fmt.Println("Queued task 2")
-})
-scheduler.Execute() // Executes all queued tasks
 ```
 
 ## Performance Comparison
 
 | Scheduler | Latency | Throughput | Memory Usage | Use Case |
 |-----------|---------|------------|--------------|----------|
-| Immediate | Lowest | Single-threaded | Minimal | Lightweight ops |
-| NewThread | Medium | Highest | High | CPU/I/O intensive |
+| Computation | Low | High CPU | Medium | CPU-bound work |
+| IO | Low | High I/O | Low-Medium | I/O operations |
+| NewThread | Medium | Highest | High | Parallel processing |
 | SingleThread | Low | Medium | Low | Ordered processing |
-| Trampoline | Low | Medium | Minimal | Batch operations |
+| Trampoline | Lowest | Single-threaded | Minimal | Immediate execution |
 
 ## Practical Examples
 
 ### CPU-Intensive Workload
 
 ```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
 func processImages(imageIDs []int) {
-    scheduler := observable.NewNewThreadScheduler()
+    sched := scheduler.Computation // Use Computation for CPU work
     
     for _, id := range imageIDs {
         id := id // capture variable
-        scheduler.Schedule(func() {
+        sched.Schedule(func() {
             processImage(id) // Runs in parallel
         })
     }
@@ -143,13 +174,14 @@ func processImages(imageIDs []int) {
 ### Sequential Database Operations
 
 ```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
 func sequentialDatabaseOperations() {
-    scheduler := observable.NewSingleThreadScheduler()
-    defer scheduler.Close()
+    sched := scheduler.SingleThread
     
-    scheduler.Schedule(func() { insertUser() })
-    scheduler.Schedule(func() { insertProfile() })
-    scheduler.Schedule(func() { commitTransaction() })
+    sched.Schedule(func() { insertUser() })
+    sched.Schedule(func() { insertProfile() })
+    sched.Schedule(func() { commitTransaction() })
     // All operations execute sequentially
 }
 ```
@@ -157,11 +189,13 @@ func sequentialDatabaseOperations() {
 ### Real-time UI Updates
 
 ```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
 func updateUI(data int) {
-    scheduler := observable.NewImmediateScheduler()
+    sched := scheduler.Trampoline
     
-    // Update happens immediately on main thread
-    scheduler.Schedule(func() {
+    // Update happens immediately on current goroutine
+    sched.Schedule(func() {
         updateProgressBar(data)
     })
 }
@@ -170,17 +204,19 @@ func updateUI(data int) {
 ### Batch Event Processing
 
 ```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
 func processEvents(events []Event) {
-    scheduler := observable.NewTrampolineScheduler()
+    sched := scheduler.Trampoline
     
     for _, event := range events {
         event := event // capture variable
-        scheduler.Schedule(func() {
+        sched.Schedule(func() {
             processEvent(event)
         })
     }
     
-    scheduler.Execute() // Process all events at once
+    // All events processed immediately on current goroutine
 }
 ```
 
@@ -188,20 +224,12 @@ func processEvents(events []Event) {
 
 ### 1. Choose Based on Workload Type
 
-- **CPU-intensive**: Use `NewThread` for maximum parallelism
-- **I/O-bound**: Use `NewThread` to hide latency
+- **CPU-intensive**: Use `Computation` for efficient CPU utilization
+- **I/O-bound**: Use `IO` for blocking operations
+- **Maximum parallelism**: Use `NewThread` for unlimited goroutines
 - **Ordered operations**: Use `SingleThread` for consistency
-- **Lightweight work**: Use `Immediate` to avoid overhead
-- **Batch processing**: Use `Trampoline` for efficiency
+- **Immediate execution**: Use `Trampoline` for current goroutine
 
-### 2. Resource Management
-
-Always close `SingleThreadScheduler` when done:
-
-```go
-scheduler := observable.NewSingleThreadScheduler()
-defer scheduler.Close()
-```
 
 ### 3. Avoid Goroutine Leaks
 
@@ -221,12 +249,14 @@ for range unboundedStream {
 
 ### 4. Testing Considerations
 
-Use `ImmediateScheduler` for deterministic tests:
+Use `Trampoline` for deterministic tests:
 
 ```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
+
 func TestMyFunction(t *testing.T) {
-    scheduler := rx.NewImmediateScheduler()
-    result := myFunction(scheduler)
+    sched := scheduler.Trampoline
+    result := myFunction(sched)
     // Result is immediately available
     assert.Equal(t, expected, result)
 }
@@ -236,7 +266,7 @@ func TestMyFunction(t *testing.T) {
 
 ### Custom Pool Implementation
 
-When the built-in `NewThreadScheduler` creates too many goroutines, implement a custom pool:
+When the built-in `NewThread` creates too many goroutines, implement a custom pool:
 
 ```go
 type PoolScheduler struct {
@@ -293,20 +323,20 @@ func (w *WorkStealingScheduler) Schedule(task func()) {
 Create a decision tree for your application:
 
 ```go
-func selectScheduler(workloadType string) rx.Scheduler {
+func selectScheduler(workloadType string) Scheduler {
     switch workloadType {
     case "CPU-intensive":
-        return rx.NewNewThreadScheduler()
+        return scheduler.Computation
     case "IO-bound":
-        return rx.NewNewThreadScheduler()
+        return scheduler.IO
     case "ordered":
-        return rx.NewSingleThreadScheduler()
-    case "lightweight":
-        return rx.NewImmediateScheduler()
-    case "batch":
-        return rx.NewTrampolineScheduler()
+        return scheduler.SingleThread
+    case "maximum-parallelism":
+        return scheduler.NewThread
+    case "immediate":
+        return scheduler.Trampoline
     default:
-        return rx.NewImmediateScheduler()
+        return scheduler.Trampoline
     }
 }
 ```
@@ -383,9 +413,10 @@ The `examples/schedulers/scheduler_examples.go` file provides a concise, compreh
 
 Schedulers are a powerful feature in RxGo that provide fine-grained control over execution context. Choose the right scheduler based on your specific use case:
 
-- **Immediate**: When you need immediate, synchronous execution
-- **NewThread**: When you need maximum parallelism for CPU or I/O work
+- **Computation**: When you need efficient CPU utilization for CPU-bound work
+- **IO**: When you need efficient handling of I/O-bound operations
+- **NewThread**: When you need maximum parallelism with new goroutines
 - **SingleThread**: When order matters and you need sequential processing
-- **Trampoline**: When you want to batch work on the current goroutine
+- **Trampoline**: When you need immediate execution on the current goroutine
 
 Understanding these schedulers and their appropriate use cases is crucial for building efficient, responsive reactive applications in Go.
