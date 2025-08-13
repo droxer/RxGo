@@ -64,7 +64,15 @@ func mockAPIStream(ctx context.Context) []APIResponse {
 	}
 }
 
+func RunHTTPStreamingExamples() {
+	httpStreamingExamples()
+}
+
 func main() {
+	httpStreamingExamples()
+}
+
+func httpStreamingExamples() {
 	fmt.Println("=== HTTP Streaming Example ===")
 
 	apiStream := rx.Create(func(ctx context.Context, sub rx.Subscriber[APIResponse]) {

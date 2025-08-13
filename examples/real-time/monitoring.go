@@ -122,7 +122,15 @@ func sensorSimulator(ctx context.Context, deviceID, location string) []SensorDat
 	return data
 }
 
+func RunRealTimeMonitoringExamples() {
+	realTimeMonitoringExamples()
+}
+
 func main() {
+	realTimeMonitoringExamples()
+}
+
+func realTimeMonitoringExamples() {
 	fmt.Println("=== Real-Time IoT Monitoring ===")
 
 	// Create monitoring services

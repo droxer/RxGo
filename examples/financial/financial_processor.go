@@ -98,7 +98,15 @@ func generateMarketData(ctx context.Context) []Trade {
 	}
 }
 
+func RunFinancialProcessingExamples() {
+	financialProcessingExamples()
+}
+
 func main() {
+	financialProcessingExamples()
+}
+
+func financialProcessingExamples() {
 	fmt.Println("=== Financial Trading Example ===")
 
 	processor := NewFinancialProcessor("TradeEngine", 10000.0)

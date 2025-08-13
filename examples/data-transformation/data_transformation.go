@@ -153,7 +153,15 @@ func SchedulerProcessor(scheduler scheduler.Scheduler, name string, data []User)
 	fmt.Printf("[%s] Completed in %v\n", name, time.Since(start))
 }
 
+func RunDataTransformationExamples() {
+	dataTransformationExamples()
+}
+
 func main() {
+	dataTransformationExamples()
+}
+
+func dataTransformationExamples() {
 	fmt.Println("=== Real-World Data Transformation Examples ===")
 
 	// Sample data

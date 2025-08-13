@@ -9,8 +9,8 @@ import (
 	"github.com/droxer/RxGo/pkg/rx/streams"
 )
 
-// Advanced backpressure patterns
-func RunAdvancedExamples() {
+// BoundedBufferAdvanced demonstrates advanced bounded buffer patterns
+func RunBoundedBufferAdvanced() {
 	fmt.Println("=== Advanced Backpressure Patterns ===")
 	// Example 1: Dynamic demand adjustment
 	dynamicDemand()

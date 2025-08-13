@@ -8,9 +8,9 @@ import (
 	"github.com/droxer/RxGo/pkg/rx/streams"
 )
 
-// SlowConsumer demonstrates controlled consumption with backpressure
-func RunBasicExamples() {
-	fmt.Println("=== RxGo Backpressure Examples ===")
+// BoundedBufferBasic demonstrates basic bounded buffer with controlled consumption
+func RunBoundedBufferBasic() {
+	fmt.Println("=== Bounded Buffer Basic Examples ===")
 	// Example 1: Basic backpressure with controlled demand
 	basicBackpressure()
 

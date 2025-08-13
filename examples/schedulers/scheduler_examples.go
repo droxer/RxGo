@@ -9,7 +9,15 @@ import (
 	"github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
+func RunSchedulerExamples() {
+	schedulerExamples()
+}
+
 func main() {
+	schedulerExamples()
+}
+
+func schedulerExamples() {
 	fmt.Println("=== RxGo Scheduler Examples ===")
 
 	// Quick demo of all schedulers
