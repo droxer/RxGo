@@ -6,15 +6,15 @@ import (
 	"time"
 )
 
-func TestEventLoopScheduler(t *testing.T) {
+func TestFixedThreadScheduler(t *testing.T) {
 	tests := []struct {
 		name string
 		fn   func(t *testing.T)
 	}{
-		{"Schedule", testEventLoopSchedulerSchedule},
-		{"ScheduleAt", testEventLoopSchedulerScheduleAt},
-		{"StartStop", testEventLoopSchedulerStartStop},
-		{"Concurrent", testEventLoopSchedulerConcurrent},
+		{"Schedule", testFixedThreadSchedulerSchedule},
+		{"ScheduleAt", testFixedThreadSchedulerScheduleAt},
+		{"StartStop", testFixedThreadSchedulerStartStop},
+		{"Concurrent", testFixedThreadSchedulerConcurrent},
 	}
 
 	for _, tt := range tests {
@@ -22,8 +22,8 @@ func TestEventLoopScheduler(t *testing.T) {
 	}
 }
 
-func testEventLoopSchedulerSchedule(t *testing.T) {
-	scheduler := newEventLoopScheduler(2)
+func testFixedThreadSchedulerSchedule(t *testing.T) {
+	scheduler := NewFixedThreadScheduler(2)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -55,8 +55,8 @@ func testEventLoopSchedulerSchedule(t *testing.T) {
 	}
 }
 
-func testEventLoopSchedulerScheduleAt(t *testing.T) {
-	scheduler := newEventLoopScheduler(2)
+func testFixedThreadSchedulerScheduleAt(t *testing.T) {
+	scheduler := NewFixedThreadScheduler(2)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -93,8 +93,8 @@ func testEventLoopSchedulerScheduleAt(t *testing.T) {
 	}
 }
 
-func testEventLoopSchedulerStartStop(t *testing.T) {
-	scheduler := newEventLoopScheduler(2)
+func testFixedThreadSchedulerStartStop(t *testing.T) {
+	scheduler := NewFixedThreadScheduler(2)
 
 	// Should start successfully
 	scheduler.Start()
@@ -131,8 +131,8 @@ func testEventLoopSchedulerStartStop(t *testing.T) {
 	scheduler.Stop()
 }
 
-func testEventLoopSchedulerConcurrent(t *testing.T) {
-	scheduler := newEventLoopScheduler(4)
+func testFixedThreadSchedulerConcurrent(t *testing.T) {
+	scheduler := NewFixedThreadScheduler(4)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -170,8 +170,8 @@ func testEventLoopSchedulerConcurrent(t *testing.T) {
 	}
 }
 
-func TestThreadPoolScheduler(t *testing.T) {
-	scheduler := newThreadPoolScheduler(100 * time.Millisecond)
+func TestCachedThreadScheduler(t *testing.T) {
+	scheduler := NewCachedThreadScheduler(100 * time.Millisecond)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -203,8 +203,8 @@ func TestThreadPoolScheduler(t *testing.T) {
 	}
 }
 
-func TestThreadPoolSchedulerStop(t *testing.T) {
-	scheduler := newThreadPoolScheduler(100 * time.Millisecond)
+func TestCachedThreadSchedulerStop(t *testing.T) {
+	scheduler := NewCachedThreadScheduler(100 * time.Millisecond)
 
 	// Start and schedule a task
 	scheduler.Start()
@@ -291,8 +291,8 @@ func TestGlobalSchedulers(t *testing.T) {
 	}
 }
 
-func TestThreadPoolSchedulerTimeout(t *testing.T) {
-	scheduler := newThreadPoolScheduler(10 * time.Millisecond)
+func TestCachedThreadSchedulerTimeout(t *testing.T) {
+	scheduler := NewCachedThreadScheduler(10 * time.Millisecond)
 	scheduler.Start()
 	defer scheduler.Stop()
 
@@ -327,8 +327,8 @@ func TestThreadPoolSchedulerTimeout(t *testing.T) {
 	time.Sleep(20 * time.Millisecond)
 }
 
-func BenchmarkEventLoopScheduler(b *testing.B) {
-	scheduler := newEventLoopScheduler(4)
+func BenchmarkFixedThreadScheduler(b *testing.B) {
+	scheduler := NewFixedThreadScheduler(4)
 	defer scheduler.Stop()
 
 	b.ResetTimer()
@@ -337,8 +337,8 @@ func BenchmarkEventLoopScheduler(b *testing.B) {
 	}
 }
 
-func BenchmarkThreadPoolScheduler(b *testing.B) {
-	scheduler := newThreadPoolScheduler(100 * time.Millisecond)
+func BenchmarkCachedThreadScheduler(b *testing.B) {
+	scheduler := NewCachedThreadScheduler(100 * time.Millisecond)
 	defer scheduler.Stop()
 
 	b.ResetTimer()

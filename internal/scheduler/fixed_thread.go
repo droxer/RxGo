@@ -5,15 +5,15 @@ import (
 	"time"
 )
 
-type eventLoopScheduler struct {
+type FixedThreadScheduler struct {
 	workers         []*poolWorker
 	jobQueue        chan job
 	fixedWorkerPool chan chan job
 	quit            chan bool
 }
 
-func newEventLoopScheduler(maxWorkers int) Scheduler {
-	return &eventLoopScheduler{
+func NewFixedThreadScheduler(maxWorkers int) Scheduler {
+	return &FixedThreadScheduler{
 		workers:         make([]*poolWorker, maxWorkers),
 		fixedWorkerPool: make(chan chan job, maxWorkers),
 		jobQueue:        make(chan job),
@@ -21,44 +21,44 @@ func newEventLoopScheduler(maxWorkers int) Scheduler {
 	}
 }
 
-func (s *eventLoopScheduler) Start() {
-	for i := 0; i < len(s.workers); i++ {
-		s.workers[i] = newPoolWorker(s.fixedWorkerPool)
-		s.workers[i].start()
+func (fts *FixedThreadScheduler) Start() {
+	for i := 0; i < len(fts.workers); i++ {
+		fts.workers[i] = newPoolWorker(fts.fixedWorkerPool)
+		fts.workers[i].start()
 	}
 
-	go s.dispatch()
+	go fts.dispatch()
 }
 
-func (s *eventLoopScheduler) Stop() {
-	s.quit <- true
-	for _, worker := range s.workers {
+func (fts *FixedThreadScheduler) Stop() {
+	fts.quit <- true
+	for _, worker := range fts.workers {
 		worker.stop()
 	}
 }
 
-func (s *eventLoopScheduler) Schedule(run Runnable) {
+func (fts *FixedThreadScheduler) Schedule(run Runnable) {
 	job := job{
 		run: run,
 	}
-	s.jobQueue <- job
+	fts.jobQueue <- job
 }
 
-func (s *eventLoopScheduler) ScheduleAt(run Runnable, delay time.Duration) {
+func (fts *FixedThreadScheduler) ScheduleAt(run Runnable, delay time.Duration) {
 	job := job{
 		run:   run,
 		delay: delay,
 	}
-	s.jobQueue <- job
+	fts.jobQueue <- job
 }
 
-func (s *eventLoopScheduler) dispatch() {
+func (fts *FixedThreadScheduler) dispatch() {
 	for {
 		select {
-		case job := <-s.jobQueue:
-			jobChan := <-s.fixedWorkerPool
+		case job := <-fts.jobQueue:
+			jobChan := <-fts.fixedWorkerPool
 			jobChan <- job
-		case <-s.quit:
+		case <-fts.quit:
 			return
 		}
 	}

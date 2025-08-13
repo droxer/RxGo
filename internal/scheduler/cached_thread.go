@@ -5,41 +5,41 @@ import (
 	"time"
 )
 
-type threadPoolScheduler struct {
+type CachedThreadScheduler struct {
 	workerPool *cachedThreadPool
 	jobQueue   chan job
 	quit       chan bool
 }
 
-func newThreadPoolScheduler(ttl time.Duration) *threadPoolScheduler {
-	return &threadPoolScheduler{
+func NewCachedThreadScheduler(ttl time.Duration) *CachedThreadScheduler {
+	return &CachedThreadScheduler{
 		workerPool: newCachedThreadPool(ttl),
 		jobQueue:   make(chan job),
 		quit:       make(chan bool),
 	}
 }
 
-func (tps *threadPoolScheduler) Start() {
-	go tps.run()
+func (cts *CachedThreadScheduler) Start() {
+	go cts.run()
 }
 
-func (tps *threadPoolScheduler) Stop() {
+func (cts *CachedThreadScheduler) Stop() {
 }
 
-func (tps *threadPoolScheduler) Schedule(run Runnable) {
+func (cts *CachedThreadScheduler) Schedule(run Runnable) {
 	job := job{
 		run: run,
 	}
 
-	tps.jobQueue <- job
+	cts.jobQueue <- job
 }
 
-func (tps *threadPoolScheduler) ScheduleAt(run Runnable, delay time.Duration) {
+func (cts *CachedThreadScheduler) ScheduleAt(run Runnable, delay time.Duration) {
 }
 
-func (tps *threadPoolScheduler) run() {
-	for job := range tps.jobQueue {
-		tps.workerPool.get() <- job
+func (cts *CachedThreadScheduler) run() {
+	for job := range cts.jobQueue {
+		cts.workerPool.get() <- job
 	}
 }
 

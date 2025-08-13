@@ -362,9 +362,7 @@ func profileScheduler(scheduler observable.Scheduler, tasks int) time.Duration {
 
 For comprehensive examples demonstrating all schedulers in action, see the `examples/schedulers/` directory which contains:
 
-- **`scheduler_comparison.go`** - Basic scheduler comparison with timing measurements
-- **`goroutine_patterns.go`** - Advanced goroutine usage patterns and benchmarks  
-- **`computation_examples.go`** - Workload-specific examples for CPU, I/O, and memory-intensive tasks
+- **`scheduler_examples.go`** - Comprehensive scheduler comparison with timing measurements and real-world scenarios
 
 Run the examples to see the differences:
 
@@ -377,7 +375,7 @@ go run examples/schedulers/scheduler_examples.go
 
 The `examples/schedulers/scheduler_examples.go` file provides a concise, comprehensive demonstration:
 
-- **Quick Demo** - Shows all 4 schedulers in action (50 lines of code)
+- **Quick Demo** - Shows all 4 schedulers in action (75 lines of code)
 - **Performance Benchmark** - Simple timing comparison for 100 tasks
 - **Decision Guide** - Straightforward when-to-use recommendations
 
