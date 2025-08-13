@@ -1,17 +1,14 @@
 # Basic Usage
 
-This guide demonstrates the basic Observable API using the reorganized package structure.
+Simple Observable API examples for RxGo.
 
-## Package Imports
+## Quick Overview
 
-```go
-import (
-    "context"
-    "github.com/droxer/RxGo/pkg/rx"
-    "github.com/droxer/RxGo/pkg/rx/operators"
-    "github.com/droxer/RxGo/pkg/rx/scheduler"
-)
-```
+| Function | Purpose | Example |
+|----------|---------|---------|
+| `Just` | Create from values | `rx.Just(1, 2, 3)` |
+| `Range` | Create from range | `rx.Range(1, 5)` |
+| `Create` | Custom logic | `rx.Create(...)` |
 
 ## Creating Observables
 

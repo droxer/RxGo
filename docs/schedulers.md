@@ -388,26 +388,70 @@ func profileScheduler(scheduler observable.Scheduler, tasks int) time.Duration {
 4. **Order Dependencies**: Using parallel schedulers for ordered operations
 5. **Memory Pressure**: Creating too many goroutines with `NewThreadScheduler`
 
-## Examples and Usage
+## Complete Examples
 
-For comprehensive examples demonstrating all schedulers in action, see the `examples/schedulers/` directory which contains:
+### Quick Demo - All Schedulers
 
-- **`scheduler_examples.go`** - Comprehensive scheduler comparison with timing measurements and real-world scenarios
+```go
+import "github.com/droxer/RxGo/pkg/rx/scheduler"
 
-Run the examples to see the differences:
+// Demo all 5 schedulers
+work := func(id int) { fmt.Printf("Task %d on goroutine %d\n", id, getGID()) }
 
-```bash
-# Comprehensive scheduler examples
-go run examples/schedulers/scheduler_examples.go
+// 1. Trampoline - immediate execution
+scheduler.Trampoline.Schedule(func() { work(1) })
+
+// 2. NewThread - new goroutine for each task
+scheduler.NewThread.Schedule(func() { work(2) })
+
+// 3. SingleThread - sequential on dedicated goroutine
+st := scheduler.SingleThread
+st.Schedule(func() { work(3) })
+st.Schedule(func() { work(4) }) // Always executes after task 3
+
+// 4. Computation - fixed thread pool
+scheduler.Computation.Schedule(func() { work(5) })
+
+// 5. IO - cached thread pool
+scheduler.IO.Schedule(func() { work(6) })
 ```
 
-## Examples Overview
+### Performance Comparison
 
-The `examples/schedulers/scheduler_examples.go` file provides a concise, comprehensive demonstration:
+```go
+import "time"
 
-- **Quick Demo** - Shows all 4 schedulers in action (75 lines of code)
-- **Performance Benchmark** - Simple timing comparison for 100 tasks
-- **Decision Guide** - Straightforward when-to-use recommendations
+func benchmarkScheduler() {
+    task := func() {
+        // Simulate CPU work
+        for i := 0; i < 1000; i++ {}
+    }
+    
+    benchmark := func(name string, s scheduler.Scheduler) time.Duration {
+        start := time.Now()
+        var wg sync.WaitGroup
+        for i := 0; i < 100; i++ {
+            wg.Add(1)
+            s.Schedule(func() { defer wg.Done(); task() })
+        }
+        wg.Wait()
+        return time.Since(start)
+    }
+    
+    fmt.Printf("Computation: %v\n", benchmark("Computation", scheduler.Computation))
+    fmt.Printf("IO: %v\n", benchmark("IO", scheduler.IO))
+}
+```
+
+### Decision Guide
+
+| Scheduler | When to Use | Memory | Use Case |
+|-----------|-------------|--------|----------|
+| **Computation** | CPU-intensive work | Medium | Math, compression |
+| **IO** | I/O-bound work | Low-Medium | HTTP, database |
+| **NewThread** | Maximum parallelism | High | Parallel processing |
+| **SingleThread** | Ordered operations | Low | Transactions |
+| **Trampoline** | Immediate execution | Minimal | UI updates |
 
 ## Summary
 

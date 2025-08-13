@@ -1,14 +1,16 @@
 # Reactive Streams API
 
-This document demonstrates the Reactive Streams API using both `rxgo` and `observable` packages, consistent with actual examples.
+Full Reactive Streams 1.0.4 compliance with backpressure support.
 
-## Basic Reactive Streams Usage
+## Quick Overview
 
-The actual examples show a simplified approach using the Observable API. Here's how the Reactive Streams concepts map to the actual implementations:
+| Component | Purpose | Example |
+|-----------|---------|---------|
+| `Publisher[T]` | Data source | `streams.RangePublisherWithConfig` |
+| `Subscriber[T]` | Data consumer | Custom struct |
+| `Subscription` | Demand control | `Request(n)` |
 
-## Using Range
-
-Create and process a range of values:
+## Basic Usage
 
 ```go
 package main

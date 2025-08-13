@@ -83,8 +83,42 @@ filterProcessor := streams.NewFilterProcessor(func(i int) bool {
 
 ## Running Examples
 
-```bash
-go run examples/backpressure/backpressure_examples.go
+### Complete Examples
+
+**Buffer Strategy** - Keeps all items in bounded buffer:
+```go
+publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 5,
+})
+// Processes: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+```
+
+**Drop Strategy** - Discards new items when buffer is full:
+```go
+publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+    Strategy:   streams.Drop,
+    BufferSize: 3,
+})
+// Processes: 1, 2, 3 (rest dropped due to slow consumer)
+```
+
+**Latest Strategy** - Keeps only the latest item:
+```go
+publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+    Strategy:   streams.Latest,
+    BufferSize: 2,
+})
+// Processes: 9, 10 (only latest items kept)
+```
+
+**Error Strategy** - Signals error on overflow:
+```go
+publisher := streams.RangePublisherWithConfig(1, 10, streams.BackpressureConfig{
+    Strategy:   streams.Error,
+    BufferSize: 2,
+})
+// Processes: 1, 2 then signals error due to overflow
 ```
 
 ## API Reference
