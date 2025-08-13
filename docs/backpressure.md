@@ -6,12 +6,57 @@ This document demonstrates how to handle producer/consumer speed mismatches usin
 
 RxGo provides full Reactive Streams 1.0.4 compliance with backpressure support through the `pkg/rx/streams` package. This enables demand-based flow control to prevent memory issues when producers outpace consumers.
 
+## Backpressure Strategies
+
+RxGo implements four reactive backpressure strategies for handling overflow when producers are faster than consumers:
+
+### 1. Buffer Strategy
+Maintains a bounded buffer to store items when the consumer is slow.
+
+```go
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 100,
+})
+```
+
+### 2. Drop Strategy
+Discards new items when the buffer is full.
+
+```go
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Drop,
+    BufferSize: 50,
+})
+```
+
+### 3. Latest Strategy
+Keeps only the latest item, discarding older ones.
+
+```go
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Latest,
+    BufferSize: 1,
+})
+```
+
+### 4. Error Strategy
+Signals an error when the buffer overflows.
+
+```go
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Error,
+    BufferSize: 10,
+})
+```
+
 ## Key Components
 
 - **Publisher[T]** - Type-safe data source with demand control
 - **Subscriber[T]** - Complete subscriber interface with lifecycle
 - **Subscription** - Request/cancel control with backpressure
 - **ReactivePublisher[T]** - Full implementation with backpressure
+- **BufferedPublisher[T]** - Publisher with configurable backpressure strategies
 
 ## Quick Start
 
@@ -21,8 +66,11 @@ import (
     "github.com/droxer/RxGo/pkg/rx/streams"
 )
 
-// Create publisher with backpressure support
-publisher := streams.RangePublisher(1, 1000)
+// Create publisher with backpressure strategy
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 100,
+})
 
 // Subscribe with controlled demand
 consumer := &controlledConsumer{demand: 10}
@@ -31,14 +79,9 @@ publisher.Subscribe(ctx, consumer)
 
 ## Examples
 
-### 1. Basic Backpressure
-
-**File**: `examples/backpressure/basic_backpressure.go`
-
-Controlled consumption with explicit demand:
+### Basic Backpressure with Buffer Strategy
 
 ```go
-// Controlled consumer with backpressure
 type controlledConsumer struct {
     demand    int64
     processed []int
@@ -47,117 +90,77 @@ type controlledConsumer struct {
 
 func (c *controlledConsumer) OnSubscribe(sub streams.Subscription) {
     c.sub = sub
-    sub.Request(c.demand) // Request initial batch
+    sub.Request(c.demand)
 }
 
 func (c *controlledConsumer) OnNext(value int) {
     c.processed = append(c.processed, value)
     
-    // Request next batch when current one is processed
     if len(c.processed)%int(c.demand) == 0 {
         c.sub.Request(c.demand)
     }
 }
 ```
 
-**Run**: `go run examples/backpressure/basic_backpressure.go`
+### Drop Strategy for High-Volume Data
 
-### 2. Advanced Patterns
-
-**File**: `examples/backpressure/advanced_backpressure.go`
-
-#### Dynamic Demand Adjustment
 ```go
-// Adjust demand based on processing speed
-func calculateDemand() int64 {
-    if averageProcessingTime < 100*time.Millisecond {
-        return min(currentDemand+5, maxDemand)
-    } else if averageProcessingTime > 300*time.Millisecond {
-        return max(currentDemand-2, minDemand)
-    }
-    return currentDemand
-}
+// Fast producer, slow consumer - drops excess items
+publisher := streams.FromSlicePublisherWithConfig(largeDataSet, streams.BackpressureConfig{
+    Strategy:   streams.Drop,
+    BufferSize: 20,
+})
 ```
 
-#### Buffer Overflow Protection
+### Latest Strategy for Real-Time Data
+
 ```go
-// Monitor memory usage and apply backpressure
-if currentMemoryUsage >= memoryLimit {
-    flushBuffer()
-    sub.Request(smallBatchSize)
-}
+// Keep only the most recent data point
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Latest,
+    BufferSize: 1,
+})
 ```
 
-**Run**: `go run examples/backpressure/advanced_backpressure.go`
+### Error Strategy for Strict Requirements
 
-### 3. Usage Patterns
-
-#### Simple Backpressure
 ```go
-// Create publisher with backpressure support
-publisher := streams.RangePublisher(1, 100)
-
-// Subscribe with controlled demand
-consumer := &controlledConsumer{demand: 10}
-publisher.Subscribe(ctx, consumer)
+// Fail fast when overflow occurs
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Error,
+    BufferSize: 10,
+})
 ```
 
-#### Batch Processing
-```go
-// Process in batches of fixed size
-publisher := streams.RangePublisher(1, 1000)
-consumer := &batchConsumer{batchSize: 50}
-publisher.Subscribe(ctx, consumer)
-```
-
-#### Rate Limiting
-```go
-// Process at controlled rate
-consumer := &rateLimitedConsumer{
-    rate: time.Second,
-    sub:  sub,
-}
-```
-
-## Running All Examples
+## Running Examples
 
 ```bash
-# Run all backpressure examples
-./examples/backpressure/run_all.sh
+# Run comprehensive backpressure examples
+go run examples/backpressure/simple_demo.go
 
-# Or run individually
-go run examples/backpressure/basic_backpressure.go
-go run examples/backpressure/advanced_backpressure.go
+# Run tests
+go test -v examples/backpressure/backpressure_test.go
 ```
 
-## Key Concepts Demonstrated
+## Strategy Selection Guide
 
-1. **Demand-based flow control** via `Subscription.Request(n int64)`
-2. **Memory pressure handling** with buffer management
-3. **Dynamic demand adjustment** based on processing metrics
-4. **Error recovery** while maintaining flow control
-5. **Rate limiting** with controlled consumption
+| Strategy | Use Case | Memory Impact | Data Loss | Error Handling |
+|----------|----------|---------------|-----------|----------------|
+| **Buffer** | Preserve all data | High | None | Automatic |
+| **Drop** | High-volume streams | Medium | New items | Silent |
+| **Latest** | Real-time updates | Low | Old items | Silent |
+| **Error** | Strict requirements | Low | None | Explicit error |
 
 ## Best Practices
 
-- **Start with moderate demand** (10-50 items) and adjust based on performance
-- **Monitor memory usage** to prevent buffer overflow
-- **Implement error handling** with retry mechanisms
-- **Use context cancellation** for graceful shutdown
-- **Test with different load patterns** to find optimal batch sizes
-
-## Performance Guidelines
-
-| Use Case | Recommended Demand | Memory Impact |
-|----------|-------------------|---------------|
-| CPU-intensive | 10-20 items | Low |
-| I/O-bound | 5-10 items | Medium |
-| Network calls | 1-5 items | High |
-| Batch processing | 50-100 items | Very High |
+- **Buffer**: Use when data completeness is critical
+- **Drop**: Use when data volume exceeds processing capacity
+- **Latest**: Use for real-time applications where only current state matters
+- **Error**: Use when overflow conditions must be explicitly handled
 
 ## Integration with Schedulers
 
-Combine backpressure with schedulers for optimal performance:
+Combine backpressure strategies with schedulers for optimal performance:
 
 ```go
 import (
@@ -165,7 +168,49 @@ import (
     "github.com/droxer/RxGo/pkg/rx/scheduler"
 )
 
-// Use Computation scheduler for CPU-bound processing
+// CPU-intensive processing with buffer strategy
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 50,
+})
+
+// Process with computation scheduler
 scheduler := scheduler.Computation
-consumer := &cpuBoundConsumer{scheduler: scheduler}
+// ... integrate with scheduler
 ```
+
+## API Reference
+
+### BackpressureConfig
+
+```go
+type BackpressureConfig struct {
+    Strategy   BackpressureStrategy
+    BufferSize int64
+}
+```
+
+### BackpressureStrategy
+
+```go
+const (
+    Buffer BackpressureStrategy = iota  // Keep all items in bounded buffer
+    Drop                               // Discard new items when full
+    Latest                             // Keep only latest item
+    Error                              // Signal error on overflow
+)
+```
+
+### Publisher Builders
+
+- `RangePublisherWithConfig(start, count int, config BackpressureConfig) Publisher[int]`
+- `FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T]`
+- `NewBufferedPublisher[T any](config BackpressureConfig, source func(ctx context.Context, sub Subscriber[T])) Publisher[T]`
+
+### Complete Examples
+
+See the `examples/backpressure/` directory for complete working examples of all four strategies:
+
+- `main.go` - Comprehensive demonstration of all strategies
+- `backpressure_test.go` - Unit tests for each strategy
+- `backpressure_examples.go` - Detailed usage examples

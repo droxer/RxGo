@@ -26,7 +26,6 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 - **Processor[T,R]** - Transforming publisher
 - **Backpressure support** - Full demand-based flow control
 - **Non-blocking guarantees** - Async processing with context cancellation
-- **Binary compatible** with Reactive Streams 1.0.4
 
 ### **✅ Backpressure Strategies**
 - **Buffer** - Queue items when producer is faster than consumer

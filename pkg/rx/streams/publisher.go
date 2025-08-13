@@ -76,6 +76,50 @@ func RangePublisher(start, count int) Publisher[int] {
 	})
 }
 
+// RangePublisherWithConfig creates a Publisher with backpressure strategies
+func RangePublisherWithConfig(start, count int, config BackpressureConfig) Publisher[int] {
+	return NewBufferedPublisher(BackpressureConfig{
+		Strategy:   config.Strategy,
+		BufferSize: config.BufferSize,
+	}, func(ctx context.Context, sub Subscriber[int]) {
+		defer sub.OnComplete()
+
+		if count <= 0 {
+			return
+		}
+
+		for i := 0; i < count; i++ {
+			select {
+			case <-ctx.Done():
+				sub.OnError(ctx.Err())
+				return
+			default:
+				sub.OnNext(start + i)
+			}
+		}
+	})
+}
+
+// FromSlicePublisherWithConfig creates a Publisher from slice with backpressure strategies
+func FromSlicePublisherWithConfig[T any](items []T, config BackpressureConfig) Publisher[T] {
+	return NewBufferedPublisher(BackpressureConfig{
+		Strategy:   config.Strategy,
+		BufferSize: config.BufferSize,
+	}, func(ctx context.Context, sub Subscriber[T]) {
+		defer sub.OnComplete()
+
+		for _, item := range items {
+			select {
+			case <-ctx.Done():
+				sub.OnError(ctx.Err())
+				return
+			default:
+				sub.OnNext(item)
+			}
+		}
+	})
+}
+
 // reactiveSubscription implements Subscription for reactive publishers
 type reactiveSubscription struct {
 	cancelled atomic.Bool

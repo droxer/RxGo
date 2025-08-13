@@ -44,6 +44,41 @@ Starting subscription
 Completed!
 ```
 
+## Backpressure Strategies
+
+RxGo provides four strategies to handle producer/consumer speed mismatches:
+
+```go
+import (
+    "context"
+    "github.com/droxer/RxGo/pkg/rx/streams"
+)
+
+// Buffer strategy - keep all items in bounded buffer
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Buffer,
+    BufferSize: 100,
+})
+
+// Drop strategy - discard new items when full
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Drop,
+    BufferSize: 50,
+})
+
+// Latest strategy - keep only latest item
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Latest,
+    BufferSize: 1,
+})
+
+// Error strategy - signal error on overflow
+publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+    Strategy:   streams.Error,
+    BufferSize: 10,
+})
+```
+
 ## Next Steps
 
 For more detailed examples and advanced usage patterns, see:
@@ -54,12 +89,18 @@ For more detailed examples and advanced usage patterns, see:
 - **[Context Cancellation](./context-cancellation.md)** - Graceful cancellation using Go context
 - **[Data Transformation](./data-transformation.md)** - Transform and process data streams
 
-## Running the Example
+## Running Examples
 
-You can run this example directly:
+You can run the basic example:
 
 ```bash
 go run examples/basic/basic.go
+```
+
+Or run the backpressure examples:
+
+```bash
+go run examples/backpressure/main.go
 ```
 
 Or create your own Go file with the code above and run:
