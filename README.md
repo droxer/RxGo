@@ -27,14 +27,11 @@ RxGo is a reactive programming library for Go that provides both the original Ob
 - **Backpressure support** - Full demand-based flow control
 - **Non-blocking guarantees** - Async processing with context cancellation
 
-### **✅ Reactive Streams 1.0.4 Compliant Implementation**
+### **✅ Reactive Streams 1.0.4 Compliance**
 - **Full specification compliance** - Complete Reactive Streams 1.0.4 implementation
-- **Demand tracking** - Publishers respect requested demand (Rule 1.1)
-- **Sequential signaling** - All signals properly serialized (Rule 1.3, 2.7)
-- **Thread safety** - Memory visibility guarantees across goroutines
-- **Processor support** - Transforming stages with Map/Filter/FlatMap processors
-- **Proper cancellation** - Resource cleanup on subscription cancellation
-- **Error handling** - IllegalArgumentException for invalid requests (Rule 3.9)
+- **Backpressure strategies** - Buffer, Drop, Latest, Error
+- **Processor support** - Map, Filter, FlatMap processors
+- **Thread safety** - Safe concurrent access
 
 ## Quick Start
 
@@ -70,51 +67,11 @@ func main() {
 }
 ```
 
-#### Reactive Streams 1.0.4 Compliant API
+#### Reactive Streams API
 ```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/droxer/RxGo/pkg/rx/streams"
-)
-
-// Custom subscriber implementing Subscriber interface
-type MySubscriber struct {
-    processed int
-}
-
-func (s *MySubscriber) OnSubscribe(sub streams.Subscription) {
-    sub.Request(5) // Request exactly 5 items
-}
-
-func (s *MySubscriber) OnNext(value int) {
-    fmt.Printf("Processing: %d\n", value)
-    s.processed++
-    time.Sleep(100 * time.Millisecond) // Simulate processing
-}
-
-func (s *MySubscriber) OnError(err error) {
-    fmt.Printf("Error: %v\n", err)
-}
-
-func (s *MySubscriber) OnComplete() {
-    fmt.Printf("Completed! Processed %d items\n", s.processed)
-}
-
-func main() {
-    // Create compliant publisher
-    publisher := streams.NewCompliantRangePublisher(1, 10)
-    subscriber := &MySubscriber{}
-    
-    ctx := context.Background()
-    publisher.Subscribe(ctx, subscriber)
-    
-    // Will only process 5 items due to demand limit
-}
+publisher := streams.NewCompliantRangePublisher(1, 10)
+subscriber := &MySubscriber{}
+publisher.Subscribe(context.Background(), subscriber)
 ```
 
 ### With Schedulers
