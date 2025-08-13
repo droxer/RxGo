@@ -8,10 +8,10 @@ import (
 
 // compliantSubscription implements Reactive Streams 1.0.4 compliant subscription
 type compliantSubscription[T any] struct {
-	requested atomic.Int64
-	cancelled atomic.Bool
-	completed atomic.Bool
-	error     atomic.Value // error
+	requested  atomic.Int64
+	cancelled  atomic.Bool
+	completed  atomic.Bool
+	error      atomic.Value // error
 	subscriber Subscriber[T]
 	publisher  *compliantPublisher[T]
 	mu         sync.Mutex
@@ -59,11 +59,6 @@ func (s *compliantSubscription[T]) Cancel() {
 // isCancelled checks if the subscription has been cancelled
 func (s *compliantSubscription[T]) isCancelled() bool {
 	return s.cancelled.Load()
-}
-
-// isCompleted checks if the subscription has completed
-func (s *compliantSubscription[T]) isCompleted() bool {
-	return s.completed.Load()
 }
 
 // markCompleted marks the subscription as completed

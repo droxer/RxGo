@@ -16,8 +16,8 @@ type CompliantRangePublisher struct {
 func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
 	return &CompliantRangePublisher{
 		compliantPublisher: newCompliantPublisher[int](),
-		start:            start,
-		end:              end,
+		start:              start,
+		end:                end,
 	}
 }
 
@@ -95,7 +95,7 @@ type CompliantFromSlicePublisher[T any] struct {
 func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublisher[T] {
 	return &CompliantFromSlicePublisher[T]{
 		compliantPublisher: newCompliantPublisher[T](),
-		items:            items,
+		items:              items,
 	}
 }
 
@@ -245,7 +245,7 @@ type SignalSerializer struct {
 func (s *SignalSerializer) Serialize(signal func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if !s.terminal {
 		signal()
 	}

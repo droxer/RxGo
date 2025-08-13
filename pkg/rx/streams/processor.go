@@ -2,15 +2,12 @@ package streams
 
 import (
 	"context"
-	"sync"
 )
 
 // MapProcessor implements a Processor that transforms items using a mapping function
 type MapProcessor[T any, R any] struct {
 	*compliantPublisher[R]
 	transform func(T) R
-	subscriptions map[*compliantSubscription[T]]struct{}
-	mu           sync.RWMutex
 }
 
 // NewMapProcessor creates a new MapProcessor
@@ -18,7 +15,6 @@ func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 	return &MapProcessor[T, R]{
 		compliantPublisher: newCompliantPublisher[R](),
 		transform:          transform,
-		subscriptions:      make(map[*compliantSubscription[T]]struct{}),
 	}
 }
 
@@ -95,7 +91,6 @@ func (p *FilterProcessor[T]) OnComplete() {
 type FlatMapProcessor[T any, R any] struct {
 	*compliantPublisher[R]
 	transform func(T) Publisher[R]
-	active    int32
 }
 
 // NewFlatMapProcessor creates a new FlatMapProcessor

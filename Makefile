@@ -1,8 +1,6 @@
 .PHONY: default dev build test test-coverage race fmt lint vet deps deps-upgrade check-security bench clean quality install-tools verify-examples
 
-default: deps test
-
-dev: fmt lint test race
+default: check
 
 build:
 	go build ./...
@@ -41,8 +39,9 @@ clean:
 	rm -rf bin/
 	rm -f coverage.out coverage.html
 
-check: fmt vet lint test race
+check: fmt vet lint test test-coverage race check-security verify-examples
 
+ 
 install-tools:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/securego/gosec/v2/cmd/gosec@latest

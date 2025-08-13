@@ -12,7 +12,6 @@ type compliantPublisher[T any] struct {
 	mu           sync.RWMutex
 	subscribers  map[*compliantSubscription[T]]struct{}
 	terminal     atomic.Bool
-	shutdown     atomic.Bool
 	demandSignal chan struct{}
 }
 
@@ -138,18 +137,11 @@ func (p *compliantPublisher[T]) removeSubscription(sub *compliantSubscription[T]
 	delete(p.subscribers, sub)
 }
 
-// hasSubscribers checks if there are any active subscribers
-func (p *compliantPublisher[T]) hasSubscribers() bool {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return len(p.subscribers) > 0
-}
-
 // getActiveSubscribers returns a snapshot of active subscriptions
 func (p *compliantPublisher[T]) getActiveSubscribers() []*compliantSubscription[T] {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
-	
+
 	subs := make([]*compliantSubscription[T], 0, len(p.subscribers))
 	for sub := range p.subscribers {
 		subs = append(subs, sub)

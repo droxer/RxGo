@@ -12,14 +12,14 @@ import (
 func main() {
 	fmt.Println("RxGo Backpressure Examples")
 	fmt.Println("==========================")
-	
+
 	// Run individual examples
 	RunBufferStrategy()
 	RunDropStrategy()
 	RunLatestStrategy()
 	RunErrorStrategy()
 	RunHighVolumeBackpressure()
-	
+
 	fmt.Println("\nAll examples completed!")
 }
 
@@ -84,7 +84,7 @@ func RunErrorStrategy() {
 	ctx := context.Background()
 	publisher.Subscribe(ctx, subscriber)
 	subscriber.wait()
-	
+
 	if subscriber.err != nil {
 		fmt.Printf("Error strategy triggered: %v\n", subscriber.err)
 	} else {

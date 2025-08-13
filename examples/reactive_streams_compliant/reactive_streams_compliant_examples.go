@@ -51,12 +51,12 @@ func RunCompliantProcessorChain() {
 	subscriber := &stringSubscriber{name: "ProcessorChainSubscriber"}
 
 	ctx := context.Background()
-	
+
 	// Chain: Publisher -> MapProcessor -> FilterProcessor -> Subscriber
 	publisher.Subscribe(ctx, mapProcessor)
 	mapProcessor.Subscribe(ctx, filterProcessor)
 	filterProcessor.Subscribe(ctx, subscriber)
-	
+
 	subscriber.wait()
 	fmt.Printf("Processor chain processed %d items\n", subscriber.processed)
 }
@@ -84,7 +84,7 @@ func RunThreadSafetyDemo() {
 
 	publisher := streams.NewCompliantRangePublisher(1, 50)
 	var wg sync.WaitGroup
-	
+
 	// Multiple subscribers accessing concurrently
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
@@ -99,7 +99,7 @@ func RunThreadSafetyDemo() {
 			fmt.Printf("Thread %d processed %d items\n", id, subscriber.processed)
 		}(i)
 	}
-	
+
 	wg.Wait()
 }
 
@@ -114,7 +114,7 @@ func RunProcessorExamples() {
 	})
 	sub1 := &stringSubscriber{name: "MapSubscriber"}
 	ctx := context.Background()
-	
+
 	// Create a simple source
 	source := streams.NewCompliantFromSlicePublisher[int]([]int{1, 2, 3})
 	source.Subscribe(ctx, mapProc)
@@ -127,7 +127,7 @@ func RunProcessorExamples() {
 		return i%2 == 0
 	})
 	sub2 := &intSubscriber{name: "FilterSubscriber"}
-	
+
 	source2 := streams.NewCompliantFromSlicePublisher[int]([]int{1, 2, 3, 4, 5})
 	source2.Subscribe(ctx, filterProc)
 	filterProc.Subscribe(ctx, sub2)
@@ -198,12 +198,12 @@ func (s *stringSubscriber) wait() {
 
 // demandSubscriber demonstrates demand-based flow control
 type demandSubscriber struct {
-	name      string
-	maxItems  int
-	received  int
-	delay     time.Duration
-	sub       streams.Subscription
-	wg        sync.WaitGroup
+	name     string
+	maxItems int
+	received int
+	delay    time.Duration
+	sub      streams.Subscription
+	wg       sync.WaitGroup
 }
 
 func (s *demandSubscriber) OnSubscribe(sub streams.Subscription) {
@@ -239,12 +239,12 @@ func RunBuilderExample() {
 	// Using compliant builder
 	builder := streams.NewCompliantBuilder[int]()
 	publisher := builder.Range(1, 5)
-	
+
 	subscriber := &intSubscriber{name: "BuilderSubscriber"}
 	ctx := context.Background()
 	publisher.Subscribe(ctx, subscriber)
 	subscriber.wait()
-	
+
 	fmt.Printf("Builder processed %d items\n", subscriber.processed)
 }
 
@@ -254,7 +254,7 @@ func RunProcessorBuilderExample() {
 
 	// Create a processing pipeline
 	publisher := streams.NewCompliantRangePublisher(1, 10)
-	
+
 	// Create processors
 	mapProcessor := streams.NewMapProcessor(func(i int) string {
 		return fmt.Sprintf("item-%d", i)
@@ -262,15 +262,15 @@ func RunProcessorBuilderExample() {
 	filterProcessor := streams.NewFilterProcessor(func(s string) bool {
 		return len(s) > 5
 	})
-	
+
 	subscriber := &stringSubscriber{name: "ProcessorBuilderSubscriber"}
 	ctx := context.Background()
-	
+
 	publisher.Subscribe(ctx, mapProcessor)
 	mapProcessor.Subscribe(ctx, filterProcessor)
 	filterProcessor.Subscribe(ctx, subscriber)
 	subscriber.wait()
-	
+
 	fmt.Printf("Processor builder processed %d items\n", subscriber.processed)
 }
 
@@ -284,7 +284,7 @@ func init() {
 // Memory safety test
 func RunMemorySafetyTest() {
 	fmt.Println("\n--- Memory Safety Test ---")
-	
+
 	// Create many publishers and subscribers
 	for i := 0; i < 100; i++ {
 		publisher := streams.NewCompliantRangePublisher(1, 10)
@@ -293,17 +293,17 @@ func RunMemorySafetyTest() {
 		publisher.Subscribe(ctx, subscriber)
 		subscriber.wait()
 	}
-	
+
 	fmt.Println("Memory safety test completed")
 }
 
 // Stress test
 func RunStressTest() {
 	fmt.Println("\n--- Stress Test ---")
-	
+
 	publisher := streams.NewCompliantRangePublisher(1, 1000)
 	var wg sync.WaitGroup
-	
+
 	// Many concurrent subscribers
 	for i := 0; i < 50; i++ {
 		wg.Add(1)
@@ -315,29 +315,9 @@ func RunStressTest() {
 			subscriber.wait()
 		}(i)
 	}
-	
+
 	wg.Wait()
 	fmt.Println("Stress test completed")
-}
-
-// Usage summary
-func PrintUsageSummary() {
-	fmt.Println("\n=== Reactive Streams 1.0.4 Compliant Usage ===")
-	fmt.Println("")
-	fmt.Println("New Compliant API:")
-	fmt.Println("publisher := streams.NewCompliantRangePublisher(1, 10)")
-	fmt.Println("processor := streams.NewMapProcessor(func(i int) string { return fmt.Sprintf("item-%d", i) })")
-	fmt.Println("subscriber := streams.NewFilterProcessor(func(s string) bool { return len(s) > 5 })")
-	fmt.Println("")
-	fmt.Println("Features:")
-	fmt.Println("- ✅ Full Reactive Streams 1.0.4 compliance")
-	fmt.Println("- ✅ Demand tracking and enforcement")
-	fmt.Println("- ✅ Sequential signaling")
-	fmt.Println("- ✅ Thread safety")
-	fmt.Println("- ✅ Proper cancellation")
-	fmt.Println("- ✅ Error handling")
-	fmt.Println("- ✅ Processor chaining")
-	fmt.Println("===============================================")
 }
 
 // Run all examples
@@ -351,7 +331,6 @@ func RunAllCompliantExamples() {
 	RunProcessorBuilderExample()
 	RunMemorySafetyTest()
 	RunStressTest()
-	PrintUsageSummary()
 }
 
 // For testing
@@ -362,7 +341,7 @@ func TestCompliantAPIs() {
 	ctx := context.Background()
 	publisher.Subscribe(ctx, subscriber)
 	subscriber.wait()
-	
+
 	if subscriber.processed != 3 {
 		panic("Compliant API test failed")
 	}
@@ -370,13 +349,13 @@ func TestCompliantAPIs() {
 
 // Ensure interfaces are implemented
 var (
-	_ streams.Publisher[int]          = (*streams.CompliantRangePublisher)(nil)
-	_ streams.Publisher[string]       = (*streams.CompliantFromSlicePublisher[string])(nil)
-	_ streams.Processor[int, string]  = (*streams.MapProcessor[int, string])(nil)
-	_ streams.Processor[int, int]     = (*streams.FilterProcessor[int])(nil)
-	_ streams.Processor[int, string]  = (*streams.FlatMapProcessor[int, string])(nil)
-	_ streams.Subscription            = streams.Subscription(nil)
-	_ streams.Subscriber[int]         = (*intSubscriber)(nil)
+	_ streams.Publisher[int]         = (*streams.CompliantRangePublisher)(nil)
+	_ streams.Publisher[string]      = (*streams.CompliantFromSlicePublisher[string])(nil)
+	_ streams.Processor[int, string] = (*streams.MapProcessor[int, string])(nil)
+	_ streams.Processor[int, int]    = (*streams.FilterProcessor[int])(nil)
+	_ streams.Processor[int, string] = (*streams.FlatMapProcessor[int, string])(nil)
+	_ streams.Subscription           = streams.Subscription(nil)
+	_ streams.Subscriber[int]        = (*intSubscriber)(nil)
 )
 
 // Entry point - main function is defined at the beginning of the file
@@ -398,38 +377,16 @@ func RunPerformanceCompliant() {
 	RunStressTest()
 }
 
-// Documentation generator
-func GenerateDocs() {
-	fmt.Println("# Reactive Streams 1.0.4 Compliant Examples")
-	fmt.Println()
-	fmt.Println("## Basic Usage")
-	fmt.Println()
-	fmt.Println("```go")
-	fmt.Println("publisher := streams.NewCompliantRangePublisher(1, 100)")
-	fmt.Println("subscriber := &intSubscriber{}")
-	fmt.Println("publisher.Subscribe(context.Background(), subscriber)")
-	fmt.Println("```")
-	fmt.Println()
-	fmt.Println("## Processor Chain")
-	fmt.Println()
-	fmt.Println("```go")
-	fmt.Println("publisher := streams.NewCompliantRangePublisher(1, 10)")
-	fmt.Println("mapProc := streams.NewMapProcessor(func(i int) string { return fmt.Sprintf("item-%d", i) })")
-	fmt.Println("publisher.Subscribe(ctx, mapProc)")
-	fmt.Println("mapProc.Subscribe(ctx, subscriber)")
-	fmt.Println("```")
-}
-
 // Export for external usage
 var (
-	NewCompliantRangePublisher    = streams.NewCompliantRangePublisher
+	NewCompliantRangePublisher     = streams.NewCompliantRangePublisher
 	NewCompliantFromSlicePublisher = streams.NewCompliantFromSlicePublisher[string]
 	NewCompliantBufferedPublisher  = streams.NewCompliantBufferedPublisher[int]
-	NewMapProcessor               = streams.NewMapProcessor[int, string]
-	NewFilterProcessor            = streams.NewFilterProcessor[int]
-	NewFlatMapProcessor           = streams.NewFlatMapProcessor[int, string]
-	NewCompliantBuilder           = streams.NewCompliantBuilder[int]
-	NewProcessorBuilder           = streams.NewProcessorBuilder[int, string]
+	NewMapProcessor                = streams.NewMapProcessor[int, string]
+	NewFilterProcessor             = streams.NewFilterProcessor[int]
+	NewFlatMapProcessor            = streams.NewFlatMapProcessor[int, string]
+	NewCompliantBuilder            = streams.NewCompliantBuilder[int]
+	NewProcessorBuilder            = streams.NewProcessorBuilder[int, string]
 )
 
 // Initialize example
@@ -441,8 +398,6 @@ func init() {
 // Ensure everything compiles
 var _ = RunAllCompliantExamples
 var _ = TestCompliantAPIs
-var _ = GenerateDocs
-var _ = PrintUsageSummary
 
 // Convenience functions
 func NewCompliantIntPublisher() streams.Publisher[int] {
