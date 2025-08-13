@@ -19,9 +19,9 @@ func (t *TestSubscriber[T]) OnSubscribe(sub Subscription) {
 	// Request all items immediately
 	sub.Request(int64(^uint(0) >> 1))
 }
-func (t *TestSubscriber[T]) OnNext(value T)               { t.Received = append(t.Received, value) }
-func (t *TestSubscriber[T]) OnError(err error)            { t.Errors = append(t.Errors, err); close(t.Done) }
-func (t *TestSubscriber[T]) OnComplete()                   { t.Completed = true; close(t.Done) }
+func (t *TestSubscriber[T]) OnNext(value T)    { t.Received = append(t.Received, value) }
+func (t *TestSubscriber[T]) OnError(err error) { t.Errors = append(t.Errors, err); close(t.Done) }
+func (t *TestSubscriber[T]) OnComplete()       { t.Completed = true; close(t.Done) }
 
 func TestFromSlicePublisher(t *testing.T) {
 	// Test basic slice publisher
@@ -198,7 +198,7 @@ func TestPublisherMultipleSubscribers(t *testing.T) {
 	<-sub2.Done
 
 	expected := []int{1, 2, 3}
-	
+
 	for _, sub := range []*TestSubscriber[int]{sub1, sub2} {
 		if len(sub.Received) != len(expected) {
 			t.Errorf("Expected %d values, got %d", len(expected), len(sub.Received))
@@ -281,16 +281,15 @@ func TestRangePublisherLarge(t *testing.T) {
 func TestPublisherNilSubscriber(t *testing.T) {
 	// Test nil subscriber handling
 	publisher := FromSlicePublisher([]int{1, 2, 3})
-	
+
 	defer func() {
 		if r := recover(); r == nil {
 			t.Error("Expected panic for nil subscriber")
 		}
 	}()
-	
+
 	publisher.Subscribe(context.Background(), nil)
 }
-
 
 // TestProcessorWithTransform removed - NewProcessor function not available in this package
 

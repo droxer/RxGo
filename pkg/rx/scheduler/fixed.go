@@ -35,7 +35,7 @@ func (fts *FixedThreadScheduler) Start() {
 		return
 	}
 	fts.started = true
-	
+
 	for i := 0; i < len(fts.workers); i++ {
 		fts.workers[i] = newPoolWorker(fts.fixedWorkerPool)
 		fts.workers[i].start()
@@ -113,9 +113,9 @@ func (p *poolWorker) start() {
 	go func() {
 		defer func() {
 			// Clean up when worker exits
-			recover()
+			_ = recover()
 		}()
-		
+
 		for {
 			// Register this worker
 			select {
