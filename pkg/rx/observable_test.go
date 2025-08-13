@@ -3,24 +3,13 @@ package rx
 import (
 	"context"
 	"testing"
+
+	"github.com/droxer/RxGo/internal/testutil"
 )
-
-// TestSubscriber is a test implementation of Subscriber
-type TestSubscriber[T any] struct {
-	Received  []T
-	Completed bool
-	Errors    []error
-	Done      chan struct{}
-}
-
-func (t *TestSubscriber[T]) Start()            {}
-func (t *TestSubscriber[T]) OnNext(value T)    { t.Received = append(t.Received, value) }
-func (t *TestSubscriber[T]) OnError(err error) { t.Errors = append(t.Errors, err); close(t.Done) }
-func (t *TestSubscriber[T]) OnCompleted()      { t.Completed = true; close(t.Done) }
 
 func TestJust(t *testing.T) {
 	// Test basic Just creation
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Just(1, 2, 3, 4, 5)
 	obs.Subscribe(context.Background(), sub)
 
@@ -44,7 +33,7 @@ func TestJust(t *testing.T) {
 
 func TestRange(t *testing.T) {
 	// Test Range creation
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Range(10, 5)
 	obs.Subscribe(context.Background(), sub)
 
@@ -68,7 +57,7 @@ func TestRange(t *testing.T) {
 
 func TestCreate(t *testing.T) {
 	// Test Create with custom subscriber
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Create(func(ctx context.Context, subscriber Subscriber[int]) {
 		for i := 1; i <= 3; i++ {
 			select {
@@ -105,7 +94,7 @@ func TestSubscribeWithContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Create(func(ctx context.Context, subscriber Subscriber[int]) {
 		for i := 1; i <= 3; i++ {
 			subscriber.OnNext(i)
@@ -130,7 +119,7 @@ func TestSubscribeWithContext(t *testing.T) {
 
 func TestSubscriberInterface(t *testing.T) {
 	// Test custom subscriber implementation
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Just(1, 2, 3)
 	obs.Subscribe(context.Background(), sub)
 
@@ -154,7 +143,7 @@ func TestSubscriberInterface(t *testing.T) {
 
 func TestEmptyObservable(t *testing.T) {
 	// Test empty observable
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[int]()
 	obs := Just[int]()
 	obs.Subscribe(context.Background(), sub)
 
@@ -171,7 +160,7 @@ func TestEmptyObservable(t *testing.T) {
 
 func TestStringObservable(t *testing.T) {
 	// Test string observable
-	sub := &TestSubscriber[string]{Done: make(chan struct{})}
+	sub := testutil.NewTestSubscriber[string]()
 	obs := Just("hello", "world", "test")
 	obs.Subscribe(context.Background(), sub)
 

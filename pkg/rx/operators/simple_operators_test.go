@@ -4,24 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/droxer/RxGo/internal/testutil"
 	"github.com/droxer/RxGo/pkg/rx"
 )
 
-// TestSubscriber is a test implementation of rx.Subscriber
-type TestSubscriber[T any] struct {
-	Received  []T
-	Completed bool
-	Errors    []error
-}
-
-func (t *TestSubscriber[T]) Start()            {}
-func (t *TestSubscriber[T]) OnNext(value T)    { t.Received = append(t.Received, value) }
-func (t *TestSubscriber[T]) OnError(err error) { t.Errors = append(t.Errors, err) }
-func (t *TestSubscriber[T]) OnCompleted()      { t.Completed = true }
+// (moved to pkg/rx/testutil)
 
 func TestMap(t *testing.T) {
 	// Test basic mapping
-	sub := &TestSubscriber[int]{}
+	sub := testutil.NewTestSubscriber[int]()
 	source := rx.Just(1, 2, 3)
 	mapped := Map(source, func(x int) int { return x * 2 })
 	mapped.Subscribe(context.Background(), sub)
@@ -44,7 +35,7 @@ func TestMap(t *testing.T) {
 
 func TestFilter(t *testing.T) {
 	// Test basic filtering
-	sub := &TestSubscriber[int]{}
+	sub := testutil.NewTestSubscriber[int]()
 	source := rx.Just(1, 2, 3, 4, 5, 6)
 	filtered := Filter(source, func(x int) bool { return x%2 == 0 })
 	filtered.Subscribe(context.Background(), sub)
@@ -67,7 +58,7 @@ func TestFilter(t *testing.T) {
 
 func TestMapFilterChain(t *testing.T) {
 	// Test chaining map and filter
-	sub := &TestSubscriber[int]{}
+	sub := testutil.NewTestSubscriber[int]()
 	source := rx.Just(1, 2, 3, 4, 5)
 
 	// Chain: double then filter for > 4
@@ -90,7 +81,7 @@ func TestMapFilterChain(t *testing.T) {
 
 func TestEmptySource(t *testing.T) {
 	// Test with empty source
-	sub := &TestSubscriber[int]{}
+	sub := testutil.NewTestSubscriber[int]()
 	source := rx.Just[int]()
 	mapped := Map(source, func(x int) int { return x * 2 })
 	mapped.Subscribe(context.Background(), sub)
@@ -106,7 +97,7 @@ func TestEmptySource(t *testing.T) {
 
 func TestStringMap(t *testing.T) {
 	// Test mapping to different type
-	sub := &TestSubscriber[string]{}
+	sub := testutil.NewTestSubscriber[string]()
 	source := rx.Just(1, 2, 3)
 	mapped := Map(source, func(x int) string { return string(rune(x + 'A')) })
 	mapped.Subscribe(context.Background(), sub)
