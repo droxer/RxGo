@@ -6,6 +6,8 @@ This directory contains comprehensive benchmark tests for the RxGo library.
 
 - `observable/benchmark_test.go` - Benchmarks for the observable package
 - `rxgo/benchmark_test.go` - Benchmarks for the rxgo package
+- `operators/benchmark_test.go` - Benchmarks for operators package
+- `backpressure/benchmark_test.go` - Benchmarks for backpressure strategies
 
 ## Running Benchmarks
 
@@ -50,6 +52,10 @@ go test -bench=BenchmarkObservableCreation ./benchmarks/observable
 - **Error Handling**: `BenchmarkObservableErrorHandling`
 - **Struct Handling**: `BenchmarkObservableStructData`
 - **String Handling**: `BenchmarkObservableStringData`
+- **From Slice**: `BenchmarkObservableFromSlice`
+- **Empty Observable**: `BenchmarkEmptyObservable`
+- **Never Observable**: `BenchmarkNeverObservable`
+- **Error Observable**: `BenchmarkErrorObservable`
 
 ### RxGo Package Benchmarks
 - **Creation**: `BenchmarkRxGoObservableCreation`
@@ -67,6 +73,27 @@ go test -bench=BenchmarkObservableCreation ./benchmarks/observable
 - **Struct Handling**: `BenchmarkRxGoObservableStructData`
 - **String Handling**: `BenchmarkRxGoObservableStringData`
 - **Backpressure Strategies**: `BenchmarkRxGoBackpressureStrategies`
+- **From Slice**: `BenchmarkRxGoObservableFromSlice`
+- **Empty Observable**: `BenchmarkRxGoEmptyObservable`
+- **Never Observable**: `BenchmarkRxGoNeverObservable`
+- **Error Observable**: `BenchmarkRxGoErrorObservable`
+
+### Operators Package Benchmarks
+- **Map Operator**: `BenchmarkOperatorMap`
+- **Filter Operator**: `BenchmarkOperatorFilter`
+- **Operator Chains**: `BenchmarkOperatorMapFilterChain`
+- **ObserveOn Operator**: `BenchmarkOperatorObserveOn`
+- **Memory Allocations**: `BenchmarkOperatorMapMemoryAllocations`, `BenchmarkOperatorFilterMemoryAllocations`, `BenchmarkOperatorChainMemoryAllocations`
+- **Data Types**: `BenchmarkOperatorMapDifferentDataTypes`, `BenchmarkOperatorFilterDifferentDataTypes`
+
+### Backpressure Package Benchmarks
+- **Buffer Strategy**: `BenchmarkBackpressureBufferStrategy`
+- **Drop Strategy**: `BenchmarkBackpressureDropStrategy`
+- **Latest Strategy**: `BenchmarkBackpressureLatestStrategy`
+- **Error Strategy**: `BenchmarkBackpressureErrorStrategy`
+- **Strategy Comparison**: `BenchmarkBackpressureStrategiesComparison`
+- **Buffer Sizes**: `BenchmarkBackpressureWithDifferentBufferSizes`
+- **Memory Allocations**: `BenchmarkBackpressureMemoryAllocations`
 
 ## Example Usage
 
@@ -77,10 +104,14 @@ go test -v -bench=. ./benchmarks/...
 # Run benchmarks with CPU profiling
 go test -bench=. -cpuprofile=cpu.prof ./benchmarks/observable
 go test -bench=. -cpuprofile=cpu.prof ./benchmarks/rxgo
+go test -bench=. -cpuprofile=cpu.prof ./benchmarks/operators
+go test -bench=. -cpuprofile=cpu.prof ./benchmarks/backpressure
 
 # Run benchmarks with memory profiling
 go test -bench=. -memprofile=mem.prof ./benchmarks/observable
 go test -bench=. -memprofile=mem.prof ./benchmarks/rxgo
+go test -bench=. -memprofile=mem.prof ./benchmarks/operators
+go test -bench=. -memprofile=mem.prof ./benchmarks/backpressure
 ```
 
 ## Performance Analysis
@@ -94,3 +125,5 @@ The benchmarks cover:
 - **Error handling** performance impact
 - **Context cancellation** performance
 - **Backpressure strategy** performance impact
+- **Operator chaining** performance
+- **Scheduler integration** performance

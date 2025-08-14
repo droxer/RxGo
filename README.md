@@ -62,25 +62,25 @@ Handle producer/consumer speed mismatches with four strategies:
 import "github.com/droxer/RxGo/pkg/rx/streams"
 
 // Buffer - keep all items in bounded buffer
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
     Strategy:   streams.Buffer,
     BufferSize: 100,
 })
 
 // Drop - discard new items when full
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
     Strategy:   streams.Drop,
     BufferSize: 50,
 })
 
 // Latest - keep only latest item
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
     Strategy:   streams.Latest,
     BufferSize: 1,
 })
 
 // Error - signal error on overflow
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
     Strategy:   streams.Error,
     BufferSize: 10,
 })

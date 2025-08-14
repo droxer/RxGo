@@ -131,7 +131,7 @@ func (c *testCollector) wait() {
 	c.wg.Wait()
 }
 
-func TestRangePublisherWithConfig(t *testing.T) {
+func TestRangePublishWithBackpressure(t *testing.T) {
 	publisher := RangePublishWithBackpressure(1, 5, BackpressureConfig{
 		Strategy:   Buffer,
 		BufferSize: 10,

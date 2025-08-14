@@ -1,3 +1,4 @@
+// Package benchmarks provides performance benchmarks for the RxGo library.
 package benchmarks
 
 import (
@@ -6,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/droxer/RxGo/pkg/rx"
 )
@@ -279,5 +281,50 @@ func BenchmarkObservableDatasetSizes(b *testing.B) {
 				observable.Subscribe(context.Background(), subscriber)
 			}
 		})
+	}
+}
+
+func BenchmarkObservableFromSlice(b *testing.B) {
+	data := make([]int, 1000)
+	for i := 0; i < 1000; i++ {
+		data[i] = i
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.FromSlice(data)
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
+	}
+}
+
+func BenchmarkEmptyObservable(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Empty[int]()
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
+	}
+}
+
+func BenchmarkNeverObservable(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Never[int]()
+		subscriber := &TestSubscriber[int]{}
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+		observable.Subscribe(ctx, subscriber)
+		cancel()
+	}
+}
+
+func BenchmarkErrorObservable(b *testing.B) {
+	testError := fmt.Errorf("test error")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Error[int](testError)
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
 	}
 }

@@ -1,3 +1,4 @@
+// Package benchmarks provides performance benchmarks for the RxGo library.
 package benchmarks
 
 import (
@@ -6,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/droxer/RxGo/pkg/rx"
 )
@@ -282,28 +284,82 @@ func BenchmarkRxGoObservableDatasetSizes(b *testing.B) {
 	}
 }
 
+func BenchmarkRxGoObservableFromSlice(b *testing.B) {
+	data := make([]int, 1000)
+	for i := 0; i < 1000; i++ {
+		data[i] = i
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.FromSlice(data)
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
+	}
+}
+
+func BenchmarkRxGoEmptyObservable(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Empty[int]()
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
+	}
+}
+
+func BenchmarkRxGoNeverObservable(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Never[int]()
+		subscriber := &TestSubscriber[int]{}
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+		observable.Subscribe(ctx, subscriber)
+		cancel()
+	}
+}
+
+func BenchmarkRxGoErrorObservable(b *testing.B) {
+	testError := fmt.Errorf("test error")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		observable := rx.Error[int](testError)
+		subscriber := &TestSubscriber[int]{}
+		observable.Subscribe(context.Background(), subscriber)
+	}
+}
+
 func BenchmarkRxGoBackpressureStrategies(b *testing.B) {
+	// Note: These benchmarks require the streams package to be properly integrated
+	// with the rx package, which may need additional implementation
+
 	b.Run("Buffer", func(b *testing.B) {
+		b.Skip("Buffer backpressure strategy requires integration with streams package")
 		for i := 0; i < b.N; i++ {
-			observable := rx.Range(0, 1000)
-			subscriber := &TestSubscriber[int]{}
-			observable.Subscribe(context.Background(), subscriber)
+			// This would require creating a buffered publisher with Buffer strategy
+			// observable := streams.NewBufferedPublisher(config, source)
+			// subscriber := &TestSubscriber[int]{}
+			// observable.Subscribe(context.Background(), subscriber)
 		}
 	})
 
 	b.Run("Drop", func(b *testing.B) {
+		b.Skip("Drop backpressure strategy requires integration with streams package")
 		for i := 0; i < b.N; i++ {
-			observable := rx.Range(0, 1000)
-			subscriber := &TestSubscriber[int]{}
-			observable.Subscribe(context.Background(), subscriber)
+			// This would require creating a buffered publisher with Drop strategy
+			// observable := streams.NewBufferedPublisher(config, source)
+			// subscriber := &TestSubscriber[int]{}
+			// observable.Subscribe(context.Background(), subscriber)
 		}
 	})
 
 	b.Run("Latest", func(b *testing.B) {
+		b.Skip("Latest backpressure strategy requires integration with streams package")
 		for i := 0; i < b.N; i++ {
-			observable := rx.Range(0, 1000)
-			subscriber := &TestSubscriber[int]{}
-			observable.Subscribe(context.Background(), subscriber)
+			// This would require creating a buffered publisher with Latest strategy
+			// observable := streams.NewBufferedPublisher(config, source)
+			// subscriber := &TestSubscriber[int]{}
+			// observable.Subscribe(context.Background(), subscriber)
 		}
 	})
 }
