@@ -90,7 +90,7 @@ func (s *MonitoringService) OnError(err error) {
 	fmt.Printf("[%s] Monitoring error: %v\n", s.name, err)
 }
 
-func (s *MonitoringService) OnCompleted() {
+func (s *MonitoringService) OnComplete() {
 	fmt.Printf("[%s] Monitoring completed! Total alerts: %d\n", s.name, s.alertCount)
 }
 
@@ -162,7 +162,7 @@ func realTimeMonitoringExamples() {
 				}
 			}
 		}
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 
 	tempStream.Subscribe(context.Background(), temperatureMonitor)

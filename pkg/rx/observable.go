@@ -7,7 +7,7 @@ import (
 type Subscriber[T any] interface {
 	Start()
 	OnNext(next T)
-	OnCompleted()
+	OnComplete()
 	OnError(e error)
 }
 
@@ -37,7 +37,7 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 
 func Just[T any](values ...T) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		defer sub.OnCompleted()
+		defer sub.OnComplete()
 		for _, value := range values {
 			select {
 			case <-ctx.Done():
@@ -52,7 +52,7 @@ func Just[T any](values ...T) *Observable[T] {
 
 func Range(start, count int) *Observable[int] {
 	return Create(func(ctx context.Context, sub Subscriber[int]) {
-		defer sub.OnCompleted()
+		defer sub.OnComplete()
 		if count <= 0 {
 			return
 		}
@@ -70,7 +70,7 @@ func Range(start, count int) *Observable[int] {
 
 func Empty[T any]() *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 }
 
@@ -88,7 +88,7 @@ func Never[T any]() *Observable[T] {
 
 func FromSlice[T any](items []T) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		defer sub.OnCompleted()
+		defer sub.OnComplete()
 		for _, item := range items {
 			select {
 			case <-ctx.Done():
@@ -103,21 +103,21 @@ func FromSlice[T any](items []T) *Observable[T] {
 
 func NewSubscriber[T any](
 	onNext func(T),
-	onCompleted func(),
+	onComplete func(),
 	onError func(error),
 ) Subscriber[T] {
 	return &simpleSubscriber[T]{
-		onNext:      onNext,
-		onCompleted: onCompleted,
-		onError:     onError,
+		onNext:     onNext,
+		onComplete: onComplete,
+		onError:    onError,
 	}
 }
 
 type simpleSubscriber[T any] struct {
-	onNext      func(T)
-	onCompleted func()
-	onError     func(error)
-	started     bool
+	onNext     func(T)
+	onComplete func()
+	onError    func(error)
+	started    bool
 }
 
 func (s *simpleSubscriber[T]) Start() { s.started = true }
@@ -126,9 +126,9 @@ func (s *simpleSubscriber[T]) OnNext(t T) {
 		s.onNext(t)
 	}
 }
-func (s *simpleSubscriber[T]) OnCompleted() {
-	if s.onCompleted != nil {
-		s.onCompleted()
+func (s *simpleSubscriber[T]) OnComplete() {
+	if s.onComplete != nil {
+		s.onComplete()
 	}
 }
 func (s *simpleSubscriber[T]) OnError(err error) {

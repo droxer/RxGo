@@ -23,7 +23,7 @@ func Schedule[T any](value T, delay time.Duration) *Observable[T] {
 		case <-time.After(delay):
 			if ctx.Err() == nil {
 				sub.OnNext(value)
-				sub.OnCompleted()
+				sub.OnComplete()
 			} else {
 				sub.OnError(ctx.Err())
 			}
@@ -35,7 +35,7 @@ func Schedule[T any](value T, delay time.Duration) *Observable[T] {
 
 func Interval(interval time.Duration) *Observable[int] {
 	return Create(func(ctx context.Context, sub Subscriber[int]) {
-		defer sub.OnCompleted()
+		defer sub.OnComplete()
 
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
@@ -88,11 +88,11 @@ func (o *observeOnSubscriber[T]) OnError(err error) {
 	})
 }
 
-func (o *observeOnSubscriber[T]) OnCompleted() {
+func (o *observeOnSubscriber[T]) OnComplete() {
 	o.scheduler.Schedule(func() {
 		if o.ctx.Err() != nil {
 			return
 		}
-		o.sub.OnCompleted()
+		o.sub.OnComplete()
 	})
 }

@@ -67,7 +67,7 @@ func TestCreate(t *testing.T) {
 				subscriber.OnNext(i)
 			}
 		}
-		subscriber.OnCompleted()
+		subscriber.OnComplete()
 	})
 	obs.Subscribe(context.Background(), sub)
 
@@ -99,7 +99,7 @@ func TestSubscribeWithContext(t *testing.T) {
 		for i := 1; i <= 3; i++ {
 			subscriber.OnNext(i)
 		}
-		subscriber.OnCompleted()
+		subscriber.OnComplete()
 	})
 	obs.Subscribe(ctx, sub)
 

@@ -48,7 +48,7 @@ type mapSubscriber[T, R any] struct {
 func (m *mapSubscriber[T, R]) Start()            { m.sub.Start() }
 func (m *mapSubscriber[T, R]) OnNext(t T)        { m.sub.OnNext(m.transform(t)) }
 func (m *mapSubscriber[T, R]) OnError(err error) { m.sub.OnError(err) }
-func (m *mapSubscriber[T, R]) OnCompleted()      { m.sub.OnCompleted() }
+func (m *mapSubscriber[T, R]) OnComplete()       { m.sub.OnComplete() }
 
 type filterSubscriber[T any] struct {
 	sub       rx.Subscriber[T]
@@ -62,7 +62,7 @@ func (f *filterSubscriber[T]) OnNext(t T) {
 	}
 }
 func (f *filterSubscriber[T]) OnError(err error) { f.sub.OnError(err) }
-func (f *filterSubscriber[T]) OnCompleted()      { f.sub.OnCompleted() }
+func (f *filterSubscriber[T]) OnComplete()       { f.sub.OnComplete() }
 
 type observeOnSubscriber[T any] struct {
 	scheduler scheduler.Scheduler
@@ -98,11 +98,11 @@ func (o *observeOnSubscriber[T]) OnError(err error) {
 	})
 }
 
-func (o *observeOnSubscriber[T]) OnCompleted() {
+func (o *observeOnSubscriber[T]) OnComplete() {
 	o.scheduler.Schedule(func() {
 		if o.ctx.Err() != nil {
 			return
 		}
-		o.sub.OnCompleted()
+		o.sub.OnComplete()
 	})
 }

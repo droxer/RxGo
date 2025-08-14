@@ -39,17 +39,12 @@ func (t *TestSubscriber[T]) OnError(err error) {
 	}
 }
 
-// OnCompleted implements Subscriber interface
-func (t *TestSubscriber[T]) OnCompleted() {
+// OnComplete implements Subscriber interface
+func (t *TestSubscriber[T]) OnComplete() {
 	t.Completed = true
 	if t.Done != nil {
 		close(t.Done)
 	}
-}
-
-// OnComplete implements a Subscriber interface method with different naming
-func (t *TestSubscriber[T]) OnComplete() {
-	t.OnCompleted()
 }
 
 // OnSubscribe implements a Subscriber interface method

@@ -157,6 +157,6 @@ func (a *observableSubscriberAdapter[T]) OnError(err error) {
 	a.sub.OnError(err)
 }
 
-func (a *observableSubscriberAdapter[T]) OnCompleted() {
+func (a *observableSubscriberAdapter[T]) OnComplete() {
 	a.sub.OnComplete()
 }

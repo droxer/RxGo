@@ -25,7 +25,7 @@ func (t *TestSubscriber[T]) OnNext(next T) {
 	t.mu.Unlock()
 }
 
-func (t *TestSubscriber[T]) OnCompleted() {
+func (t *TestSubscriber[T]) OnComplete() {
 	t.mu.Lock()
 	t.completed = true
 	t.mu.Unlock()
@@ -66,7 +66,7 @@ func BenchmarkObservableLargeDataset(b *testing.B) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 		subscriber := &TestSubscriber[int]{}
 		observable.Subscribe(context.Background(), subscriber)
@@ -95,7 +95,7 @@ func BenchmarkCreateObservable(b *testing.B) {
 			for j := 0; j < 100; j++ {
 				sub.OnNext(j)
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 		subscriber := &TestSubscriber[int]{}
 		observable.Subscribe(context.Background(), subscriber)
@@ -132,7 +132,7 @@ func BenchmarkObservableStringData(b *testing.B) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 		subscriber := &TestSubscriber[string]{}
 		observable.Subscribe(context.Background(), subscriber)
@@ -160,7 +160,7 @@ func BenchmarkObservableStructData(b *testing.B) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 		subscriber := &TestSubscriber[TestStruct]{}
 		observable.Subscribe(context.Background(), subscriber)
@@ -191,7 +191,7 @@ func BenchmarkObservableContextCancellation(b *testing.B) {
 					sub.OnNext(j)
 				}
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 
 		subscriber := &TestSubscriber[int]{}
@@ -210,7 +210,7 @@ func (s *AtomicSubscriber) OnNext(next int) {
 	s.doNext(next)
 }
 
-func (s *AtomicSubscriber) OnCompleted() {}
+func (s *AtomicSubscriber) OnComplete() {}
 
 func (s *AtomicSubscriber) OnError(e error) {}
 
@@ -273,7 +273,7 @@ func BenchmarkObservableDatasetSizes(b *testing.B) {
 					for _, v := range data {
 						sub.OnNext(v)
 					}
-					sub.OnCompleted()
+					sub.OnComplete()
 				})
 				subscriber := &TestSubscriber[int]{}
 				observable.Subscribe(context.Background(), subscriber)

@@ -49,7 +49,7 @@ func (s *APISubscriber) OnError(err error) {
 	fmt.Printf("[%s] API processing error: %v\n", s.name, err)
 }
 
-func (s *APISubscriber) OnCompleted() {
+func (s *APISubscriber) OnComplete() {
 	fmt.Printf("[%s] HTTP streaming completed!\n", s.name)
 }
 
@@ -88,7 +88,7 @@ func httpStreamingExamples() {
 				time.Sleep(500 * time.Millisecond)
 			}
 		}
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 
 	apiStream.Subscribe(context.Background(), &APISubscriber{name: "HTTPProcessor"})

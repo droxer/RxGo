@@ -86,9 +86,3 @@ Context cancellation example completed!
 - **Graceful Shutdown**: The observable respects context cancellation and exits cleanly
 - **Real-world Usage**: Essential for production systems with timeout requirements
 - **Select Statement**: Uses Go's select statement to handle context cancellation
-
-## Running the Example
-
-```bash
-go run examples/context/context.go
-```

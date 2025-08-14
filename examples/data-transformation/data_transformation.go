@@ -46,7 +46,7 @@ func (s *UserSubscriber) OnError(err error) {
 	fmt.Printf("[%s] Processing error: %v\n", s.name, err)
 }
 
-func (s *UserSubscriber) OnCompleted() {
+func (s *UserSubscriber) OnComplete() {
 	fmt.Printf("[%s] User processing completed!\n", s.name)
 }
 
@@ -73,7 +73,7 @@ func (s *StringProcessor) OnError(err error) {
 	fmt.Printf("[%s] Processing error: %v\n", s.name, err)
 }
 
-func (s *StringProcessor) OnCompleted() {
+func (s *StringProcessor) OnComplete() {
 	fmt.Printf("[%s] String processing completed!\n", s.name)
 }
 
@@ -120,7 +120,7 @@ func (s *NumberCruncher) OnError(err error) {
 	fmt.Printf("[%s] Processing error: %v\n", s.name, err)
 }
 
-func (s *NumberCruncher) OnCompleted() {
+func (s *NumberCruncher) OnComplete() {
 	fmt.Printf("[%s] Number crunching completed!\n", s.name)
 }
 
@@ -144,7 +144,7 @@ func SchedulerProcessor(scheduler scheduler.Scheduler, name string, data []User)
 				time.Sleep(10 * time.Millisecond)
 			}
 		}
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 
 	users.Subscribe(context.Background(), processor)
