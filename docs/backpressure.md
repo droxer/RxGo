@@ -4,6 +4,8 @@ Handle producer/consumer speed mismatches with Reactive Streams 1.0.4 compliant 
 
 ## Overview
 
+RxGo implements backpressure through the Reactive Streams pull-based model where subscribers control the rate of data consumption. This is fundamentally different from push-based models where producers control emission rates.
+
 RxGo provides full Reactive Streams 1.0.4 compliance with four backpressure strategies to control flow when producers outpace consumers.
 
 ## Four Backpressure Strategies

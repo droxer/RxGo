@@ -62,19 +62,55 @@ Each package has a single, well-defined responsibility:
 - `operators/` - Data transformation
 - `streams/` - Reactive Streams specification
 
-### 2. Type Safety
+### 2. Push vs Pull Models
+RxGo implements two distinct reactive models to serve different use cases:
+
+**Push Model (`pkg/rx`)**:
+- Observable API follows a push-based model
+- Producer controls emission rate
+- Data is pushed to subscribers as soon as it's available
+- No built-in backpressure mechanism
+- Simple and intuitive for basic use cases
+- Best for scenarios where producers and consumers operate at similar speeds
+
+**Pull Model (`pkg/rx/streams`)**:
+- Reactive Streams specification follows a pull-based model with backpressure
+- Subscriber controls consumption rate through demand requests
+- Publishers must respect subscriber demand (`Request(n)` calls)
+- Full backpressure support with multiple strategies
+- Production-ready with Reactive Streams 1.0.4 compliance
+- Best for scenarios where producers may outpace consumers
+
+For a detailed explanation of push vs pull models and backpressure strategies, see the [Push vs Pull Models documentation](./push-pull-models.md).
+
+### When to Use Each Model
+
+**Use the Push Model (`pkg/rx`) when**:
+- Building simple reactive applications
+- Working with predictable data rates
+- Prototyping or learning reactive programming
+- Data sources that naturally emit at controlled rates
+
+**Use the Pull Model (`pkg/rx/streams`) when**:
+- Building production systems with potentially unbounded data streams
+- Need to handle producer/consumer speed mismatches
+- Working with external data sources (network, file I/O, etc.)
+- Requiring Reactive Streams 1.0.4 compliance
+- Need for backpressure control to prevent memory issues
+
+### 3. Type Safety
 Full generics support throughout the API:
 - Type-safe Observable creation and processing
 - Compile-time type checking
 - No interface{} or reflection usage
 
-### 3. Context Integration
+### 4. Context Integration
 Native Go context support:
 - Graceful cancellation using `context.Context`
 - Goroutine leak prevention
 - Timeout and deadline support
 
-### 4. Performance
+### 5. Performance
 Optimized for Go's concurrency model:
 - Zero-allocation signal delivery where possible
 - Lock-free data structures
@@ -120,19 +156,19 @@ publisher.Subscribe(subscriber)
 
 ## Best Practices
 
-### Package Selection
+### 6. Package Selection
 - Use `pkg/rx` for simple reactive programming
 - Use `pkg/rx/scheduler` for advanced thread control
 - Use `pkg/rx/operators` for data transformation
 - Use `pkg/rx/streams` for production systems with backpressure
 
-### Performance Guidelines
+### 7. Performance Guidelines
 - Always use context cancellation for long-running streams
 - Implement proper backpressure with `Request(n)` calls
 - Use bounded buffers to prevent memory exhaustion
 - Prefer the Reactive Streams API for production use
 
-### Thread Safety
+### 8. Thread Safety
 All packages are designed to be thread-safe:
 - Concurrent subscription support
 - Safe scheduler usage across goroutines
