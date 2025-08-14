@@ -1,7 +1,6 @@
 package streams
 
 // BackpressureStrategy defines how to handle buffer overflow scenarios
-
 type BackpressureStrategy int
 
 const (
@@ -18,18 +17,6 @@ const (
 	Error
 )
 
-// BackoffPolicy defines retry backoff strategies
-type BackoffPolicy int
-
-const (
-	// FixedBackoff uses constant delay between retries
-	FixedBackoff BackoffPolicy = iota
-	// LinearBackoff increases delay linearly
-	LinearBackoff
-	// ExponentialBackoff increases delay exponentially
-	ExponentialBackoff
-)
-
 // String returns string representation of backpressure strategy
 func (bs BackpressureStrategy) String() string {
 	switch bs {
@@ -41,20 +28,6 @@ func (bs BackpressureStrategy) String() string {
 		return "Latest"
 	case Error:
 		return "Error"
-	default:
-		return "Unknown"
-	}
-}
-
-// String returns string representation of backoff policy
-func (b BackoffPolicy) String() string {
-	switch b {
-	case FixedBackoff:
-		return "FixedBackoff"
-	case LinearBackoff:
-		return "LinearBackoff"
-	case ExponentialBackoff:
-		return "ExponentialBackoff"
 	default:
 		return "Unknown"
 	}

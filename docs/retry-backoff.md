@@ -26,7 +26,7 @@ publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
     MaxRetries:    3,
     InitialDelay:  100 * time.Millisecond,
     BackoffFactor: 2.0,
-    BackoffPolicy: streams.ExponentialBackoff,
+    BackoffPolicy: streams.RetryExponential,
 })
 ```
 
@@ -37,7 +37,7 @@ publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
 publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
     MaxRetries:    5,
     InitialDelay:  200 * time.Millisecond,
-    BackoffPolicy: streams.FixedBackoff,
+    BackoffPolicy: streams.RetryFixed,
 })
 // Delays: 200ms, 200ms, 200ms, 200ms, 200ms
 ```
@@ -47,7 +47,7 @@ publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
 publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
     MaxRetries:    3,
     InitialDelay:  100 * time.Millisecond,
-    BackoffPolicy: streams.LinearBackoff,
+    BackoffPolicy: streams.RetryLinear,
 })
 // Delays: 100ms, 200ms, 300ms
 ```
@@ -58,7 +58,7 @@ publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
     MaxRetries:    4,
     InitialDelay:  50 * time.Millisecond,
     BackoffFactor: 2.0,
-    BackoffPolicy: streams.ExponentialBackoff,
+    BackoffPolicy: streams.RetryExponential,
 })
 // Delays: 50ms, 100ms, 200ms, 400ms
 ```
@@ -106,7 +106,7 @@ publisher := streams.WithLinearRetry(source, 3, 100*time.Millisecond)
 publisher := streams.WithExponentialRetry(source, 3, 100*time.Millisecond, 2.0)
 
 // Infinite retry
-publisher := streams.WithInfiniteRetry(source, 100*time.Millisecond, streams.FixedBackoff)
+publisher := streams.WithInfiniteRetry(source, 100*time.Millisecond, streams.RetryFixed)
 ```
 
 ## Complete Examples
@@ -130,7 +130,7 @@ retryPublisher := streams.NewRetryPublisher(networkCall, streams.RetryConfig{
     InitialDelay:  100 * time.Millisecond,
     MaxDelay:      5 * time.Second,
     BackoffFactor: 2.0,
-    BackoffPolicy: streams.ExponentialBackoff,
+    BackoffPolicy: streams.RetryExponential,
     RetryCondition: func(err error, attempt int) bool {
         return strings.Contains(err.Error(), "timeout")
     },
@@ -167,17 +167,17 @@ type RetryConfig struct {
     InitialDelay   time.Duration
     MaxDelay       time.Duration
     BackoffFactor  float64
-    BackoffPolicy  BackoffPolicy
+    BackoffPolicy  RetryBackoffPolicy
     RetryCondition RetryCondition
 }
 
 type RetryCondition func(err error, attempt int) bool
-type BackoffPolicy int
+type RetryBackoffPolicy int
 
 const (
-    FixedBackoff BackoffPolicy = iota
-    LinearBackoff
-    ExponentialBackoff
+    RetryFixed RetryBackoffPolicy = iota
+    RetryLinear
+    RetryExponential
 )
 ```
 
@@ -224,7 +224,7 @@ publisher := streams.RangePublishWithBackpressure(1, 100, streams.BackpressureCo
 retryPublisher := streams.NewRetryPublisher(publisher, streams.RetryConfig{
     MaxRetries:    3,
     InitialDelay:  100 * time.Millisecond,
-    BackoffPolicy: streams.ExponentialBackoff,
+    BackoffPolicy: streams.RetryExponential,
 })
 ```
 

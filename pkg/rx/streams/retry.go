@@ -31,31 +31,6 @@ type RetryConfig struct {
 	RetryCondition RetryCondition     // Function to determine if retry should happen
 }
 
-type RetryBackoffPolicy int
-
-const (
-	// RetryFixed uses constant delay between retries
-	RetryFixed RetryBackoffPolicy = iota
-	// RetryLinear increases delay linearly (delay = initial * attempt)
-	RetryLinear
-	// RetryExponential increases delay exponentially (delay = initial * factor^attempt)
-	RetryExponential
-)
-
-// String returns string representation of retry backoff policy
-func (b RetryBackoffPolicy) String() string {
-	switch b {
-	case RetryFixed:
-		return "RetryFixed"
-	case RetryLinear:
-		return "RetryLinear"
-	case RetryExponential:
-		return "RetryExponential"
-	default:
-		return "Unknown"
-	}
-}
-
 // RetryCondition determines if an error should trigger a retry
 // Return true to retry, false to propagate the error
 // This allows fine-grained control over which errors are retriable
