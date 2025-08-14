@@ -17,10 +17,11 @@ import (
 //	    InitialDelay:   100 * time.Millisecond,
 //	    MaxDelay:       5 * time.Second,
 //	    BackoffFactor:  2.0,
-//	    BackoffPolicy:  ExponentialBackoff,
+//	    BackoffPolicy:  RetryExponential,
 //	}
 //
 // This will retry up to 3 times with delays: 100ms, 200ms, 400ms
+// (First retry uses factor^0=1, second uses factor^1=2, third uses factor^2=4)
 type RetryConfig struct {
 	MaxRetries     int                // Maximum number of retry attempts (0 = infinite)
 	InitialDelay   time.Duration      // Initial delay before first retry
@@ -30,7 +31,6 @@ type RetryConfig struct {
 	RetryCondition RetryCondition     // Function to determine if retry should happen
 }
 
-// RetryBackoffPolicy defines retry backoff strategies
 type RetryBackoffPolicy int
 
 const (
