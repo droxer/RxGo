@@ -89,7 +89,7 @@ publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureC
 
 ## Documentation
 
-- [Basic Usage](./docs/basic-usage.md) - Simple Observable API examples
+- [Observable API](./docs/observable.md) - Simple Observable API examples
 - [Reactive Streams](./docs/reactive-streams.md) - Full Reactive Streams 1.0.4 compliance
 - [Backpressure](./docs/backpressure.md) - Handle producer/consumer speed mismatches
 - [Push vs Pull Models](./docs/push-pull-models.md) - Understanding push and pull models with backpressure

@@ -1,4 +1,4 @@
-# Basic Usage
+# Observable API
 
 Simple Observable API examples for RxGo.
 
@@ -10,11 +10,15 @@ Simple Observable API examples for RxGo.
 | `Range` | Create from range | `rx.Range(1, 5)` |
 | `Create` | Custom logic | `rx.Create(...)` |
 
-## Creating Observables
+## Push vs Pull Model
 
-### Using Just
+The Observable API implements a **push-based model** without built-in backpressure, which is different from the pull-based Reactive Streams API:
 
-Create observable from literal values:
+- **Push Model**: Observables push data to subscribers as soon as it's available
+- **No Backpressure**: Producers control emission rate without subscriber demand control
+- **Simplicity**: Clean and intuitive API for basic reactive programming
+
+## Basic Usage
 
 ```go
 package main
@@ -50,7 +54,7 @@ func main() {
 }
 ```
 
-### Using Range
+## Using Range
 
 Create observable from range of integers:
 
@@ -60,7 +64,7 @@ rangeObservable := rx.Range(10, 5) // Emits 10, 11, 12, 13, 14
 rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 ```
 
-### Using Create with Custom Logic
+## Using Create with Custom Logic
 
 Create custom observable with your own logic:
 
@@ -85,7 +89,7 @@ customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
 
 ## Using Operators
 
-### Map and Filter Operations
+Transform and filter data using operators:
 
 ```go
 import (
@@ -102,7 +106,7 @@ filtered.Subscribe(context.Background(), &IntSubscriber{name: "Operators"})
 
 ## Using Schedulers
 
-### With Different Schedulers
+Control execution context with different schedulers:
 
 ```go
 import (
@@ -149,6 +153,14 @@ contextObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int])
 })
 contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
 ```
+
+## Key Concepts
+
+- **Observable/Subscriber Pattern**: The `rx` package provides a clean Observable API
+- **Push-based Model**: Data is pushed to subscribers as soon as it's available
+- **Context Support**: All observables support context cancellation for graceful shutdown
+- **Type Safety**: Generic types ensure compile-time type safety
+- **Simplicity**: Clean and intuitive API for basic reactive programming
 
 ## Complete Example
 
