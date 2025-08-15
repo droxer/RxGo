@@ -150,7 +150,7 @@ publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureC
 - [Backpressure](./docs/backpressure.md) - Handle producer/consumer speed mismatches
 - [Push vs Pull Models](./docs/push-pull-models.md) - Understanding push and pull models with backpressure
 - [Retry and Backoff](./docs/retry-backoff.md) - Configurable retry with backoff strategies
-- [Data Transformation](./docs/data-transformation.md) - Transform and process data streams
+- [Transformations](./docs/transformations.md) - Transform and process data streams with both Reactive Streams and Observable API
 - [Context Cancellation](./docs/context-cancellation.md) - Graceful cancellation using Go context
 - [Schedulers](./docs/schedulers.md) - Execution context control
 

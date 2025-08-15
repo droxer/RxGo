@@ -1,7 +1,5 @@
 # Observable API
 
-Simple Observable API examples for RxGo.
-
 ## Quick Overview
 
 | Function | Purpose | Example |
@@ -10,7 +8,7 @@ Simple Observable API examples for RxGo.
 | `Range` | Create from range | `rx.Range(1, 5)` |
 | `Create` | Custom logic | `rx.Create(...)` |
 
-## Push vs Pull Model
+## Push Model
 
 The Observable API implements a **push-based model** without built-in backpressure, which is different from the pull-based Reactive Streams API:
 

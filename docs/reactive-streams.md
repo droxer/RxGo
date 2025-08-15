@@ -10,7 +10,7 @@ Full Reactive Streams 1.0.4 compliance with backpressure support.
 | `Subscriber[T]` | Data consumer | Custom struct implementing Subscriber interface |
 | `Subscription` | Demand control | `Request(n)` |
 
-## Push vs Pull Model
+## Pull Model
 
 The Reactive Streams API implements a **pull-based model** with backpressure, which is different from the push-based Observable API:
 

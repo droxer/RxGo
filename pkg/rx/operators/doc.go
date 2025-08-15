@@ -9,7 +9,7 @@
 // Map: Transforms each value emitted by an Observable by applying a function
 //
 //	import "github.com/droxer/RxGo/pkg/rx/operators"
-//	
+//
 //	// Transform each value by doubling it
 //	source := rx.Just(1, 2, 3, 4, 5)
 //	doubled := operators.Map(source, func(x int) int { return x * 2 })
