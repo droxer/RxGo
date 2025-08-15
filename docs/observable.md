@@ -25,7 +25,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/observable"
 )
 
 type IntSubscriber struct {
@@ -47,7 +47,7 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
     // Using Just to create observable
-    justObservable := rx.Just(1, 2, 3, 4, 5)
+    justObservable := observable.Just(1, 2, 3, 4, 5)
     justObservable.Subscribe(context.Background(), &IntSubscriber{name: "Just"})
 }
 ```
@@ -58,7 +58,7 @@ Create observable from range of integers:
 
 ```go
 // Create observable from range of integers
-rangeObservable := rx.Range(10, 5) // Emits 10, 11, 12, 13, 14
+rangeObservable := observable.Range(10, 5) // Emits 10, 11, 12, 13, 14
 rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 ```
 
@@ -68,9 +68,9 @@ Create custom observable with your own logic:
 
 ```go
 // Create custom observable
-import "github.com/droxer/RxGo/pkg/rx"
+import "github.com/droxer/RxGo/pkg/observable"
 
-customObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
+customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
     for i := 0; i < 3; i++ {
         select {
         case <-ctx.Done():
@@ -221,7 +221,7 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
     defer cancel()
 
-    contextObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
+    contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
         for i := 0; i < 5; i++ {
             select {
             case <-ctx.Done():

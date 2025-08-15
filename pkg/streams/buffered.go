@@ -137,7 +137,6 @@ func (bp *BufferedPublisher[T]) handleBufferStrategy(value T, sub *bufferedSubsc
 
 func (bp *BufferedPublisher[T]) handleDropStrategy(value T, sub *bufferedSubscription[T]) {
 	if int64(len(bp.buffer)) >= bp.config.BufferSize {
-		// Drop the new item
 		return
 	}
 
@@ -152,7 +151,6 @@ func (bp *BufferedPublisher[T]) handleDropStrategy(value T, sub *bufferedSubscri
 
 func (bp *BufferedPublisher[T]) handleLatestStrategy(value T, sub *bufferedSubscription[T]) {
 	if int64(len(bp.buffer)) >= bp.config.BufferSize {
-		// Replace oldest with latest
 		if len(bp.buffer) > 0 {
 			bp.buffer[0] = value
 		} else {
@@ -199,19 +197,159 @@ func (bp *BufferedPublisher[T]) flushBuffer(sub *bufferedSubscription[T]) {
 		sub.sub.OnNext(next)
 	}
 
-	// Handle remaining buffer based on strategy
 	if len(bp.buffer) > 0 {
 		switch bp.config.Strategy {
 		case Buffer, Drop, Latest:
-			// Process remaining items
 			for len(bp.buffer) > 0 {
 				next := bp.buffer[0]
 				bp.buffer = bp.buffer[1:]
 				sub.sub.OnNext(next)
 			}
 		case Error:
-			// Signal overflow for remaining items
 			sub.sub.OnError(errors.New("buffer overflow during completion"))
 		}
 	}
+}
+
+// CompliantRangePublisher implements a Reactive Streams 1.0.4 compliant range publisher
+type CompliantRangePublisher struct {
+	*compliantPublisher[int]
+	start int
+	end   int
+}
+
+func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
+	return &CompliantRangePublisher{
+		compliantPublisher: newCompliantPublisher[int](),
+		start:              start,
+		end:                end,
+	}
+}
+
+func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber[int]) {
+	rp.compliantPublisher.subscribe(ctx, sub)
+	go rp.process(ctx)
+}
+
+func (rp *CompliantRangePublisher) process(ctx context.Context) {
+	defer rp.complete()
+
+	select {
+	case <-rp.demandSignal:
+	case <-ctx.Done():
+		return
+	}
+
+	for i := rp.start; i <= rp.end; i++ {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		subs := rp.getActiveSubscribers()
+		if len(subs) == 0 {
+			return
+		}
+
+		canEmit := false
+		for _, sub := range subs {
+			if sub.canEmit() {
+				canEmit = true
+				break
+			}
+		}
+
+		if !canEmit {
+			select {
+			case <-rp.demandSignal:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if !rp.emit(i) {
+			return
+		}
+	}
+}
+
+// CompliantFromSlicePublisher implements a Reactive Streams compliant slice publisher
+type CompliantFromSlicePublisher[T any] struct {
+	*compliantPublisher[T]
+	items []T
+}
+
+func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublisher[T] {
+	return &CompliantFromSlicePublisher[T]{
+		compliantPublisher: newCompliantPublisher[T](),
+		items:              items,
+	}
+}
+
+func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+	sp.compliantPublisher.subscribe(ctx, sub)
+	go sp.process(ctx)
+}
+
+func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
+	defer sp.complete()
+
+	if len(sp.items) == 0 {
+		return
+	}
+
+	select {
+	case <-sp.demandSignal:
+	case <-ctx.Done():
+		return
+	}
+
+	for _, item := range sp.items {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		subs := sp.getActiveSubscribers()
+		if len(subs) == 0 {
+			return
+		}
+
+		canEmit := false
+		for _, sub := range subs {
+			if sub.canEmit() {
+				canEmit = true
+				break
+			}
+		}
+
+		if !canEmit {
+			select {
+			case <-sp.demandSignal:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if !sp.emit(item) {
+			return
+		}
+	}
+}
+
+// CompliantBuilder provides fluent API for compliant publishers
+type CompliantBuilder[T any] struct{}
+
+func NewCompliantBuilder[T any]() *CompliantBuilder[T] {
+	return &CompliantBuilder[T]{}
+}
+
+func (b *CompliantBuilder[T]) Range(start, end int) Publisher[int] {
+	return NewCompliantRangePublisher(start, end)
+}
+
+func (b *CompliantBuilder[T]) FromSlice(items []T) Publisher[T] {
+	return NewCompliantFromSlicePublisher(items)
 }

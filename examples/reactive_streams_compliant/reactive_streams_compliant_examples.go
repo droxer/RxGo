@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/rx/streams"
+	"github.com/droxer/RxGo/pkg/streams"
 )
 
 func main() {
@@ -381,12 +381,12 @@ func RunPerformanceCompliant() {
 var (
 	NewCompliantRangePublisher     = streams.NewCompliantRangePublisher
 	NewCompliantFromSlicePublisher = streams.NewCompliantFromSlicePublisher[string]
-	NewCompliantBufferedPublisher  = streams.NewCompliantBufferedPublisher[int]
-	NewMapProcessor                = streams.NewMapProcessor[int, string]
-	NewFilterProcessor             = streams.NewFilterProcessor[int]
-	NewFlatMapProcessor            = streams.NewFlatMapProcessor[int, string]
-	NewCompliantBuilder            = streams.NewCompliantBuilder[int]
-	NewProcessorBuilder            = streams.NewProcessorBuilder[int, string]
+	// NewCompliantBufferedPublisher  = streams.NewCompliantBufferedPublisher[int]
+	NewMapProcessor     = streams.NewMapProcessor[int, string]
+	NewFilterProcessor  = streams.NewFilterProcessor[int]
+	NewFlatMapProcessor = streams.NewFlatMapProcessor[int, string]
+	NewCompliantBuilder = streams.NewCompliantBuilder[int]
+	NewProcessorBuilder = streams.NewProcessorBuilder[int, string]
 )
 
 // Initialize example

@@ -34,12 +34,12 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/rx"
+    "github.com/droxer/RxGo/pkg/observable"
 )
 
 func main() {
-    obs := rx.Just(1, 2, 3, 4, 5)
-    obs.Subscribe(context.Background(), rx.NewSubscriber(
+    obs := observable.Just(1, 2, 3, 4, 5)
+    obs.Subscribe(context.Background(), observable.NewSubscriber(
         func(v int) { fmt.Printf("Got %d\n", v) },
         func() { fmt.Println("Done") },
         func(err error) { fmt.Printf("Error: %v\n", err) },
@@ -69,7 +69,7 @@ import (
     "fmt"
     "math"
     
-    "github.com/droxer/RxGo/pkg/rx/streams"
+    "github.com/droxer/RxGo/pkg/streams"
 )
 
 type IntSubscriber struct {
@@ -94,7 +94,7 @@ func (s *IntSubscriber) OnComplete() {
 }
 
 func main() {
-    publisher := streams.RangePublisher(1, 5)
+    publisher := streams.NewRangePublisher(1, 5)
     publisher.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 }
 ```
@@ -115,31 +115,31 @@ func main() {
 Handle producer/consumer speed mismatches with four strategies:
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/streams"
+import "github.com/droxer/RxGo/pkg/streams"
 
 // Buffer - keep all items in bounded buffer
-publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
-    Strategy:   streams.Buffer,
-    BufferSize: 100,
-})
+publisher := streams.NewBufferedPublisher[int](
+    streams.WithBufferStrategy(streams.Buffer),
+    streams.WithBufferSize(100),
+)
 
 // Drop - discard new items when full
-publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
-    Strategy:   streams.Drop,
-    BufferSize: 50,
-})
+publisher := streams.NewBufferedPublisher[int](
+    streams.WithBufferStrategy(streams.Drop),
+    streams.WithBufferSize(50),
+)
 
 // Latest - keep only latest item
-publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
-    Strategy:   streams.Latest,
-    BufferSize: 1,
-})
+publisher := streams.NewBufferedPublisher[int](
+    streams.WithBufferStrategy(streams.Latest),
+    streams.WithBufferSize(1),
+)
 
 // Error - signal error on overflow
-publisher := streams.RangePublishWithBackpressure(1, 1000, streams.BackpressureConfig{
-    Strategy:   streams.Error,
-    BufferSize: 10,
-})
+publisher := streams.NewBufferedPublisher[int](
+    streams.WithBufferStrategy(streams.Error),
+    streams.WithBufferSize(10),
+)
 ```
 
 ## Documentation

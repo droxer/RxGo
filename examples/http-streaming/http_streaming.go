@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 // APIResponse represents a mock API response
@@ -49,7 +49,7 @@ func (s *APISubscriber) OnError(err error) {
 	fmt.Printf("[%s] API processing error: %v\n", s.name, err)
 }
 
-func (s *APISubscriber) OnComplete() {
+func (s *APISubscriber) OnCompleted() {
 	fmt.Printf("[%s] HTTP streaming completed!\n", s.name)
 }
 
@@ -75,7 +75,7 @@ func main() {
 func httpStreamingExamples() {
 	fmt.Println("=== HTTP Streaming Example ===")
 
-	apiStream := rx.Create(func(ctx context.Context, sub rx.Subscriber[APIResponse]) {
+	apiStream := observable.Create(func(ctx context.Context, sub observable.Subscriber[APIResponse]) {
 		data := mockAPIStream(ctx)
 
 		for _, item := range data {
@@ -88,7 +88,7 @@ func httpStreamingExamples() {
 				time.Sleep(500 * time.Millisecond)
 			}
 		}
-		sub.OnComplete()
+		sub.OnCompleted()
 	})
 
 	apiStream.Subscribe(context.Background(), &APISubscriber{name: "HTTPProcessor"})

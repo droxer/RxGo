@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/rx"
-	"github.com/droxer/RxGo/pkg/rx/scheduler"
+	"github.com/droxer/RxGo/pkg/observable"
+	"github.com/droxer/RxGo/pkg/scheduler"
 )
 
 // Trade represents a financial transaction
@@ -78,7 +78,7 @@ func (s *FinancialProcessor) OnError(err error) {
 	fmt.Printf("[%s] Financial processing error: %v\n", s.name, err)
 }
 
-func (s *FinancialProcessor) OnComplete() {
+func (s *FinancialProcessor) OnCompleted() {
 	fmt.Printf("[%s] Financial processing completed!\n", s.name)
 	fmt.Printf("[%s] Final portfolio:\n", s.name)
 	for symbol, shares := range s.portfolio.Holdings {
@@ -112,7 +112,7 @@ func financialProcessingExamples() {
 	processor := NewFinancialProcessor("TradeEngine", 10000.0)
 
 	// Simulate real-time trading data
-	trades := rx.Create(func(ctx context.Context, sub rx.Subscriber[Trade]) {
+	trades := observable.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
 		data := generateMarketData(ctx)
 
 		for _, trade := range data {
@@ -125,7 +125,7 @@ func financialProcessingExamples() {
 				time.Sleep(800 * time.Millisecond)
 			}
 		}
-		sub.OnComplete()
+		sub.OnCompleted()
 	})
 
 	trades.Subscribe(context.Background(), processor)
@@ -150,7 +150,7 @@ func financialProcessingExamples() {
 		start := time.Now()
 		processor := NewFinancialProcessor(name+"-Engine", 10000.0)
 
-		trades := rx.Create(func(ctx context.Context, sub rx.Subscriber[Trade]) {
+		trades := observable.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
 			for _, trade := range data {
 				select {
 				case <-ctx.Done():
@@ -163,7 +163,7 @@ func financialProcessingExamples() {
 					time.Sleep(50 * time.Millisecond)
 				}
 			}
-			sub.OnComplete()
+			sub.OnCompleted()
 		})
 
 		trades.Subscribe(context.Background(), processor)

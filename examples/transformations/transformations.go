@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/rx"
-	"github.com/droxer/RxGo/pkg/rx/operators"
-	"github.com/droxer/RxGo/pkg/rx/streams"
+	"github.com/droxer/RxGo/pkg/observable"
+	"github.com/droxer/RxGo/pkg/streams"
 )
 
 // Observable API Example
@@ -30,7 +29,7 @@ func (s *ObservableSubscriber) OnError(err error) {
 	fmt.Printf("[Observable %s] Error: %v\n", s.name, err)
 }
 
-func (s *ObservableSubscriber) OnComplete() {
+func (s *ObservableSubscriber) OnCompleted() {
 	fmt.Printf("[Observable %s] Completed\n", s.name)
 }
 
@@ -61,8 +60,8 @@ func main() {
 	fmt.Println("=== Observable API Example ===")
 
 	// Observable API transformation
-	words := rx.Just("hello", "world", "rxgo")
-	uppercased := operators.Map(words, strings.ToUpper)
+	words := observable.Just("hello", "world", "rxgo")
+	uppercased := observable.Map(words, strings.ToUpper)
 	uppercased.Subscribe(context.Background(), &ObservableSubscriber{name: "Mapper"})
 
 	time.Sleep(100 * time.Millisecond)

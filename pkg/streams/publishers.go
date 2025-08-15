@@ -3,8 +3,6 @@ package streams
 import (
 	"context"
 	"sync/atomic"
-
-	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // ReactivePublisher implements Publisher with full Reactive Streams compliance
@@ -36,6 +34,7 @@ func (p *ReactivePublisher[T]) processWithBackpressure(ctx context.Context, s Su
 	p.onSubscribe(ctx, s)
 }
 
+// FromSlicePublisher creates a Publisher from a slice of items
 func FromSlicePublisher[T any](items []T) Publisher[T] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[T]) {
 		defer sub.OnComplete()
@@ -52,6 +51,7 @@ func FromSlicePublisher[T any](items []T) Publisher[T] {
 	})
 }
 
+// RangePublisher creates a Publisher that emits a range of integers
 func RangePublisher(start, count int) Publisher[int] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnComplete()
@@ -72,6 +72,7 @@ func RangePublisher(start, count int) Publisher[int] {
 	})
 }
 
+// RangePublishWithBackpressure creates a range publisher with backpressure support
 func RangePublishWithBackpressure(start, count int, config BackpressureConfig) Publisher[int] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
@@ -95,6 +96,7 @@ func RangePublishWithBackpressure(start, count int, config BackpressureConfig) P
 	})
 }
 
+// FromSlicePublishWithBackpressure creates a slice publisher with backpressure support
 func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfig) Publisher[T] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
@@ -114,7 +116,7 @@ func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfi
 	})
 }
 
-// reactiveSubscription implements Subscription
+// reactiveSubscription implements Subscription for ReactivePublisher
 type reactiveSubscription struct {
 	cancelled atomic.Bool
 	requested atomic.Int64
@@ -132,31 +134,4 @@ func (s *reactiveSubscription) Request(n int64) {
 
 func (s *reactiveSubscription) Cancel() {
 	s.cancelled.Store(true)
-}
-
-func ObservablePublisherAdapter[T any](obs *rx.Observable[T]) Publisher[T] {
-	return NewPublisher(func(ctx context.Context, sub Subscriber[T]) {
-		obs.Subscribe(ctx, &observableSubscriberAdapter[T]{sub: sub})
-	})
-}
-
-type observableSubscriberAdapter[T any] struct {
-	sub Subscriber[T]
-}
-
-func (a *observableSubscriberAdapter[T]) Start() {
-	// Observable interface doesn't have OnSubscribe, so we call it here
-	a.sub.OnSubscribe(&reactiveSubscription{})
-}
-
-func (a *observableSubscriberAdapter[T]) OnNext(t T) {
-	a.sub.OnNext(t)
-}
-
-func (a *observableSubscriberAdapter[T]) OnError(err error) {
-	a.sub.OnError(err)
-}
-
-func (a *observableSubscriberAdapter[T]) OnComplete() {
-	a.sub.OnComplete()
 }

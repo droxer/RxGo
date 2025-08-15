@@ -17,7 +17,7 @@ The library is organized into clean, focused subpackages:
 
 ### Core Packages
 
-#### `github.com/droxer/RxGo/pkg/rx`
+#### `github.com/droxer/RxGo/pkg/observable`
 - **Purpose**: Core Observable API and basic reactive programming
 - **Key Features**:
   - `Observable[T]` - Main observable type with generics support
@@ -26,7 +26,7 @@ The library is organized into clean, focused subpackages:
   - Context-based cancellation support
   - Type-safe throughout with Go generics
 
-#### `github.com/droxer/RxGo/pkg/rx/scheduler`
+#### `github.com/droxer/RxGo/pkg/scheduler`
 - **Purpose**: Advanced threading and execution control
 - **Key Features**:
   - `Scheduler` interface - Unified scheduling abstraction
@@ -36,23 +36,20 @@ The library is organized into clean, focused subpackages:
   - **Computation** - Fixed thread pool for CPU-bound work
   - **IO** - Cached thread pool for I/O-bound work
 
-#### `github.com/droxer/RxGo/pkg/rx/operators`
-- **Purpose**: Data transformation and processing operators
-- **Key Features**:
-  - `Map()` - Transform values using functions
-  - `Filter()` - Filter values based on predicates
-  - `ObserveOn()` - Schedule observable emissions on specific schedulers
-  - Type-safe operators with generics
-  - Function-based composition for Observable API
-
-#### `github.com/droxer/RxGo/pkg/rx/streams`
+#### `github.com/droxer/RxGo/pkg/streams`
 - **Purpose**: Full Reactive Streams 1.0.4 compliance
 - **Key Features**:
   - `Publisher[T]` - Type-safe data source with demand control
-  - `ReactiveSubscriber[T]` - Complete subscriber interface with lifecycle
+  - `Subscriber[T]` - Complete subscriber interface with lifecycle
   - `Subscription` - Request/cancel control with backpressure
   - `Processor[T,R]` - Transforming publisher that implements both Publisher and Subscriber
   - Full backpressure support with multiple strategies
+
+#### `github.com/droxer/RxGo/pkg/adapters`
+- **Purpose**: Interoperability between Observable and Reactive Streams APIs
+- **Key Features**:
+  - `ObservablePublisherAdapter[T]` - Convert Observable to Publisher
+  - `PublisherToObservableAdapter[T]` - Convert Publisher to Observable
   - Processor-based composition for Reactive Streams API
 
 ## Design Principles
@@ -67,7 +64,7 @@ Each package has a single, well-defined responsibility:
 ### 2. Push vs Pull Models
 RxGo implements two distinct reactive models to serve different use cases:
 
-**Push Model (`pkg/rx`)**:
+**Push Model (`pkg/observable`)**:
 - Observable API follows a push-based model
 - Producer controls emission rate
 - Data is pushed to subscribers as soon as it's available
@@ -75,7 +72,7 @@ RxGo implements two distinct reactive models to serve different use cases:
 - Simple and intuitive for basic use cases
 - Best for scenarios where producers and consumers operate at similar speeds
 
-**Pull Model (`pkg/rx/streams`)**:
+**Pull Model (`pkg/streams`)**:
 - Reactive Streams specification follows a pull-based model with backpressure
 - Subscriber controls consumption rate through demand requests
 - Publishers must respect subscriber demand (`Request(n)` calls)
@@ -87,33 +84,33 @@ RxGo implements two distinct reactive models to serve different use cases:
 
 RxGo provides two distinct approaches to data transformation:
 
-**Operators (`pkg/rx/operators`)**:
+**Operators (`pkg/observable`)**:
 - Function-based transformations for the Observable API
-- Composed using function calls: `operators.Map(observable, transformFunc)`
+- Composed using function calls: `observable.Map(observable, transformFunc)`
 - Work with push-based Observable model
 - No built-in backpressure support
 - Simple syntax for basic transformations
 - Examples: `Map`, `Filter`, `ObserveOn`
 
-**Processors (`pkg/rx/streams`)**:
+**Processors (`pkg/streams`)**:
 - Type-based transformations for the Reactive Streams API
 - Composed using Subscribe method calls: `publisher.Subscribe(ctx, processor)`
 - Work with pull-based Publisher/Subscriber model
 - Full Reactive Streams 1.0.4 compliance with backpressure
 - Implement both Publisher and Subscriber interfaces
-- Examples: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`
+- Examples: `MapProcessor`, `FilterProcessor`
 
 For a detailed explanation of push vs pull models and backpressure strategies, see the [Push vs Pull Models documentation](./push-pull-models.md).
 
 ### When to Use Each Model
 
-**Use the Push Model (`pkg/rx`) when**:
+**Use the Push Model (`pkg/observable`) when**:
 - Building simple reactive applications
 - Working with predictable data rates
 - Prototyping or learning reactive programming
 - Data sources that naturally emit at controlled rates
 
-**Use the Pull Model (`pkg/rx/streams`) when**:
+**Use the Pull Model (`pkg/streams`) when**:
 - Building production systems with potentially unbounded data streams
 - Need to handle producer/consumer speed mismatches
 - Working with external data sources (network, file I/O, etc.)

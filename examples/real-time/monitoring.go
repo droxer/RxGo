@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/droxer/RxGo/pkg/rx"
+	"github.com/droxer/RxGo/pkg/observable"
 )
 
 // SensorData represents IoT sensor readings
@@ -90,7 +90,7 @@ func (s *MonitoringService) OnError(err error) {
 	fmt.Printf("[%s] Monitoring error: %v\n", s.name, err)
 }
 
-func (s *MonitoringService) OnComplete() {
+func (s *MonitoringService) OnCompleted() {
 	fmt.Printf("[%s] Monitoring completed! Total alerts: %d\n", s.name, s.alertCount)
 }
 
@@ -148,7 +148,7 @@ func realTimeMonitoringExamples() {
 	}
 
 	// Create temperature monitoring stream
-	tempStream := rx.Create(func(ctx context.Context, sub rx.Subscriber[SensorData]) {
+	tempStream := observable.Create(func(ctx context.Context, sub observable.Subscriber[SensorData]) {
 		for _, device := range devices {
 			data := sensorSimulator(ctx, device.id, device.location)
 			for _, reading := range data {
@@ -162,7 +162,7 @@ func realTimeMonitoringExamples() {
 				}
 			}
 		}
-		sub.OnComplete()
+		sub.OnCompleted()
 	})
 
 	tempStream.Subscribe(context.Background(), temperatureMonitor)

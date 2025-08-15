@@ -1,15 +1,14 @@
-package operators
+package observable
 
 import (
 	"context"
 
-	"github.com/droxer/RxGo/pkg/rx"
-	"github.com/droxer/RxGo/pkg/rx/scheduler"
+	"github.com/droxer/RxGo/pkg/scheduler"
 )
 
-// Map transforms each value emitted by the Observable
-func Map[T, R any](source *rx.Observable[T], transform func(T) R) *rx.Observable[R] {
-	return rx.Create(func(ctx context.Context, sub rx.Subscriber[R]) {
+// Map transforms each value emitted by the Observable using the provided function
+func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
+	return Create(func(ctx context.Context, sub Subscriber[R]) {
 		source.Subscribe(ctx, &mapSubscriber[T, R]{
 			sub:       sub,
 			transform: transform,
@@ -17,9 +16,9 @@ func Map[T, R any](source *rx.Observable[T], transform func(T) R) *rx.Observable
 	})
 }
 
-// Filter filters values emitted by the Observable
-func Filter[T any](source *rx.Observable[T], predicate func(T) bool) *rx.Observable[T] {
-	return rx.Create(func(ctx context.Context, sub rx.Subscriber[T]) {
+// Filter filters values emitted by the Observable based on a predicate function
+func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] {
+	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &filterSubscriber[T]{
 			sub:       sub,
 			predicate: predicate,
@@ -28,30 +27,31 @@ func Filter[T any](source *rx.Observable[T], predicate func(T) bool) *rx.Observa
 }
 
 // ObserveOn schedules the Observable to emit its values on the specified scheduler
-func ObserveOn[T any](source *rx.Observable[T], scheduler scheduler.Scheduler) *rx.Observable[T] {
-	return rx.Create(func(ctx context.Context, sub rx.Subscriber[T]) {
+// This allows control over which thread/scheduler the emissions occur on
+func ObserveOn[T any](source *Observable[T], sched scheduler.Scheduler) *Observable[T] {
+	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &observeOnSubscriber[T]{
-			scheduler: scheduler,
+			scheduler: sched,
 			sub:       sub,
 			ctx:       ctx,
 		})
 	})
 }
 
-// internal subscriber types
+// internal subscriber types for operators
 
 type mapSubscriber[T, R any] struct {
-	sub       rx.Subscriber[R]
+	sub       Subscriber[R]
 	transform func(T) R
 }
 
 func (m *mapSubscriber[T, R]) Start()            { m.sub.Start() }
 func (m *mapSubscriber[T, R]) OnNext(t T)        { m.sub.OnNext(m.transform(t)) }
 func (m *mapSubscriber[T, R]) OnError(err error) { m.sub.OnError(err) }
-func (m *mapSubscriber[T, R]) OnComplete()       { m.sub.OnComplete() }
+func (m *mapSubscriber[T, R]) OnCompleted()      { m.sub.OnCompleted() }
 
 type filterSubscriber[T any] struct {
-	sub       rx.Subscriber[T]
+	sub       Subscriber[T]
 	predicate func(T) bool
 }
 
@@ -62,11 +62,11 @@ func (f *filterSubscriber[T]) OnNext(t T) {
 	}
 }
 func (f *filterSubscriber[T]) OnError(err error) { f.sub.OnError(err) }
-func (f *filterSubscriber[T]) OnComplete()       { f.sub.OnComplete() }
+func (f *filterSubscriber[T]) OnCompleted()      { f.sub.OnCompleted() }
 
 type observeOnSubscriber[T any] struct {
 	scheduler scheduler.Scheduler
-	sub       rx.Subscriber[T]
+	sub       Subscriber[T]
 	ctx       context.Context
 	started   bool
 }
@@ -98,11 +98,11 @@ func (o *observeOnSubscriber[T]) OnError(err error) {
 	})
 }
 
-func (o *observeOnSubscriber[T]) OnComplete() {
+func (o *observeOnSubscriber[T]) OnCompleted() {
 	o.scheduler.Schedule(func() {
 		if o.ctx.Err() != nil {
 			return
 		}
-		o.sub.OnComplete()
+		o.sub.OnCompleted()
 	})
 }

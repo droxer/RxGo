@@ -3,8 +3,6 @@ package streams
 import (
 	"context"
 	"testing"
-
-	"github.com/droxer/RxGo/pkg/rx"
 )
 
 // TestSubscriber is a test implementation of Subscriber
@@ -99,31 +97,6 @@ func TestFromSlicePublisherEmpty(t *testing.T) {
 
 	if len(sub.Received) != 0 {
 		t.Errorf("Expected 0 values, got %d", len(sub.Received))
-	}
-
-	if !sub.Completed {
-		t.Error("Expected completion")
-	}
-}
-
-func TestObservablePublisherAdapter(t *testing.T) {
-	// Test adapter from Observable to Publisher
-	sub := &TestSubscriber[int]{Done: make(chan struct{})}
-	obs := rx.Just(1, 2, 3)
-	publisher := ObservablePublisherAdapter(obs)
-	publisher.Subscribe(context.Background(), sub)
-
-	<-sub.Done
-
-	expected := []int{1, 2, 3}
-	if len(sub.Received) != len(expected) {
-		t.Errorf("Expected %d values, got %d", len(expected), len(sub.Received))
-	}
-
-	for i, v := range sub.Received {
-		if v != expected[i] {
-			t.Errorf("Expected %v at index %d, got %v", expected[i], i, v)
-		}
 	}
 
 	if !sub.Completed {
@@ -296,42 +269,6 @@ func TestPublisherNilSubscriber(t *testing.T) {
 // TestComplexProcessorChain removed - NewProcessor function not available in this package
 
 // TestFloatProcessor removed - NewProcessor function not available in this package
-
-func TestObservableAdapter(t *testing.T) {
-	// Test Observable to Publisher adapter
-	tests := []struct {
-		name string
-		obs  *rx.Observable[int]
-	}{
-		{"Just", rx.Just(1, 2, 3)},
-		{"Range", rx.Range(1, 3)},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sub := &TestSubscriber[int]{Done: make(chan struct{})}
-			publisher := ObservablePublisherAdapter(tt.obs)
-			publisher.Subscribe(context.Background(), sub)
-
-			<-sub.Done
-
-			expected := []int{1, 2, 3}
-			if len(sub.Received) != len(expected) {
-				t.Errorf("Expected %d values, got %d", len(expected), len(sub.Received))
-			}
-
-			for i, v := range sub.Received {
-				if v != expected[i] {
-					t.Errorf("Expected %v at index %d, got %v", expected[i], i, v)
-				}
-			}
-
-			if !sub.Completed {
-				t.Error("Expected completion")
-			}
-		})
-	}
-}
 
 // TestProcessorIdentity removed - NewProcessor function not available in this package
 

@@ -23,6 +23,7 @@ func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 
 // OnSubscribe implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnSubscribe(s Subscription) {
+	// Process subscription
 }
 
 // OnNext implements Subscriber[T]
@@ -98,6 +99,7 @@ func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R
 }
 
 func (p *FlatMapProcessor[T, R]) OnSubscribe(s Subscription) {
+	// Process subscription
 }
 
 // OnNext implements Subscriber[T]
