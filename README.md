@@ -23,7 +23,9 @@ Install the library:
 go get github.com/droxer/RxGo@latest
 ```
 
-### Usage Example
+### Observable API (Push Model)
+
+Simple and intuitive API for basic reactive programming:
 
 ```go
 package main
@@ -53,6 +55,59 @@ Got 3
 Got 4
 Got 5
 Done
+```
+
+### Reactive Streams API (Pull Model with Backpressure)
+
+Full Reactive Streams 1.0.4 compliance with backpressure support:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "math"
+    
+    "github.com/droxer/RxGo/pkg/rx/streams"
+)
+
+type IntSubscriber struct {
+    name string
+}
+
+func (s *IntSubscriber) OnSubscribe(sub streams.Subscription) {
+    fmt.Printf("[%s] Starting subscription\n", s.name)
+    sub.Request(math.MaxInt64) // Request all items
+}
+
+func (s *IntSubscriber) OnNext(value int) {
+    fmt.Printf("[%s] Received: %d\n", s.name, value)
+}
+
+func (s *IntSubscriber) OnError(err error) {
+    fmt.Printf("[%s] Error: %v\n", s.name, err)
+}
+
+func (s *IntSubscriber) OnComplete() {
+    fmt.Printf("[%s] Completed\n", s.name)
+}
+
+func main() {
+    publisher := streams.RangePublisher(1, 5)
+    publisher.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+}
+```
+
+**Output:**
+```
+[Range] Starting subscription
+[Range] Received: 1
+[Range] Received: 2
+[Range] Received: 3
+[Range] Received: 4
+[Range] Received: 5
+[Range] Completed
 ```
 
 ### Backpressure Strategies
