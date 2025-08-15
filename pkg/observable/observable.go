@@ -100,3 +100,57 @@ func Error[T any](err error) *Observable[T] {
 		sub.OnError(err)
 	})
 }
+
+// functionalSubscriber implements the Subscriber interface with functions
+type functionalSubscriber[T any] struct {
+	onStart     func()
+	onNext      func(T)
+	onCompleted func()
+	onError     func(error)
+}
+
+func (s *functionalSubscriber[T]) Start() {
+	if s.onStart != nil {
+		s.onStart()
+	}
+}
+
+func (s *functionalSubscriber[T]) OnNext(next T) {
+	if s.onNext != nil {
+		s.onNext(next)
+	}
+}
+
+func (s *functionalSubscriber[T]) OnCompleted() {
+	if s.onCompleted != nil {
+		s.onCompleted()
+	}
+}
+
+func (s *functionalSubscriber[T]) OnError(e error) {
+	if s.onError != nil {
+		s.onError(e)
+	}
+}
+
+// NewSubscriber creates a Subscriber from a set of callback functions.
+// This provides a convenient way to subscribe to an Observable without
+// implementing the Subscriber interface directly.
+//
+// Parameters:
+//
+//	onNext:      (optional) function to handle each emitted value.
+//	onCompleted: (optional) function to handle the completion signal.
+//	onError:     (optional) function to handle any error.
+func NewSubscriber[T any](
+	onNext func(T),
+	onCompleted func(),
+	onError func(error),
+) Subscriber[T] {
+	return &functionalSubscriber[T]{
+		onStart:     func() {}, // Default no-op for Start
+		onNext:      onNext,
+		onCompleted: onCompleted,
+		onError:     onError,
+	}
+}

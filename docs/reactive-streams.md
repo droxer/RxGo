@@ -24,40 +24,23 @@ The Reactive Streams API implements a **pull-based model** with backpressure, wh
 package main
 
 import (
-    "context"
-    "fmt"
-    "math"
+	"context"
+	"fmt"
 
-    "github.com/droxer/RxGo/pkg/rx/streams"
+	"github.com/droxer/RxGo/pkg/streams"
 )
 
-type IntSubscriber struct {
-    name string
-}
-
-func (s *IntSubscriber) OnSubscribe(sub streams.Subscription) {
-    fmt.Printf("[%s] Starting subscription\n", s.name)
-    sub.Request(math.MaxInt64) // Request all items
-}
-
-func (s *IntSubscriber) OnNext(value int) {
-    fmt.Printf("[%s] Received: %d\n", s.name, value)
-}
-
-func (s *IntSubscriber) OnError(err error) {
-    fmt.Printf("[%s] Error: %v\n", s.name, err)
-}
-
-func (s *IntSubscriber) OnComplete() {
-    fmt.Printf("[%s] Completed\n", s.name)
-}
-
 func main() {
-    // Create publisher from range
-    publisher := streams.RangePublisher(1, 10)
-    publisher.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+	// Create publisher from range
+	publisher := streams.RangePublisher(1, 10)
+	publisher.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+		func() { fmt.Println("Completed") },
+	))
 }
 ```
+
 
 ## Using FromSlice
 
@@ -101,6 +84,16 @@ customPublisher := streams.NewPublisher(func(ctx context.Context, sub streams.Su
 - **Type Safety**: Generic types ensure compile-time type safety
 - **Compliance**: Full Reactive Streams 1.0.4 specification compliance
 
+## streams vs. observable packages
+
+This library provides two distinct packages for reactive programming:
+
+-   **`streams`**: This package provides a more complex, Reactive Streams-compliant `Subscriber` interface that supports backpressure. This is a better choice for more advanced scenarios where you need to control the rate of data production to prevent overwhelming consumers.
+
+-   **`observable`**: This package provides a simple, Rx-style `Subscriber` interface. It's easy to use and is a good choice for basic reactive programming scenarios where you don't need fine-grained control over the data flow.
+
+For more details on the `observable` package, see the [Observable documentation](./observable.md).
+
 ## Complete Example
 
 Here's a complete reactive streams example:
@@ -109,49 +102,35 @@ Here's a complete reactive streams example:
 package main
 
 import (
-    "context"
-    "fmt"
-    "math"
-    "time"
+	"context"
+	"fmt"
+	"time"
 
-    "github.com/droxer/RxGo/pkg/rx/streams"
+	"github.com/droxer/RxGo/pkg/streams"
 )
 
-type IntSubscriber struct {
-    name string
-}
-
-func (s *IntSubscriber) OnSubscribe(sub streams.Subscription) {
-    fmt.Printf("[%s] Starting subscription\n", s.name)
-    sub.Request(math.MaxInt64) // Request all items
-}
-
-func (s *IntSubscriber) OnNext(value int) {
-    fmt.Printf("[%s] Received: %d\n", s.name, value)
-}
-
-func (s *IntSubscriber) OnError(err error) {
-    fmt.Printf("[%s] Error: %v\n", s.name, err)
-}
-
-func (s *IntSubscriber) OnComplete() {
-    fmt.Printf("[%s] Completed\n", s.name)
-}
-
 func main() {
-    fmt.Println("=== Reactive Streams Example ===")
+	fmt.Println("=== Reactive Streams Example ===")
 
-    // Example 1: Range publisher
-    fmt.Println("\n1. Range Publisher:")
-    rangePublisher := streams.RangePublisher(1, 5)
-    rangePublisher.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+	// Example 1: Range publisher
+	fmt.Println("\n1. Range Publisher:")
+	rangePublisher := streams.RangePublisher(1, 5)
+	rangePublisher.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+		func() { fmt.Println("Completed") },
+	))
 
-    // Example 2: FromSlice publisher
-    fmt.Println("\n2. FromSlice Publisher:")
-    slicePublisher := streams.FromSlicePublisher([]int{10, 20, 30, 40, 50})
-    slicePublisher.Subscribe(context.Background(), &IntSubscriber{name: "FromSlice"})
+	// Example 2: FromSlice publisher
+	fmt.Println("\n2. FromSlice Publisher:")
+	slicePublisher := streams.FromSlicePublisher([]int{10, 20, 30, 40, 50})
+	slicePublisher.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+		func() { fmt.Println("Completed") },
+	))
 
-    time.Sleep(100 * time.Millisecond)
-    fmt.Println("\n=== Reactive Streams completed ===")
+	time.Sleep(100 * time.Millisecond)
+	fmt.Println("\n=== Reactive Streams completed ===")
 }
 ```

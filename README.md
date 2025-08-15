@@ -67,48 +67,30 @@ package main
 import (
     "context"
     "fmt"
-    "math"
     
     "github.com/droxer/RxGo/pkg/streams"
 )
 
-type IntSubscriber struct {
-    name string
-}
-
-func (s *IntSubscriber) OnSubscribe(sub streams.Subscription) {
-    fmt.Printf("[%s] Starting subscription\n", s.name)
-    sub.Request(math.MaxInt64) // Request all items
-}
-
-func (s *IntSubscriber) OnNext(value int) {
-    fmt.Printf("[%s] Received: %d\n", s.name, value)
-}
-
-func (s *IntSubscriber) OnError(err error) {
-    fmt.Printf("[%s] Error: %v\n", s.name, err)
-}
-
-func (s *IntSubscriber) OnComplete() {
-    fmt.Printf("[%s] Completed\n", s.name)
-}
-
 func main() {
-    publisher := streams.NewRangePublisher(1, 5)
-    publisher.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+    publisher := streams.RangePublisher(1, 5)
+    publisher.Subscribe(context.Background(), streams.NewSubscriber(
+        func(v int) { fmt.Printf("Received: %d\n", v) },
+        func(err error) { fmt.Printf("Error: %v\n", err) },
+        func() { fmt.Println("Completed") },
+    ))
 }
 ```
 
 **Output:**
 ```
-[Range] Starting subscription
-[Range] Received: 1
-[Range] Received: 2
-[Range] Received: 3
-[Range] Received: 4
-[Range] Received: 5
-[Range] Completed
+Received: 1
+Received: 2
+Received: 3
+Received: 4
+Received: 5
+Completed
 ```
+
 
 ### Backpressure Strategies
 
@@ -124,7 +106,7 @@ publisher := streams.NewBufferedPublisher[int](
 )
 
 // Drop - discard new items when full
-publisher := streams.NewBufferedPublisher[int](
+publisher := streams.eNewBufferedPublisher[int](
     streams.WithBufferStrategy(streams.Drop),
     streams.WithBufferSize(50),
 )
@@ -140,6 +122,26 @@ publisher := streams.NewBufferedPublisher[int](
     streams.WithBufferStrategy(streams.Error),
     streams.WithBufferSize(10),
 )
+```
+
+### Bridging APIs
+
+You can easily convert between the `Observable` and `Publisher` APIs using adapters. This is useful when you need to combine the simplicity of the `observable` package with the backpressure support of the `streams` package.
+
+```go
+import (
+    "github.com/droxer/RxGo/pkg/adapters"
+    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/streams"
+)
+
+// Convert an Observable to a Publisher
+obs := observable.Just(1, 2, 3)
+publisher := adapters.ObservablePublisherAdapter(obs)
+
+// Convert a Publisher to an Observable
+pub := streams.NewRangePublisher(1, 5)
+observable := adapters.PublisherToObservableAdapter(pub)
 ```
 
 ## Documentation

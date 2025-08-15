@@ -166,10 +166,10 @@ func BenchmarkProcessors(b *testing.B) {
 			source := streams.RangePublisher(0, 100)
 			mapProc := streams.NewMapProcessor(func(v int) int { return v * 2 })
 			filterProc := streams.NewFilterProcessor(func(v int) bool { return v > 50 })
-			
+
 			source.Subscribe(ctx, mapProc)
 			mapProc.Subscribe(ctx, filterProc)
-			
+
 			sub := &testSubscriber[int]{}
 			filterProc.Subscribe(ctx, sub)
 		}
@@ -179,7 +179,7 @@ func BenchmarkProcessors(b *testing.B) {
 func BenchmarkDatasetSizes(b *testing.B) {
 	ctx := context.Background()
 	sizes := []int{10, 100, 1000, 10000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			b.ResetTimer()

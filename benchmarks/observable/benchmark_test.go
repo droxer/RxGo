@@ -115,7 +115,7 @@ func BenchmarkDataTypes(b *testing.B) {
 
 func BenchmarkDatasetSizes(b *testing.B) {
 	sizes := []int{10, 100, 1000, 10000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			data := make([]int, size)
@@ -264,7 +264,7 @@ type atomicSubscriber struct {
 	doNext func(next int)
 }
 
-func (s *atomicSubscriber) Start() {}
+func (s *atomicSubscriber) Start()          {}
 func (s *atomicSubscriber) OnNext(next int) { s.doNext(next) }
-func (s *atomicSubscriber) OnCompleted()   {}
+func (s *atomicSubscriber) OnCompleted()    {}
 func (s *atomicSubscriber) OnError(e error) {}

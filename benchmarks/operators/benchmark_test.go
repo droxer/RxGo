@@ -96,7 +96,7 @@ func BenchmarkDataTypes(b *testing.B) {
 
 func BenchmarkDatasetSizes(b *testing.B) {
 	sizes := []int{10, 100, 1000, 10000}
-	
+
 	for _, size := range sizes {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {

@@ -11,7 +11,10 @@ import (
 
 func main() {
 	fmt.Println("RxGo Reactive Streams 1.0.4 Compliant Examples")
-	fmt.Println("================================================")
+	fmt.Println("=================================================")
+
+	// Run simple subscriber example
+	RunSimpleSubscriberExample()
 
 	// Run compliant examples
 	RunCompliantRangePublisher()
@@ -21,6 +24,29 @@ func main() {
 	RunProcessorExamples()
 
 	fmt.Println("\nAll compliant examples completed!")
+}
+
+// RunSimpleSubscriberExample demonstrates the new functional subscriber
+func RunSimpleSubscriberExample() {
+	fmt.Println("\n--- Simple Functional Subscriber ---")
+
+	publisher := streams.NewCompliantRangePublisher(1, 5)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	publisher.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func(err error) {
+			fmt.Printf("Error: %v\n", err)
+			wg.Done()
+		},
+		func() {
+			fmt.Println("Completed")
+			wg.Done()
+		},
+	))
+
+	wg.Wait()
 }
 
 // RunCompliantRangePublisher demonstrates Reactive Streams 1.0.4 compliant publisher
