@@ -43,6 +43,7 @@ The library is organized into clean, focused subpackages:
   - `Filter()` - Filter values based on predicates
   - `ObserveOn()` - Schedule observable emissions on specific schedulers
   - Type-safe operators with generics
+  - Function-based composition for Observable API
 
 #### `github.com/droxer/RxGo/pkg/rx/streams`
 - **Purpose**: Full Reactive Streams 1.0.4 compliance
@@ -50,8 +51,9 @@ The library is organized into clean, focused subpackages:
   - `Publisher[T]` - Type-safe data source with demand control
   - `ReactiveSubscriber[T]` - Complete subscriber interface with lifecycle
   - `Subscription` - Request/cancel control with backpressure
-  - `Processor[T,R]` - Transforming publisher
+  - `Processor[T,R]` - Transforming publisher that implements both Publisher and Subscriber
   - Full backpressure support with multiple strategies
+  - Processor-based composition for Reactive Streams API
 
 ## Design Principles
 
@@ -81,6 +83,26 @@ RxGo implements two distinct reactive models to serve different use cases:
 - Production-ready with Reactive Streams 1.0.4 compliance
 - Best for scenarios where producers may outpace consumers
 
+### 3. Operators vs Processors
+
+RxGo provides two distinct approaches to data transformation:
+
+**Operators (`pkg/rx/operators`)**:
+- Function-based transformations for the Observable API
+- Composed using function calls: `operators.Map(observable, transformFunc)`
+- Work with push-based Observable model
+- No built-in backpressure support
+- Simple syntax for basic transformations
+- Examples: `Map`, `Filter`, `ObserveOn`
+
+**Processors (`pkg/rx/streams`)**:
+- Type-based transformations for the Reactive Streams API
+- Composed using Subscribe method calls: `publisher.Subscribe(ctx, processor)`
+- Work with pull-based Publisher/Subscriber model
+- Full Reactive Streams 1.0.4 compliance with backpressure
+- Implement both Publisher and Subscriber interfaces
+- Examples: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`
+
 For a detailed explanation of push vs pull models and backpressure strategies, see the [Push vs Pull Models documentation](./push-pull-models.md).
 
 ### When to Use Each Model
@@ -98,19 +120,19 @@ For a detailed explanation of push vs pull models and backpressure strategies, s
 - Requiring Reactive Streams 1.0.4 compliance
 - Need for backpressure control to prevent memory issues
 
-### 3. Type Safety
+### 4. Type Safety
 Full generics support throughout the API:
 - Type-safe Observable creation and processing
 - Compile-time type checking
 - No interface{} or reflection usage
 
-### 4. Context Integration
+### 5. Context Integration
 Native Go context support:
 - Graceful cancellation using `context.Context`
 - Goroutine leak prevention
 - Timeout and deadline support
 
-### 5. Performance
+### 6. Performance
 Optimized for Go's concurrency model:
 - Zero-allocation signal delivery where possible
 - Lock-free data structures
