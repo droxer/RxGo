@@ -72,7 +72,7 @@ import (
 )
 
 func main() {
-    publisher := streams.RangePublisher(1, 5)
+    publisher := streams.NewCompliantRangePublisher(1, 5)
     publisher.Subscribe(context.Background(), streams.NewSubscriber(
         func(v int) { fmt.Printf("Received: %d\n", v) },
         func(err error) { fmt.Printf("Error: %v\n", err) },
@@ -80,6 +80,7 @@ func main() {
     ))
 }
 ```
+
 
 **Output:**
 ```
@@ -106,7 +107,7 @@ publisher := streams.NewBufferedPublisher[int](
 )
 
 // Drop - discard new items when full
-publisher := streams.eNewBufferedPublisher[int](
+publisher := streams.NewBufferedPublisher[int](
     streams.WithBufferStrategy(streams.Drop),
     streams.WithBufferSize(50),
 )
@@ -140,7 +141,7 @@ obs := observable.Just(1, 2, 3)
 publisher := adapters.ObservablePublisherAdapter(obs)
 
 // Convert a Publisher to an Observable
-pub := streams.NewRangePublisher(1, 5)
+pub := streams.NewCompliantRangePublisher(1, 5)
 observable := adapters.PublisherToObservableAdapter(pub)
 ```
 

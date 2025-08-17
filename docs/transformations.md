@@ -15,7 +15,7 @@ Both APIs offer similar transformation capabilities but with different usage pat
 
 ### Basic Transformations
 
-Transform data using operators from the `pkg/rx/operators` package:
+Transform data using operators from the `pkg/observable` package:
 
 ```go
 package main
@@ -24,8 +24,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/droxer/RxGo/pkg/rx"
-    "github.com/droxer/RxGo/pkg/rx/operators"
+    "github.com/droxer/RxGo/pkg/observable"
 )
 
 type IntSubscriber struct {
@@ -47,13 +46,13 @@ func (s *IntSubscriber) OnCompleted() {
 
 func main() {
     // Create observable from range
-    obs := rx.Range(1, 5)
+    obs := observable.Range(1, 5)
     
     // Transform using Map operator
-    mapped := operators.Map(obs, func(x int) int { return x * 2 })
+    mapped := observable.Map(obs, func(x int) int { return x * 2 })
     
     // Filter values
-    filtered := operators.Filter(mapped, func(x int) bool { return x > 5 })
+    filtered := observable.Filter(mapped, func(x int) bool { return x > 5 })
     
     // Subscribe to receive transformed values
     filtered.Subscribe(context.Background(), &IntSubscriber{name: "Observable"})
@@ -64,15 +63,15 @@ func main() {
 
 | Operator | Purpose | Example |
 |----------|---------|---------|
-| `Map` | Transform values | `operators.Map(obs, func(x int) int { return x * 2 })` |
-| `Filter` | Filter values | `operators.Filter(obs, func(x int) bool { return x > 5 })` |
-| `ObserveOn` | Control execution context | `operators.ObserveOn(obs, scheduler.Computation)` |
+| `Map` | Transform values | `observable.Map(obs, func(x int) int { return x * 2 })` |
+| `Filter` | Filter values | `observable.Filter(obs, func(x int) bool { return x > 5 })` |
+| `ObserveOn` | Control execution context | `observable.ObserveOn(obs, scheduler.Computation)` |
 
 ## Reactive Streams API Transformations
 
 ### Basic Transformations
 
-Transform data using processors from the `pkg/rx/streams` package:
+Transform data using processors from the `pkg/streams` package:
 
 ```go
 package main
@@ -82,7 +81,7 @@ import (
     "fmt"
     "math"
     
-    "github.com/droxer/RxGo/pkg/rx/streams"
+    "github.com/droxer/RxGo/pkg/streams"
 )
 
 type IntSubscriber struct {
@@ -108,7 +107,7 @@ func (s *IntSubscriber) OnComplete() {
 
 func main() {
     // Create publisher from range
-    publisher := streams.RangePublisher(1, 5)
+    publisher := streams.NewCompliantRangePublisher(1, 5)
     
     // Transform using Map processor
     mapper := streams.NewMapProcessor(func(x int) int { return x * 2 })
@@ -135,7 +134,7 @@ func main() {
 
 ### Observable API (Push Model)
 - **Usage**: Simple function calls on observables
-- **Syntax**: `operators.Map(observable, transformFunc)`
+- **Syntax**: `observable.Map(observable, transformFunc)`
 - **Backpressure**: No built-in backpressure support
 - **Best for**: Simple transformations, prototyping, predictable data rates
 
@@ -158,9 +157,8 @@ import (
     "math"
     "time"
     
-    "github.com/droxer/RxGo/pkg/rx"
-    "github.com/droxer/RxGo/pkg/rx/operators"
-    "github.com/droxer/RxGo/pkg/rx/streams"
+    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/streams"
 )
 
 // Observable API subscriber
@@ -207,15 +205,15 @@ func main() {
     fmt.Println("=== Observable API Transformation ===")
     
     // Observable API transformation
-    obs := rx.Range(1, 5)
-    mapped := operators.Map(obs, func(x int) int { return x * 3 })
-    filtered := operators.Filter(mapped, func(x int) bool { return x > 6 })
+    obs := observable.Range(1, 5)
+    mapped := observable.Map(obs, func(x int) int { return x * 3 })
+    filtered := observable.Filter(mapped, func(x int) bool { return x > 6 })
     filtered.Subscribe(context.Background(), &ObservableSubscriber{name: "Transform"})
     
     fmt.Println("\n=== Reactive Streams API Transformation ===")
     
     // Reactive Streams API transformation
-    publisher := streams.RangePublisher(1, 5)
+    publisher := streams.NewCompliantRangePublisher(1, 5)
     mapper := streams.NewMapProcessor(func(x int) int { return x * 3 })
     publisher.Subscribe(context.Background(), mapper)
     filter := streams.NewFilterProcessor(func(x int) bool { return x > 6 })

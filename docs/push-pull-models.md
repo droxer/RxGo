@@ -2,21 +2,7 @@
 
 Understanding the fundamental differences between push and pull models in RxGo and how backpressure works.
 
-## Push Model (Observable API)
-
-The Observable API in `pkg/rx` implements a push-based model:
-
-```go
-import "github.com/droxer/RxGo/pkg/rx"
-
-// Producer pushes data as fast as it can generate it
-obs := rx.Just(1, 2, 3, 4, 5)
-obs.Subscribe(context.Background(), rx.NewSubscriber(
-    func(v int) { fmt.Printf("Received: %d\n", v) },
-    func() { fmt.Println("Completed") },
-    func(err error) { fmt.Printf("Error: %v\n", err) },
-))
-```
+## Push Model (Observable API)\n\nThe Observable API in `pkg/observable` implements a push-based model:\n\n```go\nimport \"github.com/droxer/RxGo/pkg/observable\"\n\n// Producer pushes data as fast as it can generate it\nobs := observable.Just(1, 2, 3, 4, 5)\nobs.Subscribe(context.Background(), observable.NewSubscriber(\n    func(v int) { fmt.Printf(\"Received: %d\\n\", v) },\n    func() { fmt.Println(\"Completed\") },\n    func(err error) { fmt.Printf(\"Error: %v\\n\", err) },\n))\n```
 
 ### Characteristics of Push Model:
 - **Producer Controlled**: The producer determines when data is emitted
@@ -27,13 +13,13 @@ obs.Subscribe(context.Background(), rx.NewSubscriber(
 
 ## Pull Model (Reactive Streams)
 
-The Reactive Streams API in `pkg/rx/streams` implements a pull-based model with backpressure:
+The Reactive Streams API in `pkg/streams` implements a pull-based model with backpressure:
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/streams"
+import "github.com/droxer/RxGo/pkg/streams"
 
 // Subscriber requests data in controlled amounts
-publisher := streams.RangePublisher(1, 1000)
+publisher := streams.NewCompliantRangePublisher(1, 1000)
 publisher.Subscribe(context.Background(), &MyReactiveSubscriber{})
 ```
 
@@ -79,36 +65,48 @@ The pull model supports multiple backpressure strategies:
 ### Buffer Strategy
 Keeps all items in a bounded buffer:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+config := streams.BackpressureConfig{
     Strategy:   streams.Buffer,
     BufferSize: 100,
+}
+publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+    // Implementation here
 })
 ```
 
 ### Drop Strategy
 Discards new items when buffer is full:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+config := streams.BackpressureConfig{
     Strategy:   streams.Drop,
     BufferSize: 50,
+}
+publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+    // Implementation here
 })
 ```
 
 ### Latest Strategy
 Keeps only the latest item:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+config := streams.BackpressureConfig{
     Strategy:   streams.Latest,
     BufferSize: 1,
+}
+publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+    // Implementation here
 })
 ```
 
 ### Error Strategy
 Signals an error when buffer overflows:
 ```go
-publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{
+config := streams.BackpressureConfig{
     Strategy:   streams.Error,
     BufferSize: 10,
+}
+publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+    // Implementation here
 })
 ```
 
