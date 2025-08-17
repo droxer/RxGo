@@ -2,7 +2,20 @@
 
 Understanding the fundamental differences between push and pull models in RxGo and how backpressure works.
 
-## Push Model (Observable API)\n\nThe Observable API in `pkg/observable` implements a push-based model:\n\n```go\nimport \"github.com/droxer/RxGo/pkg/observable\"\n\n// Producer pushes data as fast as it can generate it\nobs := observable.Just(1, 2, 3, 4, 5)\nobs.Subscribe(context.Background(), observable.NewSubscriber(\n    func(v int) { fmt.Printf(\"Received: %d\\n\", v) },\n    func() { fmt.Println(\"Completed\") },\n    func(err error) { fmt.Printf(\"Error: %v\\n\", err) },\n))\n```
+## Push Model (Observable API)
+The Observable API in `pkg/observable` implements a push-based model:
+
+```go
+import "github.com/droxer/RxGo/pkg/observable"
+
+// Producer pushes data as fast as it can generate it
+obs := observable.Just(1, 2, 3, 4, 5)
+obs.Subscribe(context.Background(), observable.NewSubscriber(
+    func(v int) { fmt.Printf("Received: %d\n", v) },
+    func() { fmt.Println("Completed") },
+    func(err error) { fmt.Printf("Error: %v\n", err) },
+))
+```
 
 ### Characteristics of Push Model:
 - **Producer Controlled**: The producer determines when data is emitted
@@ -37,13 +50,15 @@ func (s *MyReactiveSubscriber) OnSubscribe(sub streams.Subscription) {
 }
 
 func (s *MyReactiveSubscriber) OnNext(value int) {
-    fmt.Printf("Received: %d\n", value)
+    fmt.Printf("Received: %d
+", value)
     // Request one more item after processing
     s.subscription.Request(1)
 }
 
 func (s *MyReactiveSubscriber) OnError(err error) {
-    fmt.Printf("Error: %v\n", err)
+    fmt.Printf("Error: %v
+", err)
 }
 
 func (s *MyReactiveSubscriber) OnComplete() {
@@ -69,7 +84,7 @@ config := streams.BackpressureConfig{
     Strategy:   streams.Buffer,
     BufferSize: 100,
 }
-publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+publisher := streams.NewBufferedPublisher[int](config, func(ctx context.Context, sub streams.Subscriber[int]) {
     // Implementation here
 })
 ```
@@ -81,7 +96,7 @@ config := streams.BackpressureConfig{
     Strategy:   streams.Drop,
     BufferSize: 50,
 }
-publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+publisher := streams.NewBufferedPublisher[int](config, func(ctx context.Context, sub streams.Subscriber[int]) {
     // Implementation here
 })
 ```
@@ -93,7 +108,7 @@ config := streams.BackpressureConfig{
     Strategy:   streams.Latest,
     BufferSize: 1,
 }
-publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+publisher := streams.NewBufferedPublisher[int](config, func(ctx context.Context, sub streams.Subscriber[int]) {
     // Implementation here
 })
 ```
@@ -105,7 +120,7 @@ config := streams.BackpressureConfig{
     Strategy:   streams.Error,
     BufferSize: 10,
 }
-publisher := streams.NewBufferedPublisher(config, func(ctx context.Context, sub streams.Subscriber[int]) {
+publisher := streams.NewBufferedPublisher[int](config, func(ctx context.Context, sub streams.Subscriber[int]) {
     // Implementation here
 })
 ```
