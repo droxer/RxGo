@@ -23,6 +23,7 @@ The library is organized into clean, focused subpackages:
   - `Observable[T]` - Main observable type with generics support
   - `Subscriber[T]` - Functional subscriber interface
   - `Just()`, `Range()`, `Create()` - Observable creation functions
+  - Operators: `Map()`, `Filter()`, `ObserveOn()` - Data transformation functions
   - Context-based cancellation support
   - Type-safe throughout with Go generics
 
@@ -43,23 +44,23 @@ The library is organized into clean, focused subpackages:
   - `Subscriber[T]` - Complete subscriber interface with lifecycle
   - `Subscription` - Request/cancel control with backpressure
   - `Processor[T,R]` - Transforming publisher that implements both Publisher and Subscriber
+  - Processors: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor` - Data transformation types
   - Full backpressure support with multiple strategies
 
-#### `github.com/droxer/RxGo/pkg/adapters`
+#### `adapters.go` (in `github.com/droxer/RxGo/pkg/`)
 - **Purpose**: Interoperability between Observable and Reactive Streams APIs
 - **Key Features**:
   - `ObservablePublisherAdapter[T]` - Convert Observable to Publisher
   - `PublisherToObservableAdapter[T]` - Convert Publisher to Observable
-  - Processor-based composition for Reactive Streams API
 
 ## Design Principles
 
 ### 1. Modularity
 Each package has a single, well-defined responsibility:
-- `rx/` - Core reactive concepts
-- `scheduler/` - Execution control
-- `operators/` - Data transformation
-- `streams/` - Reactive Streams specification
+- `observable/` - Core Observable API and basic reactive programming
+- `scheduler/` - Execution control and threading models
+- `streams/` - Full Reactive Streams 1.0.4 compliance
+- `adapters.go` - Interoperability between Observable and Reactive Streams APIs
 
 ### 2. Push vs Pull Models
 RxGo implements two distinct reactive models to serve different use cases:
@@ -84,7 +85,7 @@ RxGo implements two distinct reactive models to serve different use cases:
 
 RxGo provides two distinct approaches to data transformation:
 
-**Operators (`pkg/observable`)**:
+**Operators (`pkg/observable/operators.go`)**:
 - Function-based transformations for the Observable API
 - Composed using function calls: `observable.Map(observable, transformFunc)`
 - Work with push-based Observable model
@@ -92,13 +93,13 @@ RxGo provides two distinct approaches to data transformation:
 - Simple syntax for basic transformations
 - Examples: `Map`, `Filter`, `ObserveOn`
 
-**Processors (`pkg/streams`)**:
+**Processors (`pkg/streams/processors.go`)**:
 - Type-based transformations for the Reactive Streams API
 - Composed using Subscribe method calls: `publisher.Subscribe(ctx, processor)`
 - Work with pull-based Publisher/Subscriber model
 - Full Reactive Streams 1.0.4 compliance with backpressure
 - Implement both Publisher and Subscriber interfaces
-- Examples: `MapProcessor`, `FilterProcessor`
+- Examples: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`
 
 For a detailed explanation of push vs pull models and backpressure strategies, see the [Push vs Pull Models documentation](./push-pull-models.md).
 
