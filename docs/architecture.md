@@ -23,7 +23,7 @@ The library is organized into clean, focused subpackages:
   - `Observable[T]` - Main observable type with generics support
   - `Subscriber[T]` - Functional subscriber interface
   - `Just()`, `Range()`, `Create()` - Observable creation functions
-  - Operators: `Map()`, `Filter()`, `ObserveOn()` - Data transformation functions
+  - Operators: `Map()`, `Filter()`, `ObserveOn()`, `Merge()`, `Concat()`, `Take()`, `Skip()`, `Distinct()` - Data transformation functions
   - Context-based cancellation support
   - Type-safe throughout with Go generics
 
@@ -44,7 +44,7 @@ The library is organized into clean, focused subpackages:
   - `Subscriber[T]` - Complete subscriber interface with lifecycle
   - `Subscription` - Request/cancel control with backpressure
   - `Processor[T,R]` - Transforming publisher that implements both Publisher and Subscriber
-  - Processors: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor` - Data transformation types
+  - Processors: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`, `MergeProcessor`, `ConcatProcessor`, `TakeProcessor`, `SkipProcessor`, `DistinctProcessor` - Data transformation types
   - Full backpressure support with multiple strategies
 
 #### `adapters.go` (in `github.com/droxer/RxGo/pkg/`)
@@ -91,7 +91,7 @@ RxGo provides two distinct approaches to data transformation:
 - Work with push-based Observable model
 - No built-in backpressure support
 - Simple syntax for basic transformations
-- Examples: `Map`, `Filter`, `ObserveOn`
+- Examples: `Map`, `Filter`, `ObserveOn`, `Merge`, `Concat`, `Take`, `Skip`, `Distinct`
 
 **Processors (`pkg/streams/processors.go`)**:
 - Type-based transformations for the Reactive Streams API
@@ -99,7 +99,7 @@ RxGo provides two distinct approaches to data transformation:
 - Work with pull-based Publisher/Subscriber model
 - Full Reactive Streams 1.0.4 compliance with backpressure
 - Implement both Publisher and Subscriber interfaces
-- Examples: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`
+- Examples: `MapProcessor`, `FilterProcessor`, `FlatMapProcessor`, `MergeProcessor`, `ConcatProcessor`, `TakeProcessor`, `SkipProcessor`, `DistinctProcessor`
 
 For a detailed explanation of push vs pull models and backpressure strategies, see the [Push vs Pull Models documentation](./push-pull-models.md).
 

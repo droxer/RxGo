@@ -2,11 +2,13 @@ package observable
 
 import (
 	"context"
+	"sync"
 	"testing"
 )
 
 // Test subscriber for testing
 type testSubscriber[T any] struct {
+	mu     sync.Mutex
 	values []T
 	err    error
 	done   bool
@@ -14,14 +16,40 @@ type testSubscriber[T any] struct {
 
 func (t *testSubscriber[T]) Start() {}
 func (t *testSubscriber[T]) OnNext(value T) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.values = append(t.values, value)
 }
 func (t *testSubscriber[T]) OnCompleted() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.done = true
 }
 func (t *testSubscriber[T]) OnError(err error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.err = err
 	t.done = true
+}
+
+func (t *testSubscriber[T]) getValues() []T {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	result := make([]T, len(t.values))
+	copy(result, t.values)
+	return result
+}
+
+func (t *testSubscriber[T]) getError() error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.err
+}
+
+func (t *testSubscriber[T]) isDone() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.done
 }
 
 func TestJust(t *testing.T) {
@@ -30,12 +58,13 @@ func TestJust(t *testing.T) {
 
 	obs.Subscribe(context.Background(), sub)
 
-	if len(sub.values) != 5 {
-		t.Errorf("Expected 5 values, got %d", len(sub.values))
+	values := sub.getValues()
+	if len(values) != 5 {
+		t.Errorf("Expected 5 values, got %d", len(values))
 	}
 
 	expected := []int{1, 2, 3, 4, 5}
-	for i, v := range sub.values {
+	for i, v := range values {
 		if v != expected[i] {
 			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
 		}
@@ -48,12 +77,13 @@ func TestRange(t *testing.T) {
 
 	obs.Subscribe(context.Background(), sub)
 
-	if len(sub.values) != 5 {
-		t.Errorf("Expected 5 values, got %d", len(sub.values))
+	values := sub.getValues()
+	if len(values) != 5 {
+		t.Errorf("Expected 5 values, got %d", len(values))
 	}
 
 	expected := []int{10, 11, 12, 13, 14}
-	for i, v := range sub.values {
+	for i, v := range values {
 		if v != expected[i] {
 			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
 		}
@@ -67,11 +97,12 @@ func TestFromSlice(t *testing.T) {
 
 	obs.Subscribe(context.Background(), sub)
 
-	if len(sub.values) != 3 {
-		t.Errorf("Expected 3 values, got %d", len(sub.values))
+	values := sub.getValues()
+	if len(values) != 3 {
+		t.Errorf("Expected 3 values, got %d", len(values))
 	}
 
-	for i, v := range sub.values {
+	for i, v := range values {
 		if v != data[i] {
 			t.Errorf("Expected %s at index %d, got %s", data[i], i, v)
 		}
@@ -85,8 +116,9 @@ func TestMap(t *testing.T) {
 
 	mapped.Subscribe(context.Background(), sub)
 
+	values := sub.getValues()
 	expected := []int{2, 4, 6, 8, 10}
-	for i, v := range sub.values {
+	for i, v := range values {
 		if v != expected[i] {
 			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
 		}
@@ -100,8 +132,9 @@ func TestFilter(t *testing.T) {
 
 	filtered.Subscribe(context.Background(), sub)
 
+	values := sub.getValues()
 	expected := []int{2, 4, 6}
-	for i, v := range sub.values {
+	for i, v := range values {
 		if v != expected[i] {
 			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
 		}
@@ -114,11 +147,12 @@ func TestEmpty(t *testing.T) {
 
 	obs.Subscribe(context.Background(), sub)
 
-	if len(sub.values) != 0 {
-		t.Errorf("Expected no values, got %d", len(sub.values))
+	values := sub.getValues()
+	if len(values) != 0 {
+		t.Errorf("Expected no values, got %d", len(values))
 	}
 
-	if !sub.done {
+	if !sub.isDone() {
 		t.Error("Expected subscription to complete")
 	}
 }
@@ -130,11 +164,11 @@ func TestError(t *testing.T) {
 
 	obs.Subscribe(context.Background(), sub)
 
-	if sub.err != expectedErr {
-		t.Errorf("Expected error %v, got %v", expectedErr, sub.err)
+	if sub.getError() != expectedErr {
+		t.Errorf("Expected error %v, got %v", expectedErr, sub.getError())
 	}
 
-	if !sub.done {
+	if !sub.isDone() {
 		t.Error("Expected subscription to complete with error")
 	}
 }
@@ -152,11 +186,12 @@ func TestContextCancellation(t *testing.T) {
 	obs.Subscribe(ctx, sub)
 
 	// Should have no values due to cancellation
-	if len(sub.values) != 0 {
-		t.Errorf("Expected no values due to cancellation, got %d", len(sub.values))
+	values := sub.getValues()
+	if len(values) != 0 {
+		t.Errorf("Expected no values due to cancellation, got %d", len(values))
 	}
 
-	if sub.err != context.Canceled {
-		t.Errorf("Expected context.Canceled error, got %v", sub.err)
+	if sub.getError() != context.Canceled {
+		t.Errorf("Expected context.Canceled error, got %v", sub.getError())
 	}
 }

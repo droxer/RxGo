@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"github.com/droxer/RxGo/pkg/streams"
 )
 
 // TestSubscriber is a test implementation of Subscriber for testing purposes
@@ -39,20 +41,18 @@ func (t *TestSubscriber[T]) OnError(err error) {
 	}
 }
 
-// OnCompleted implements Subscriber interface
-func (t *TestSubscriber[T]) OnCompleted() {
+// OnComplete implements Subscriber interface
+func (t *TestSubscriber[T]) OnComplete() {
 	t.Completed = true
 	if t.Done != nil {
 		close(t.Done)
 	}
 }
 
-// OnSubscribe implements a Subscriber interface method
-func (t *TestSubscriber[T]) OnSubscribe(s interface{}) {
+// OnSubscribe implements Subscriber interface
+func (t *TestSubscriber[T]) OnSubscribe(s streams.Subscription) {
 	// Auto-request all items
-	if req, ok := s.(interface{ Request(int64) }); ok {
-		req.Request(int64(^uint(0) >> 1))
-	}
+	s.Request(int64(^uint(0) >> 1))
 }
 
 // AssertNoError checks that no errors occurred

@@ -149,3 +149,9 @@ const (
 - `NewMapProcessor[T, R](transform func(T) R) Processor[T, R]`
 - `NewFilterProcessor[T](predicate func(T) bool) Processor[T, T]`
 - `NewFlatMapProcessor[T, R](transform func(T) Publisher[R]) Processor[T, R]`
+- `NewMergeProcessor[T](sources ...Publisher[T]) Processor[T, T]`
+- `NewConcatProcessor[T](sources ...Publisher[T]) Processor[T, T]`
+- `NewTakeProcessor[T](n int64) Processor[T, T]`
+- `NewSkipProcessor[T](n int64) Processor[T, T]`
+- `NewDistinctProcessor[T comparable]() Processor[T, T]`
+- `NewFlatMapProcessor[T, R](transform func(T) Publisher[R]) Processor[T, R]`

@@ -66,6 +66,11 @@ func main() {
 | `Map` | Transform values | `observable.Map(obs, func(x int) int { return x * 2 })` |
 | `Filter` | Filter values | `observable.Filter(obs, func(x int) bool { return x > 5 })` |
 | `ObserveOn` | Control execution context | `observable.ObserveOn(obs, scheduler.Computation)` |
+| `Merge` | Combine multiple observables | `observable.Merge(obs1, obs2, obs3)` |
+| `Concat` | Sequentially emit from multiple observables | `observable.Concat(obs1, obs2, obs3)` |
+| `Take` | Emit only first N values | `observable.Take(obs, 5)` |
+| `Skip` | Skip first N values | `observable.Skip(obs, 3)` |
+| `Distinct` | Emit only unique values | `observable.Distinct(obs)` |
 
 ## Reactive Streams API Transformations
 
@@ -129,6 +134,11 @@ func main() {
 | `MapProcessor` | Transform values | `streams.NewMapProcessor(func(x int) int { return x * 2 })` |
 | `FilterProcessor` | Filter values | `streams.NewFilterProcessor(func(x int) bool { return x > 5 })` |
 | `FlatMapProcessor` | Transform and flatten | `streams.NewFlatMapProcessor(transformFunc)` |
+| `MergeProcessor` | Combine multiple publishers | `streams.NewMergeProcessor(pub1, pub2, pub3)` |
+| `ConcatProcessor` | Sequentially emit from multiple publishers | `streams.NewConcatProcessor(pub1, pub2, pub3)` |
+| `TakeProcessor` | Limit number of emissions | `streams.NewTakeProcessor[int](5)` |
+| `SkipProcessor` | Skip initial emissions | `streams.NewSkipProcessor[int](3)` |
+| `DistinctProcessor` | Filter duplicate values | `streams.NewDistinctProcessor[int]()` |
 
 ## Comparison of Transformation Approaches
 
@@ -223,6 +233,48 @@ func main() {
     time.Sleep(100 * time.Millisecond)
     fmt.Println("\n=== All transformations completed ===")
 }
+```
+
+## Advanced Examples
+
+### Merging and Concatenating Streams
+
+Both APIs support combining multiple streams:
+
+```go
+// Observable API - Merge
+obs1 := observable.Just(1, 2, 3)
+obs2 := observable.Just(4, 5, 6)
+merged := observable.Merge(obs1, obs2)
+
+// Observable API - Concat
+concatenated := observable.Concat(obs1, obs2)
+
+// Reactive Streams API - Merge
+pub1 := streams.NewCompliantFromSlicePublisher([]int{1, 2, 3})
+pub2 := streams.NewCompliantFromSlicePublisher([]int{4, 5, 6})
+mergeProcessor := streams.NewMergeProcessor(pub1, pub2)
+
+// Reactive Streams API - Concat
+concatProcessor := streams.NewConcatProcessor(pub1, pub2)
+```
+
+### Stream Control Operators
+
+Control the flow of your streams with take, skip, and distinct operations:
+
+```go
+// Observable API
+numbers := observable.Range(1, 10)
+firstFive := observable.Take(numbers, 5)
+skipped := observable.Skip(numbers, 3)
+unique := observable.Distinct(observable.FromSlice([]int{1, 2, 2, 3, 3, 4}))
+
+// Reactive Streams API
+publisher := streams.NewCompliantRangePublisher(1, 10)
+takeProcessor := streams.NewTakeProcessor[int](5)
+skipProcessor := streams.NewSkipProcessor[int](3)
+distinctProcessor := streams.NewDistinctProcessor[int]()
 ```
 
 ## Key Concepts

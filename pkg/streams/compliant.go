@@ -3,6 +3,7 @@ package streams
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -107,29 +108,6 @@ func (p *compliantPublisher[T]) complete() {
 	}
 }
 
-// error signals an error to all subscribers
-func (p *compliantPublisher[T]) error(err error) {
-	if err == nil {
-		err = errors.New("publisher error")
-	}
-
-	if p.terminal.CompareAndSwap(false, true) {
-		p.mu.Lock()
-		defer p.mu.Unlock()
-
-		for sub := range p.subscribers {
-			sub.markError(err)
-			// Rule 1.7: onError must be the last signal
-			sub.mu.Lock()
-			if !sub.isCancelled() {
-				sub.subscriber.OnError(err)
-			}
-			sub.mu.Unlock()
-		}
-		p.subscribers = make(map[*compliantSubscription[T]]struct{})
-	}
-}
-
 // removeSubscription removes a subscription
 func (p *compliantPublisher[T]) removeSubscription(sub *compliantSubscription[T]) {
 	p.mu.Lock()
@@ -151,24 +129,28 @@ func (p *compliantPublisher[T]) getActiveSubscribers() []*compliantSubscription[
 
 // compliantSubscription implements Reactive Streams 1.0.4 compliant subscription
 type compliantSubscription[T any] struct {
-	requested  atomic.Int64
-	cancelled  atomic.Bool
-	completed  atomic.Bool
-	error      atomic.Value // error
+	requested atomic.Int64
+	cancelled atomic.Bool
+	completed atomic.Bool
+	// error field is reserved for future use
 	subscriber Subscriber[T]
 	publisher  *compliantPublisher[T]
 	mu         sync.Mutex
 }
 
 func newCompliantSubscription[T any](sub Subscriber[T], pub *compliantPublisher[T]) *compliantSubscription[T] {
-	return &compliantSubscription[T]{
+	fmt.Printf("newCompliantSubscription called\n")
+	subscription := &compliantSubscription[T]{
 		subscriber: sub,
 		publisher:  pub,
 	}
+	fmt.Printf("newCompliantSubscription: initial requested=%d\n", subscription.requested.Load())
+	return subscription
 }
 
 // Request implements Subscription.Request with Reactive Streams 1.0.4 compliance
 func (s *compliantSubscription[T]) Request(n int64) {
+	fmt.Printf("compliantSubscription.Request: %d\n", n)
 	if n <= 0 {
 		// Rule 3.9: Must signal IllegalArgumentException for non-positive requests
 		s.subscriber.OnError(errors.New("non-positive subscription request"))
@@ -181,12 +163,17 @@ func (s *compliantSubscription[T]) Request(n int64) {
 	}
 
 	// Atomically add to requested demand
+	fmt.Printf("compliantSubscription.Request: before Add, requested=%d\n", s.requested.Load())
 	old := s.requested.Add(n)
+	fmt.Printf("compliantSubscription.Request: after Add, old=%d, requested=%d\n", old, s.requested.Load())
 	if old == 0 {
 		// Signal publisher to start/resume processing
+		fmt.Printf("compliantSubscription.Request: sending demand signal\n")
 		select {
 		case s.publisher.demandSignal <- struct{}{}:
+			fmt.Printf("compliantSubscription.Request: demand signal sent successfully\n")
 		default:
+			fmt.Printf("compliantSubscription.Request: demand signal send failed (channel full)\n")
 		}
 	}
 }
@@ -207,11 +194,6 @@ func (s *compliantSubscription[T]) isCancelled() bool {
 // markCompleted marks the subscription as completed
 func (s *compliantSubscription[T]) markCompleted() bool {
 	return s.completed.CompareAndSwap(false, true)
-}
-
-// markError marks the subscription with an error
-func (s *compliantSubscription[T]) markError(err error) {
-	s.error.Store(err)
 }
 
 // canEmit checks if we can emit an item based on demand

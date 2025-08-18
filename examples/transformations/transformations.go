@@ -73,5 +73,116 @@ func main() {
 	wordPublisher.Subscribe(context.Background(), &StreamsSubscriber{name: "Direct"})
 
 	time.Sleep(100 * time.Millisecond)
-	fmt.Println("\n=== Both examples completed ===")
+
+	fmt.Println("\n=== New Observable Operators Example ===")
+
+	// Demonstrate new operators
+	numbers := observable.Range(1, 10)
+
+	// Take first 5 numbers
+	firstFive := observable.Take(numbers, 5)
+	fmt.Println("\n--- Take Operator ---")
+	firstFive.Subscribe(context.Background(), observable.NewSubscriber(
+		func(v int) { fmt.Printf("Taken: %d\n", v) },
+		func() { fmt.Println("Take completed") },
+		func(err error) { fmt.Printf("Take error: %v\n", err) },
+	))
+
+	// Skip first 3 numbers
+	skipped := observable.Skip(numbers, 3)
+	fmt.Println("\n--- Skip Operator ---")
+	skipped.Subscribe(context.Background(), observable.NewSubscriber(
+		func(v int) { fmt.Printf("Skipped to: %d\n", v) },
+		func() { fmt.Println("Skip completed") },
+		func(err error) { fmt.Printf("Skip error: %v\n", err) },
+	))
+
+	// Merge multiple observables
+	evens := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 == 0 })
+	odds := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 != 0 })
+	merged := observable.Merge(evens, odds)
+	fmt.Println("\n--- Merge Operator ---")
+	merged.Subscribe(context.Background(), observable.NewSubscriber(
+		func(v int) { fmt.Printf("Merged: %d\n", v) },
+		func() { fmt.Println("Merge completed") },
+		func(err error) { fmt.Printf("Merge error: %v\n", err) },
+	))
+
+	// Distinct values
+	withDuplicates := observable.FromSlice([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
+	distinct := observable.Distinct(withDuplicates)
+	fmt.Println("\n--- Distinct Operator ---")
+	distinct.Subscribe(context.Background(), observable.NewSubscriber(
+		func(v int) { fmt.Printf("Distinct: %d\n", v) },
+		func() { fmt.Println("Distinct completed") },
+		func(err error) { fmt.Printf("Distinct error: %v\n", err) },
+	))
+
+	time.Sleep(100 * time.Millisecond)
+
+	fmt.Println("\n=== New Stream Processors Example ===")
+
+	// Demonstrate new processors
+	numberPublisher := streams.NewCompliantRangePublisher(1, 10)
+
+	// Take first 5 numbers using processor
+	takeProcessor := streams.NewTakeProcessor[int](5)
+	numberPublisher.Subscribe(context.Background(), takeProcessor)
+	fmt.Println("\n--- Take Processor ---")
+	takeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Taken: %d\n", v) },
+		func(err error) { fmt.Printf("Take error: %v\n", err) },
+		func() { fmt.Println("Take completed") },
+	))
+
+	// Reset publisher for next example
+	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
+
+	// Skip first 3 numbers using processor
+	skipProcessor := streams.NewSkipProcessor[int](3)
+	numberPublisher.Subscribe(context.Background(), skipProcessor)
+	fmt.Println("\n--- Skip Processor ---")
+	skipProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Skipped to: %d\n", v) },
+		func(err error) { fmt.Printf("Skip error: %v\n", err) },
+		func() { fmt.Println("Skip completed") },
+	))
+
+	// Reset publisher for next example
+	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
+
+	// Distinct values using processor
+	duplicatePublisher := streams.NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
+	distinctProcessor := streams.NewDistinctProcessor[int]()
+	duplicatePublisher.Subscribe(context.Background(), distinctProcessor)
+	fmt.Println("\n--- Distinct Processor ---")
+	distinctProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Distinct: %d\n", v) },
+		func(err error) { fmt.Printf("Distinct error: %v\n", err) },
+		func() { fmt.Println("Distinct completed") },
+	))
+
+	// Additional stream processors examples
+	fmt.Println("\n--- Merge Processor ---")
+	pub1 := streams.NewCompliantFromSlicePublisher([]int{1, 2, 3})
+	pub2 := streams.NewCompliantFromSlicePublisher([]int{4, 5, 6})
+	mergeProcessor := streams.NewMergeProcessor[int](pub1, pub2)
+	mergeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Merged processor value: %d\n", v) },
+		func(err error) { fmt.Printf("Merge processor error: %v\n", err) },
+		func() { fmt.Println("Merge processor completed") },
+	))
+
+	fmt.Println("\n--- Concat Processor ---")
+	pub3 := streams.NewCompliantFromSlicePublisher([]int{7, 8, 9})
+	pub4 := streams.NewCompliantFromSlicePublisher([]int{10, 11, 12})
+	concatProcessor := streams.NewConcatProcessor[int](pub3, pub4)
+	concatProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+		func(v int) { fmt.Printf("Concat processor value: %d\n", v) },
+		func(err error) { fmt.Printf("Concat processor error: %v\n", err) },
+		func() { fmt.Println("Concat processor completed") },
+	))
+
+	time.Sleep(100 * time.Millisecond)
+	fmt.Println("\n=== All examples completed ===")
 }

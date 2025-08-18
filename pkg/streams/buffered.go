@@ -3,6 +3,7 @@ package streams
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -232,23 +233,39 @@ func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber
 }
 
 func (rp *CompliantRangePublisher) process(ctx context.Context) {
-	defer rp.complete()
+	fmt.Printf("CompliantRangePublisher.process started\n")
+	defer func() {
+		fmt.Printf("CompliantRangePublisher.process completed\n")
+		rp.complete()
+	}()
 
+	// Handle nil context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	fmt.Printf("CompliantRangePublisher.process waiting for demand signal\n")
 	select {
-	case <-rp.demandSignal:
+	case <-rp.compliantPublisher.demandSignal:
+		fmt.Printf("CompliantRangePublisher.process received demand signal\n")
 	case <-ctx.Done():
+		fmt.Printf("CompliantRangePublisher.process context done\n")
 		return
 	}
 
+	fmt.Printf("CompliantRangePublisher.process emitting values %d to %d\n", rp.start, rp.end)
 	for i := rp.start; i <= rp.end; i++ {
 		select {
 		case <-ctx.Done():
+			fmt.Printf("CompliantRangePublisher.process context done during emission\n")
 			return
 		default:
 		}
 
 		subs := rp.getActiveSubscribers()
+		fmt.Printf("CompliantRangePublisher.process subscribers: %d\n", len(subs))
 		if len(subs) == 0 {
+			fmt.Printf("CompliantRangePublisher.process no subscribers, returning\n")
 			return
 		}
 
@@ -261,14 +278,17 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 		}
 
 		if !canEmit {
+			fmt.Printf("CompliantRangePublisher.process no subscribers can emit, waiting for demand signal\n")
 			select {
-			case <-rp.demandSignal:
+			case <-rp.compliantPublisher.demandSignal:
 			case <-ctx.Done():
 				return
 			}
 		}
 
+		fmt.Printf("CompliantRangePublisher.process emitting %d\n", i)
 		if !rp.emit(i) {
+			fmt.Printf("CompliantRangePublisher.process emit returned false\n")
 			return
 		}
 	}
@@ -299,8 +319,13 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 		return
 	}
 
+	// Handle nil context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	select {
-	case <-sp.demandSignal:
+	case <-sp.compliantPublisher.demandSignal:
 	case <-ctx.Done():
 		return
 	}
@@ -327,7 +352,7 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 
 		if !canEmit {
 			select {
-			case <-sp.demandSignal:
+			case <-sp.compliantPublisher.demandSignal:
 			case <-ctx.Done():
 				return
 			}

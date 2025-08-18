@@ -38,10 +38,21 @@ import (
 )
 
 func main() {
+    // Basic usage
     obs := observable.Just(1, 2, 3, 4, 5)
     obs.Subscribe(context.Background(), observable.NewSubscriber(
         func(v int) { fmt.Printf("Got %d\n", v) },
         func() { fmt.Println("Done") },
+        func(err error) { fmt.Printf("Error: %v\n", err) },
+    ))
+    
+    // Using new operators
+    numbers := observable.Range(1, 10)
+    firstFive := observable.Take(numbers, 5)
+    fmt.Println("\nFirst five numbers:")
+    firstFive.Subscribe(context.Background(), observable.NewSubscriber(
+        func(v int) { fmt.Printf("%d ", v) },
+        func() { fmt.Println("\nCompleted") },
         func(err error) { fmt.Printf("Error: %v\n", err) },
     ))
 }
@@ -55,6 +66,10 @@ Got 3
 Got 4
 Got 5
 Done
+
+First five numbers:
+1 2 3 4 5 
+Completed
 ```
 
 ### Reactive Streams API (Pull Model with Backpressure)
@@ -78,6 +93,17 @@ func main() {
         func(err error) { fmt.Printf("Error: %v\n", err) },
         func() { fmt.Println("Completed") },
     ))
+    
+    // Using new processors
+    fmt.Println("\nUsing TakeProcessor:")
+    numbers := streams.NewCompliantRangePublisher(1, 10)
+    takeProcessor := streams.NewTakeProcessor[int](5)
+    numbers.Subscribe(context.Background(), takeProcessor)
+    takeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+        func(v int) { fmt.Printf("%d ", v) },
+        func(err error) { fmt.Printf("Error: %v\n", err) },
+        func() { fmt.Println("\nTake completed") },
+    ))
 }
 ```
 
@@ -90,6 +116,10 @@ Received: 3
 Received: 4
 Received: 5
 Completed
+
+Using TakeProcessor:
+1 2 3 4 5 
+Take completed
 ```
 
 
