@@ -210,8 +210,10 @@ func (bp *BufferedPublisher[T]) flushBuffer(sub *bufferedSubscription[T]) {
 
 type CompliantRangePublisher struct {
 	*compliantPublisher[int]
-	start int
-	end   int
+	start   int
+	end     int
+	started bool
+	mu      sync.Mutex
 }
 
 func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
@@ -245,8 +247,13 @@ func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber
 	// Call OnSubscribe synchronously to establish demand before processing
 	sub.OnSubscribe(subscription)
 
-	// Now start processing
-	go rp.process(ctx)
+	// Only start processing if we're the first subscriber
+	rp.mu.Lock()
+	if !rp.started {
+		rp.started = true
+		go rp.process(ctx)
+	}
+	rp.mu.Unlock()
 }
 
 func (rp *CompliantRangePublisher) process(ctx context.Context) {
@@ -288,7 +295,9 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 
 type CompliantFromSlicePublisher[T any] struct {
 	*compliantPublisher[T]
-	items []T
+	items   []T
+	started bool
+	mu      sync.Mutex
 }
 
 func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublisher[T] {
@@ -321,8 +330,13 @@ func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Sub
 	// Call OnSubscribe synchronously to establish demand before processing
 	sub.OnSubscribe(subscription)
 
-	// Now start processing
-	go sp.process(ctx)
+	// Only start processing if we're the first subscriber
+	sp.mu.Lock()
+	if !sp.started {
+		sp.started = true
+		go sp.process(ctx)
+	}
+	sp.mu.Unlock()
 }
 
 func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
