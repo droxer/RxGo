@@ -2,11 +2,9 @@ package streams
 
 import (
 	"context"
-	"fmt"
 	"sync"
 )
 
-// MapProcessor transforms items using a mapping function
 type MapProcessor[T any, R any] struct {
 	transform  func(T) R
 	upstream   Subscription
@@ -22,25 +20,25 @@ func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 }
 
 func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &mapProcessorSubscription[T, R]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
 
-// OnSubscribe implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnSubscribe(s Subscription) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	p.upstream = s
 
-	// If we already have downstream, request all items
 	if p.downstream != nil {
 		s.Request(1<<63 - 1)
 	}
 }
 
-// OnNext implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnNext(value T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -53,7 +51,6 @@ func (p *MapProcessor[T, R]) OnNext(value T) {
 	p.downstream.OnNext(transformed)
 }
 
-// OnError implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -66,7 +63,6 @@ func (p *MapProcessor[T, R]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
-// OnComplete implements Subscriber[T]
 func (p *MapProcessor[T, R]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -79,33 +75,25 @@ func (p *MapProcessor[T, R]) OnComplete() {
 	p.downstream.OnComplete()
 }
 
-// mapProcessorSubscription implements Subscription for map processors
 type mapProcessorSubscription[T any, R any] struct {
 	processor *MapProcessor[T, R]
 }
 
 func (s *mapProcessorSubscription[T, R]) Request(n int64) {
-	fmt.Printf("mapProcessorSubscription.Request: %d\n", n)
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
-		fmt.Printf("Forwarding request to upstream: %d\n", n)
 		upstream.Request(n)
 	} else {
-		fmt.Printf("No upstream yet, will forward request when upstream is available\n")
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil {
-			fmt.Printf("Upstream became available, forwarding request: %d\n", n)
 			s.processor.upstream.Request(n)
 		}
 		s.processor.mu.Unlock()
@@ -113,8 +101,6 @@ func (s *mapProcessorSubscription[T, R]) Request(n int64) {
 }
 
 func (s *mapProcessorSubscription[T, R]) Cancel() {
-	fmt.Printf("mapProcessorSubscription.Cancel\n")
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -124,7 +110,6 @@ func (s *mapProcessorSubscription[T, R]) Cancel() {
 	}
 }
 
-// FilterProcessor filters items based on a predicate
 type FilterProcessor[T any] struct {
 	predicate  func(T) bool
 	upstream   Subscription
@@ -140,25 +125,25 @@ func NewFilterProcessor[T any](predicate func(T) bool) *FilterProcessor[T] {
 }
 
 func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &filterProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
 
-// OnSubscribe implements Subscriber[T]
 func (p *FilterProcessor[T]) OnSubscribe(s Subscription) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	p.upstream = s
 
-	// If we already have downstream, request all items
 	if p.downstream != nil {
 		s.Request(1<<63 - 1)
 	}
 }
 
-// OnNext implements Subscriber[T]
 func (p *FilterProcessor[T]) OnNext(value T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -172,7 +157,6 @@ func (p *FilterProcessor[T]) OnNext(value T) {
 	}
 }
 
-// OnError implements Subscriber[T]
 func (p *FilterProcessor[T]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -185,7 +169,6 @@ func (p *FilterProcessor[T]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
-// OnComplete implements Subscriber[T]
 func (p *FilterProcessor[T]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -198,19 +181,16 @@ func (p *FilterProcessor[T]) OnComplete() {
 	p.downstream.OnComplete()
 }
 
-// filterProcessorSubscription implements Subscription for filter processors
 type filterProcessorSubscription[T any] struct {
 	processor *FilterProcessor[T]
 }
 
 func (s *filterProcessorSubscription[T]) Request(n int64) {
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
@@ -218,7 +198,6 @@ func (s *filterProcessorSubscription[T]) Request(n int64) {
 	if upstream != nil {
 		upstream.Request(n)
 	} else {
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil {
 			s.processor.upstream.Request(n)
@@ -228,7 +207,6 @@ func (s *filterProcessorSubscription[T]) Request(n int64) {
 }
 
 func (s *filterProcessorSubscription[T]) Cancel() {
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -238,7 +216,6 @@ func (s *filterProcessorSubscription[T]) Cancel() {
 	}
 }
 
-// FlatMapProcessor transforms items and flattens the results
 type FlatMapProcessor[T any, R any] struct {
 	transform  func(T) Publisher[R]
 	upstream   Subscription
@@ -254,7 +231,10 @@ func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapP
 }
 
 func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &flatMapProcessorSubscription[T, R]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -265,13 +245,11 @@ func (p *FlatMapProcessor[T, R]) OnSubscribe(s Subscription) {
 
 	p.upstream = s
 
-	// If we already have downstream, request all items
 	if p.downstream != nil {
 		s.Request(1<<63 - 1)
 	}
 }
 
-// OnNext implements Subscriber[T]
 func (p *FlatMapProcessor[T, R]) OnNext(value T) {
 	p.mu.Lock()
 
@@ -281,13 +259,11 @@ func (p *FlatMapProcessor[T, R]) OnNext(value T) {
 	}
 
 	publisher := p.transform(value)
-	// We need to unlock before subscribing to avoid deadlock
 	p.mu.Unlock()
 
 	publisher.Subscribe(context.Background(), &innerSubscriber[T, R]{processor: p})
 }
 
-// OnError implements Subscriber[T]
 func (p *FlatMapProcessor[T, R]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -300,7 +276,6 @@ func (p *FlatMapProcessor[T, R]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
-// OnComplete implements Subscriber[T]
 func (p *FlatMapProcessor[T, R]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -318,13 +293,11 @@ type flatMapProcessorSubscription[T any, R any] struct {
 }
 
 func (s *flatMapProcessorSubscription[T, R]) Request(n int64) {
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
@@ -332,7 +305,6 @@ func (s *flatMapProcessorSubscription[T, R]) Request(n int64) {
 	if upstream != nil {
 		upstream.Request(n)
 	} else {
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil {
 			s.processor.upstream.Request(n)
@@ -342,7 +314,6 @@ func (s *flatMapProcessorSubscription[T, R]) Request(n int64) {
 }
 
 func (s *flatMapProcessorSubscription[T, R]) Cancel() {
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -384,10 +355,8 @@ func (s *innerSubscriber[T, R]) OnError(err error) {
 }
 
 func (s *innerSubscriber[T, R]) OnComplete() {
-	// Inner publisher completed, but the main processor continues
 }
 
-// MergeProcessor combines multiple publishers into one by merging their emissions
 type MergeProcessor[T any] struct {
 	sources          []Publisher[T]
 	downstream       Subscriber[T]
@@ -406,7 +375,11 @@ func NewMergeProcessor[T any](sources ...Publisher[T]) *MergeProcessor[T] {
 }
 
 func (p *MergeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.ctx = ctx
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &mergeProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -415,7 +388,6 @@ func (p *MergeProcessor[T]) OnSubscribe(s Subscription) {
 	// Not directly used for merge processor
 }
 
-// OnNext implements Subscriber[T] for inner subscribers
 func (p *MergeProcessor[T]) OnNext(value T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -427,7 +399,6 @@ func (p *MergeProcessor[T]) OnNext(value T) {
 	p.downstream.OnNext(value)
 }
 
-// OnError implements Subscriber[T] for inner subscribers
 func (p *MergeProcessor[T]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -440,7 +411,6 @@ func (p *MergeProcessor[T]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
-// OnComplete implements Subscriber[T] for inner subscribers
 func (p *MergeProcessor[T]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -458,18 +428,10 @@ type mergeProcessorSubscription[T any] struct {
 
 func (s *mergeProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
+	defer s.processor.mu.Unlock()
+
 	ctx := s.processor.ctx
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
-	s.processor.ctx = ctx
-	s.processor.mu.Unlock()
-
-	// Subscribe to all sources immediately
-	s.processor.mu.Lock()
 	if len(s.processor.sources) == 0 {
 		s.processor.terminated = true
 		if s.processor.downstream != nil {
@@ -481,19 +443,15 @@ func (s *mergeProcessorSubscription[T]) Request(n int64) {
 				}
 			}()
 		}
-		s.processor.mu.Unlock()
 		return
 	}
 
-	// Subscribe to all sources
 	for _, source := range s.processor.sources {
 		source.Subscribe(ctx, &mergeInnerSubscriber[T]{processor: s.processor})
 	}
-	s.processor.mu.Unlock()
 }
 
 func (s *mergeProcessorSubscription[T]) Cancel() {
-	// For merge processor, cancellation affects all sources
 }
 
 type mergeInnerSubscriber[T any] struct {
@@ -516,7 +474,6 @@ func (s *mergeInnerSubscriber[T]) OnComplete() {
 	s.processor.OnComplete()
 }
 
-// ConcatProcessor emits values from publishers sequentially
 type ConcatProcessor[T any] struct {
 	sources      []Publisher[T]
 	downstream   Subscriber[T]
@@ -533,7 +490,11 @@ func NewConcatProcessor[T any](sources ...Publisher[T]) *ConcatProcessor[T] {
 }
 
 func (p *ConcatProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.ctx = ctx
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &concatProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -586,18 +547,11 @@ type concatProcessorSubscription[T any] struct {
 
 func (s *concatProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
-	ctx := s.processor.ctx
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
+	defer s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
-	s.processor.ctx = ctx
-	s.processor.mu.Unlock()
+	ctx := s.processor.ctx
 
 	// Start with the first source
-	s.processor.mu.Lock()
 	if len(s.processor.sources) > 0 {
 		s.processor.sources[0].Subscribe(ctx, &concatInnerSubscriber[T]{processor: s.processor})
 	} else {
@@ -612,7 +566,6 @@ func (s *concatProcessorSubscription[T]) Request(n int64) {
 			}()
 		}
 	}
-	s.processor.mu.Unlock()
 }
 
 func (s *concatProcessorSubscription[T]) Cancel() {
@@ -656,7 +609,10 @@ func NewTakeProcessor[T any](n int64) *TakeProcessor[T] {
 }
 
 func (p *TakeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &takeProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -667,7 +623,6 @@ func (p *TakeProcessor[T]) OnSubscribe(s Subscription) {
 
 	p.upstream = s
 
-	// If we already have downstream, request up to n items
 	if p.downstream != nil && p.n > 0 {
 		s.Request(p.n)
 	}
@@ -686,7 +641,6 @@ func (p *TakeProcessor[T]) OnNext(value T) {
 		p.count++
 	}
 
-	// If we've reached our limit, complete and cancel upstream
 	if p.count == p.n {
 		p.terminated = true
 		p.downstream.OnComplete()
@@ -725,27 +679,23 @@ type takeProcessorSubscription[T any] struct {
 }
 
 func (s *takeProcessorSubscription[T]) Request(n int64) {
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	nValue := s.processor.n
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil && nValue > 0 {
-		// Request up to n items
 		requestAmount := nValue
 		if requestAmount > n {
 			requestAmount = n
 		}
 		upstream.Request(requestAmount)
 	} else {
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil && s.processor.n > 0 {
 			requestAmount := s.processor.n
@@ -759,7 +709,6 @@ func (s *takeProcessorSubscription[T]) Request(n int64) {
 }
 
 func (s *takeProcessorSubscription[T]) Cancel() {
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -769,7 +718,6 @@ func (s *takeProcessorSubscription[T]) Cancel() {
 	}
 }
 
-// SkipProcessor skips the first n values
 type SkipProcessor[T any] struct {
 	n          int64
 	count      int64
@@ -786,7 +734,10 @@ func NewSkipProcessor[T any](n int64) *SkipProcessor[T] {
 }
 
 func (p *SkipProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &skipProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -797,7 +748,6 @@ func (p *SkipProcessor[T]) OnSubscribe(s Subscription) {
 
 	p.upstream = s
 
-	// If we already have downstream, request all items
 	if p.downstream != nil {
 		s.Request(1<<63 - 1)
 	}
@@ -847,13 +797,11 @@ type skipProcessorSubscription[T any] struct {
 }
 
 func (s *skipProcessorSubscription[T]) Request(n int64) {
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
@@ -861,7 +809,6 @@ func (s *skipProcessorSubscription[T]) Request(n int64) {
 	if upstream != nil {
 		upstream.Request(n)
 	} else {
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil {
 			s.processor.upstream.Request(n)
@@ -871,7 +818,6 @@ func (s *skipProcessorSubscription[T]) Request(n int64) {
 }
 
 func (s *skipProcessorSubscription[T]) Cancel() {
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -881,7 +827,6 @@ func (s *skipProcessorSubscription[T]) Cancel() {
 	}
 }
 
-// DistinctProcessor suppresses duplicate items
 type DistinctProcessor[T comparable] struct {
 	seen       map[T]struct{}
 	upstream   Subscription
@@ -897,7 +842,10 @@ func NewDistinctProcessor[T comparable]() *DistinctProcessor[T] {
 }
 
 func (p *DistinctProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	// Create a subscription for this processor and give it to the subscriber
+	p.mu.Lock()
+	p.downstream = sub
+	p.mu.Unlock()
+
 	processorSub := &distinctProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
 }
@@ -908,7 +856,6 @@ func (p *DistinctProcessor[T]) OnSubscribe(s Subscription) {
 
 	p.upstream = s
 
-	// If we already have downstream, request all items
 	if p.downstream != nil {
 		s.Request(1<<63 - 1)
 	}
@@ -957,13 +904,11 @@ type distinctProcessorSubscription[T comparable] struct {
 }
 
 func (s *distinctProcessorSubscription[T]) Request(n int64) {
-	// Forward the request to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	downstream := s.processor.downstream
 	s.processor.mu.Unlock()
 
-	// Store the downstream reference in the processor
 	s.processor.mu.Lock()
 	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
@@ -971,7 +916,6 @@ func (s *distinctProcessorSubscription[T]) Request(n int64) {
 	if upstream != nil {
 		upstream.Request(n)
 	} else {
-		// If we don't have upstream yet, store the request and forward it when we get the upstream
 		s.processor.mu.Lock()
 		if s.processor.upstream != nil {
 			s.processor.upstream.Request(n)
@@ -981,7 +925,6 @@ func (s *distinctProcessorSubscription[T]) Request(n int64) {
 }
 
 func (s *distinctProcessorSubscription[T]) Cancel() {
-	// Forward the cancel to the upstream
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
 	s.processor.mu.Unlock()
@@ -991,7 +934,6 @@ func (s *distinctProcessorSubscription[T]) Cancel() {
 	}
 }
 
-// ProcessorBuilder provides fluent API for building processors
 type ProcessorBuilder[T any, R any] struct{}
 
 func NewProcessorBuilder[T any, R any]() *ProcessorBuilder[T, R] {

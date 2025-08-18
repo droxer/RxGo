@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// CachedThreadScheduler provides a dynamic thread pool with caching
-// Workers are created on-demand and cached for reuse based on TTL
 type CachedThreadScheduler struct {
 	workerPool *cachedThreadPool
 	jobQueue   chan job
@@ -42,7 +40,6 @@ func (cts *CachedThreadScheduler) Schedule(run Runnable) {
 		run: run,
 	}
 
-	// Auto-start if not already started
 	if !cts.started {
 		cts.Start()
 	}
@@ -56,7 +53,6 @@ func (cts *CachedThreadScheduler) ScheduleAt(run Runnable, delay time.Duration) 
 		delay: delay,
 	}
 
-	// Auto-start if not already started
 	if !cts.started {
 		cts.Start()
 	}
@@ -75,17 +71,14 @@ func (cts *CachedThreadScheduler) run() {
 	}
 }
 
-// IOScheduler returns a CachedThreadScheduler optimized for IO-bound tasks
 func IOScheduler() Scheduler {
 	return NewCachedThreadScheduler(120 * time.Second)
 }
 
-// NewThreadScheduler creates a new thread for each task
 func NewThreadScheduler() Scheduler {
 	return NewCachedThreadScheduler(0)
 }
 
-// cachedThreadPool for CachedThreadScheduler
 type cachedThreadPool struct {
 	ttl          time.Duration
 	jobChanQueue chan chan job
@@ -109,7 +102,6 @@ func (c *cachedThreadPool) get() chan job {
 	}
 }
 
-// threadWorker for CachedThreadScheduler
 type threadWorker struct {
 	ttl          time.Duration
 	timer        *time.Timer
@@ -130,7 +122,6 @@ func newThreadWorker(ttl time.Duration, jobChanQueue chan chan job) *threadWorke
 
 func (t *threadWorker) start() {
 	go func() {
-		// Never expire if TTL is 0
 		if t.ttl > 0 {
 			t.timer.Reset(t.ttl)
 		}
@@ -142,7 +133,6 @@ func (t *threadWorker) start() {
 			case job := <-t.jobChan:
 				time.Sleep(job.delay)
 				job.run()
-				// Reset timer only if TTL > 0
 				if t.ttl > 0 {
 					t.timer.Reset(t.ttl)
 				}

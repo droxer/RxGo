@@ -4,20 +4,14 @@ import (
 	"context"
 )
 
-// Observable represents a stream of values that can be observed
-// It follows the reactive programming pattern where values are emitted over time
 type Observable[T any] struct {
 	onSubscribe OnSubscribe[T]
 }
 
-// Create creates a new Observable with the given subscription function
-// This is the primary way to create custom Observables
 func Create[T any](on OnSubscribe[T]) *Observable[T] {
 	return &Observable[T]{onSubscribe: on}
 }
 
-// Subscribe connects a Subscriber to this Observable
-// The Subscriber will receive all emitted values until completion or error
 func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	if sub == nil {
 		return
@@ -31,8 +25,6 @@ func (o *Observable[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	o.onSubscribe(ctx, sub)
 }
 
-// Just creates an Observable that emits the provided values in sequence
-// This is a convenience function for creating Observables from static data
 func Just[T any](values ...T) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		defer sub.OnCompleted()
@@ -48,8 +40,6 @@ func Just[T any](values ...T) *Observable[T] {
 	})
 }
 
-// Range creates an Observable that emits a range of integers
-// Similar to a for loop but as an Observable stream
 func Range(start, count int) *Observable[int] {
 	return Create(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnCompleted()
@@ -68,8 +58,6 @@ func Range(start, count int) *Observable[int] {
 	})
 }
 
-// FromSlice creates an Observable from a slice of values
-// This is useful for converting existing data structures to Observable streams
 func FromSlice[T any](slice []T) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		defer sub.OnCompleted()
@@ -85,23 +73,18 @@ func FromSlice[T any](slice []T) *Observable[T] {
 	})
 }
 
-// Empty creates an Observable that completes immediately without emitting any values
-// Useful for testing or as a starting point for conditional streams
 func Empty[T any]() *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		sub.OnCompleted()
 	})
 }
 
-// Error creates an Observable that immediately errors with the given error
-// Useful for error handling and testing error scenarios
 func Error[T any](err error) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		sub.OnError(err)
 	})
 }
 
-// functionalSubscriber implements the Subscriber interface with functions
 type functionalSubscriber[T any] struct {
 	onStart     func()
 	onNext      func(T)
@@ -133,15 +116,6 @@ func (s *functionalSubscriber[T]) OnError(e error) {
 	}
 }
 
-// NewSubscriber creates a Subscriber from a set of callback functions.
-// This provides a convenient way to subscribe to an Observable without
-// implementing the Subscriber interface directly.
-//
-// Parameters:
-//
-//	onNext:      (optional) function to handle each emitted value.
-//	onCompleted: (optional) function to handle the completion signal.
-//	onError:     (optional) function to handle any error.
 func NewSubscriber[T any](
 	onNext func(T),
 	onCompleted func(),

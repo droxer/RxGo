@@ -7,7 +7,6 @@ import (
 	"github.com/droxer/RxGo/pkg/scheduler"
 )
 
-// Map transforms each value emitted by the Observable using the provided function
 func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
 	return Create(func(ctx context.Context, sub Subscriber[R]) {
 		source.Subscribe(ctx, &mapSubscriber[T, R]{
@@ -17,7 +16,6 @@ func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
 	})
 }
 
-// Filter filters values emitted by the Observable based on a predicate function
 func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &filterSubscriber[T]{
@@ -27,8 +25,6 @@ func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T]
 	})
 }
 
-// ObserveOn schedules the Observable to emit its values on the specified scheduler
-// This allows control over which thread/scheduler the emissions occur on
 func ObserveOn[T any](source *Observable[T], sched scheduler.Scheduler) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &observeOnSubscriber[T]{
@@ -39,7 +35,6 @@ func ObserveOn[T any](source *Observable[T], sched scheduler.Scheduler) *Observa
 	})
 }
 
-// Merge combines multiple Observables into one by merging their emissions
 func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		var wg sync.WaitGroup
@@ -56,7 +51,6 @@ func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 			}(source)
 		}
 
-		// Wait for all sources to complete
 		go func() {
 			wg.Wait()
 			close(completed)
@@ -65,7 +59,6 @@ func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 	})
 }
 
-// Concat emits the values from the first Observable, then the second, and so on
 func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		sub.Start()
@@ -77,7 +70,6 @@ func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 					sub:  sub,
 					done: done,
 				})
-				// Wait for this source to complete before moving to the next
 				select {
 				case <-done:
 				case <-ctx.Done():
@@ -89,7 +81,6 @@ func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 	})
 }
 
-// Take emits only the first n values emitted by the source Observable
 func Take[T any](source *Observable[T], n int) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &takeSubscriber[T]{
@@ -99,7 +90,6 @@ func Take[T any](source *Observable[T], n int) *Observable[T] {
 	})
 }
 
-// Skip skips the first n values emitted by the source Observable
 func Skip[T any](source *Observable[T], n int) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &skipSubscriber[T]{
@@ -109,7 +99,6 @@ func Skip[T any](source *Observable[T], n int) *Observable[T] {
 	})
 }
 
-// Distinct suppresses duplicate items emitted by the source Observable
 func Distinct[T comparable](source *Observable[T]) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		source.Subscribe(ctx, &distinctSubscriber[T]{
@@ -118,8 +107,6 @@ func Distinct[T comparable](source *Observable[T]) *Observable[T] {
 		})
 	})
 }
-
-// internal subscriber types for operators
 
 type mapSubscriber[T, R any] struct {
 	sub       Subscriber[R]

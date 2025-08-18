@@ -19,7 +19,6 @@ func TestMerge(t *testing.T) {
 	sub := &testSubscriber[int]{}
 	merged.Subscribe(ctx, sub)
 
-	// Wait a bit for async operations
 	time.Sleep(10 * time.Millisecond)
 
 	values := sub.getValues()
@@ -27,7 +26,6 @@ func TestMerge(t *testing.T) {
 		t.Errorf("Expected 6 values, got %d", len(values))
 	}
 
-	// Check that all values are present (order may vary due to concurrency)
 	expected := map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true, 6: true}
 	for _, v := range values {
 		if !expected[v] {
@@ -52,7 +50,6 @@ func TestConcat(t *testing.T) {
 	sub := &testSubscriber[int]{}
 	concatenated.Subscribe(ctx, sub)
 
-	// Wait a bit for async operations
 	time.Sleep(10 * time.Millisecond)
 
 	values := sub.getValues()
@@ -60,7 +57,6 @@ func TestConcat(t *testing.T) {
 		t.Errorf("Expected 6 values, got %d", len(values))
 	}
 
-	// Check that values are in the correct order
 	expected := []int{1, 2, 3, 4, 5, 6}
 	for i, v := range values {
 		if v != expected[i] {
@@ -144,7 +140,6 @@ func TestObserveOn(t *testing.T) {
 	sub := &testSubscriber[int]{}
 	scheduled.Subscribe(ctx, sub)
 
-	// Wait a bit for async operations
 	time.Sleep(10 * time.Millisecond)
 
 	values := sub.getValues()

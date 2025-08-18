@@ -6,7 +6,6 @@ import (
 )
 
 func TestMergeProcessor(t *testing.T) {
-	t.Skip("MergeProcessor implementation needs review - test hangs")
 	ctx := context.Background()
 
 	pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
@@ -17,14 +16,12 @@ func TestMergeProcessor(t *testing.T) {
 	sub := NewTestSubscriber[int]()
 	mergeProcessor.Subscribe(ctx, sub)
 
-	// Wait for completion
 	sub.Wait(ctx)
 
 	if len(sub.Received) != 6 {
 		t.Errorf("Expected 6 values, got %d", len(sub.Received))
 	}
 
-	// Check that all values are present (order may vary due to concurrency)
 	expected := map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true, 6: true}
 	for _, v := range sub.Received {
 		if !expected[v] {
@@ -43,7 +40,6 @@ func TestMergeProcessor(t *testing.T) {
 }
 
 func TestConcatProcessor(t *testing.T) {
-	t.Skip("ConcatProcessor implementation needs review - test hangs")
 	ctx := context.Background()
 
 	pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
@@ -75,20 +71,16 @@ func TestConcatProcessor(t *testing.T) {
 }
 
 func TestTakeProcessor(t *testing.T) {
-	t.Skip("Processor tests need review - hanging on CompliantRangePublisher")
 	ctx := context.Background()
 
-	// Create a source publisher
-	source := NewCompliantRangePublisher(1, 10) // 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+	source := NewCompliantRangePublisher(1, 10)
 
-	// Connect source to take processor
 	takeProcessor := NewTakeProcessor[int](5)
 	source.Subscribe(ctx, takeProcessor)
 
 	sub := NewTestSubscriber[int]()
 	takeProcessor.Subscribe(ctx, sub)
 
-	// Wait for completion
 	sub.Wait(ctx)
 
 	if len(sub.Received) != 5 {
@@ -108,20 +100,16 @@ func TestTakeProcessor(t *testing.T) {
 }
 
 func TestSkipProcessor(t *testing.T) {
-	t.Skip("Processor tests need review - hanging on CompliantRangePublisher")
 	ctx := context.Background()
 
-	// Create a source publisher
-	source := NewCompliantRangePublisher(1, 10) // 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+	source := NewCompliantRangePublisher(1, 10)
 
-	// Connect source to skip processor
 	skipProcessor := NewSkipProcessor[int](5)
 	source.Subscribe(ctx, skipProcessor)
 
 	sub := NewTestSubscriber[int]()
 	skipProcessor.Subscribe(ctx, sub)
 
-	// Wait for completion
 	sub.Wait(ctx)
 
 	if len(sub.Received) != 5 {
@@ -141,20 +129,16 @@ func TestSkipProcessor(t *testing.T) {
 }
 
 func TestDistinctProcessor(t *testing.T) {
-	t.Skip("Processor tests need review - hanging on CompliantRangePublisher")
 	ctx := context.Background()
 
-	// Create a source publisher with duplicates
 	source := NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 
-	// Connect source to distinct processor
 	distinctProcessor := NewDistinctProcessor[int]()
 	source.Subscribe(ctx, distinctProcessor)
 
 	sub := NewTestSubscriber[int]()
 	distinctProcessor.Subscribe(ctx, sub)
 
-	// Wait for completion
 	sub.Wait(ctx)
 
 	if len(sub.Received) != 5 {

@@ -25,7 +25,6 @@ func TestBufferStrategy(t *testing.T) {
 		t.Errorf("Expected 10 items, got %d", len(collector.items))
 	}
 
-	// Verify order is preserved
 	for i, val := range collector.items {
 		if val != i+1 {
 			t.Errorf("Expected item %d to be %d, got %d", i, i+1, val)
@@ -47,7 +46,6 @@ func TestDropStrategy(t *testing.T) {
 	collector.wait()
 
 	fmt.Printf("Drop strategy processed %d items\n", len(collector.items))
-	// Should process some items, but may drop some due to slow consumer
 }
 
 func TestLatestStrategy(t *testing.T) {
@@ -64,7 +62,6 @@ func TestLatestStrategy(t *testing.T) {
 	collector.wait()
 
 	fmt.Printf("Latest strategy processed %d items\n", len(collector.items))
-	// Should process the latest items
 	if len(collector.items) > 0 {
 		lastItem := collector.items[len(collector.items)-1]
 		if lastItem != 10 {
@@ -78,7 +75,7 @@ func TestErrorStrategy(t *testing.T) {
 
 	publisher := FromSlicePublishWithBackpressure(data, BackpressureConfig{
 		Strategy:   Error,
-		BufferSize: 1, // Very small buffer to ensure overflow
+		BufferSize: 1,
 	})
 
 	collector := &testCollector{processDelay: 500 * time.Millisecond}
@@ -93,7 +90,6 @@ func TestErrorStrategy(t *testing.T) {
 	}
 }
 
-// testCollector collects items for testing
 type testCollector struct {
 	items        []int
 	err          error
@@ -104,7 +100,7 @@ type testCollector struct {
 
 func (c *testCollector) OnSubscribe(sub Subscription) {
 	c.wg.Add(1)
-	sub.Request(100) // Request all items
+	sub.Request(100)
 }
 
 func (c *testCollector) OnNext(value int) {

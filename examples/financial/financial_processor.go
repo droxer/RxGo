@@ -9,7 +9,6 @@ import (
 	"github.com/droxer/RxGo/pkg/scheduler"
 )
 
-// Trade represents a financial transaction
 type Trade struct {
 	Symbol    string
 	Price     float64
@@ -17,13 +16,11 @@ type Trade struct {
 	Timestamp time.Time
 }
 
-// Portfolio represents an investment portfolio
 type Portfolio struct {
 	Holdings map[string]int
 	Cash     float64
 }
 
-// FinancialProcessor processes trading data
 type FinancialProcessor struct {
 	portfolio *Portfolio
 	name      string
@@ -87,7 +84,6 @@ func (s *FinancialProcessor) OnCompleted() {
 	fmt.Printf("[%s]   Cash: $%.2f\n", s.name, s.portfolio.Cash)
 }
 
-// MarketDataGenerator generates mock trading data
 func generateMarketData(ctx context.Context) []Trade {
 	return []Trade{
 		{Symbol: "AAPL", Price: 175.25, Volume: 150, Timestamp: time.Now()},
@@ -111,7 +107,6 @@ func financialProcessingExamples() {
 
 	processor := NewFinancialProcessor("TradeEngine", 10000.0)
 
-	// Simulate real-time trading data
 	trades := observable.Create(func(ctx context.Context, sub observable.Subscriber[Trade]) {
 		data := generateMarketData(ctx)
 
@@ -132,10 +127,8 @@ func financialProcessingExamples() {
 
 	time.Sleep(5 * time.Second)
 
-	// Demonstrate scheduler usage
 	fmt.Println("\n--- Scheduler Performance Comparison ---")
 
-	// High-volume data for performance testing
 	highVolumeData := []Trade{
 		{Symbol: "AAPL", Price: 175.25, Volume: 15000, Timestamp: time.Now()},
 		{Symbol: "GOOGL", Price: 2850.50, Volume: 2500, Timestamp: time.Now().Add(1 * time.Minute)},
@@ -145,7 +138,6 @@ func financialProcessingExamples() {
 		{Symbol: "NVDA", Price: 450.25, Volume: 8500, Timestamp: time.Now().Add(5 * time.Minute)},
 	}
 
-	// Demonstrate different scheduler strategies
 	demonstrateScheduler := func(scheduler scheduler.Scheduler, name string, data []Trade) time.Duration {
 		start := time.Now()
 		processor := NewFinancialProcessor(name+"-Engine", 10000.0)

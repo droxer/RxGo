@@ -3,11 +3,9 @@ package streams
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 )
 
-// BufferedPublisher implements backpressure strategies with configurable overflow behavior
 type BufferedPublisher[T any] struct {
 	config     BackpressureConfig
 	source     func(ctx context.Context, sub Subscriber[T])
@@ -41,7 +39,6 @@ func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]
 	sub.OnSubscribe(subscription)
 }
 
-// bufferedSubscription implements Subscription
 type bufferedSubscription[T any] struct {
 	publisher *BufferedPublisher[T]
 	sub       Subscriber[T]
@@ -84,7 +81,6 @@ type strategySubscriber[T any] struct {
 }
 
 func (ss *strategySubscriber[T]) OnSubscribe(s Subscription) {
-	// Not used in this context
 }
 
 func (ss *strategySubscriber[T]) OnNext(value T) {
@@ -212,7 +208,6 @@ func (bp *BufferedPublisher[T]) flushBuffer(sub *bufferedSubscription[T]) {
 	}
 }
 
-// CompliantRangePublisher implements a Reactive Streams 1.0.4 compliant range publisher
 type CompliantRangePublisher struct {
 	*compliantPublisher[int]
 	start int
@@ -228,73 +223,69 @@ func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
 }
 
 func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber[int]) {
-	rp.compliantPublisher.subscribe(ctx, sub)
-	go rp.process(ctx)
-}
+	if sub == nil {
+		return
+	}
 
-func (rp *CompliantRangePublisher) process(ctx context.Context) {
-	fmt.Printf("CompliantRangePublisher.process started\n")
-	defer func() {
-		fmt.Printf("CompliantRangePublisher.process completed\n")
-		rp.complete()
-	}()
-
-	// Handle nil context
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
-	fmt.Printf("CompliantRangePublisher.process waiting for demand signal\n")
-	select {
-	case <-rp.compliantPublisher.demandSignal:
-		fmt.Printf("CompliantRangePublisher.process received demand signal\n")
-	case <-ctx.Done():
-		fmt.Printf("CompliantRangePublisher.process context done\n")
+	// Create subscription and call OnSubscribe synchronously
+	subscription := newCompliantSubscription(sub, rp.compliantPublisher)
+
+	rp.compliantPublisher.mu.Lock()
+	if rp.compliantPublisher.terminal.Load() {
+		rp.compliantPublisher.mu.Unlock()
 		return
 	}
+	rp.compliantPublisher.subscribers[subscription] = struct{}{}
+	rp.compliantPublisher.mu.Unlock()
 
-	fmt.Printf("CompliantRangePublisher.process emitting values %d to %d\n", rp.start, rp.end)
+	// Call OnSubscribe synchronously to establish demand before processing
+	sub.OnSubscribe(subscription)
+
+	// Now start processing
+	go rp.process(ctx)
+}
+
+func (rp *CompliantRangePublisher) process(ctx context.Context) {
+	defer rp.complete()
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	for i := rp.start; i <= rp.end; i++ {
 		select {
 		case <-ctx.Done():
-			fmt.Printf("CompliantRangePublisher.process context done during emission\n")
 			return
 		default:
 		}
 
-		subs := rp.getActiveSubscribers()
-		fmt.Printf("CompliantRangePublisher.process subscribers: %d\n", len(subs))
-		if len(subs) == 0 {
-			fmt.Printf("CompliantRangePublisher.process no subscribers, returning\n")
-			return
-		}
-
-		canEmit := false
-		for _, sub := range subs {
-			if sub.canEmit() {
-				canEmit = true
-				break
+		// Wait until we can emit this item
+		for {
+			subs := rp.getActiveSubscribers()
+			if len(subs) == 0 {
+				return
 			}
-		}
 
-		if !canEmit {
-			fmt.Printf("CompliantRangePublisher.process no subscribers can emit, waiting for demand signal\n")
+			// Check if any subscriber can accept the item
+			if rp.emit(i) {
+				break // Successfully emitted, move to next item
+			}
+
+			// No subscriber could accept the item, wait for demand
 			select {
 			case <-rp.compliantPublisher.demandSignal:
+				// Try again after receiving demand signal
 			case <-ctx.Done():
 				return
 			}
 		}
-
-		fmt.Printf("CompliantRangePublisher.process emitting %d\n", i)
-		if !rp.emit(i) {
-			fmt.Printf("CompliantRangePublisher.process emit returned false\n")
-			return
-		}
 	}
 }
 
-// CompliantFromSlicePublisher implements a Reactive Streams compliant slice publisher
 type CompliantFromSlicePublisher[T any] struct {
 	*compliantPublisher[T]
 	items []T
@@ -308,7 +299,29 @@ func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublish
 }
 
 func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
-	sp.compliantPublisher.subscribe(ctx, sub)
+	if sub == nil {
+		return
+	}
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	// Create subscription and call OnSubscribe synchronously
+	subscription := newCompliantSubscription(sub, sp.compliantPublisher)
+
+	sp.compliantPublisher.mu.Lock()
+	if sp.compliantPublisher.terminal.Load() {
+		sp.compliantPublisher.mu.Unlock()
+		return
+	}
+	sp.compliantPublisher.subscribers[subscription] = struct{}{}
+	sp.compliantPublisher.mu.Unlock()
+
+	// Call OnSubscribe synchronously to establish demand before processing
+	sub.OnSubscribe(subscription)
+
+	// Now start processing
 	go sp.process(ctx)
 }
 
@@ -319,15 +332,8 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 		return
 	}
 
-	// Handle nil context
 	if ctx == nil {
 		ctx = context.Background()
-	}
-
-	select {
-	case <-sp.compliantPublisher.demandSignal:
-	case <-ctx.Done():
-		return
 	}
 
 	for _, item := range sp.items {
@@ -337,34 +343,29 @@ func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {
 		default:
 		}
 
-		subs := sp.getActiveSubscribers()
-		if len(subs) == 0 {
-			return
-		}
-
-		canEmit := false
-		for _, sub := range subs {
-			if sub.canEmit() {
-				canEmit = true
-				break
+		// Wait until we can emit this item
+		for {
+			subs := sp.getActiveSubscribers()
+			if len(subs) == 0 {
+				return
 			}
-		}
 
-		if !canEmit {
+			// Check if any subscriber can accept the item
+			if sp.emit(item) {
+				break // Successfully emitted, move to next item
+			}
+
+			// No subscriber could accept the item, wait for demand
 			select {
 			case <-sp.compliantPublisher.demandSignal:
+				// Try again after receiving demand signal
 			case <-ctx.Done():
 				return
 			}
 		}
-
-		if !sp.emit(item) {
-			return
-		}
 	}
 }
 
-// CompliantBuilder provides fluent API for compliant publishers
 type CompliantBuilder[T any] struct{}
 
 func NewCompliantBuilder[T any]() *CompliantBuilder[T] {

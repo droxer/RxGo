@@ -4,13 +4,11 @@ import (
 	"time"
 )
 
-// job represents a unit of work to be scheduled
 type job struct {
 	run   Runnable
 	delay time.Duration
 }
 
-// FixedThreadScheduler provides a fixed-size thread pool for computation tasks
 type FixedThreadScheduler struct {
 	workers         []*poolWorker
 	jobQueue        chan job
@@ -19,7 +17,6 @@ type FixedThreadScheduler struct {
 	started         bool
 }
 
-// NewFixedThreadScheduler creates a new fixed-size thread scheduler
 func NewFixedThreadScheduler(maxWorkers int) Scheduler {
 	return &FixedThreadScheduler{
 		workers:         make([]*poolWorker, maxWorkers),
@@ -56,7 +53,6 @@ func (fts *FixedThreadScheduler) Schedule(run Runnable) {
 		run: run,
 	}
 
-	// Auto-start if not already started
 	if !fts.started {
 		fts.Start()
 	}
@@ -84,17 +80,14 @@ func (fts *FixedThreadScheduler) dispatch() {
 	}
 }
 
-// ComputationScheduler returns a FixedThreadScheduler optimized for CPU-bound tasks
 func ComputationScheduler() Scheduler {
 	return NewFixedThreadScheduler(maxParallelism())
 }
 
-// SingleThreadScheduler uses a single dedicated thread
 func SingleThreadScheduler() Scheduler {
 	return NewFixedThreadScheduler(1)
 }
 
-// poolWorker for FixedThreadScheduler
 type poolWorker struct {
 	fixedWorkerPool chan chan job
 	jobChan         chan job
@@ -112,15 +105,12 @@ func newPoolWorker(fixedWorkerPool chan chan job) *poolWorker {
 func (p *poolWorker) start() {
 	go func() {
 		defer func() {
-			// Clean up when worker exits
 			_ = recover()
 		}()
 
 		for {
-			// Register this worker
 			select {
 			case p.fixedWorkerPool <- p.jobChan:
-				// Successfully registered, wait for job
 				select {
 				case job := <-p.jobChan:
 					time.Sleep(job.delay)

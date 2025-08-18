@@ -8,7 +8,6 @@ import (
 	"github.com/droxer/RxGo/pkg/observable"
 )
 
-// APIResponse represents a mock API response
 type APIResponse struct {
 	ID     int    `json:"id"`
 	Title  string `json:"title"`
@@ -17,7 +16,6 @@ type APIResponse struct {
 	Status string `json:"status"`
 }
 
-// APISubscriber processes HTTP streaming data
 type APISubscriber struct {
 	name string
 }
@@ -53,7 +51,6 @@ func (s *APISubscriber) OnCompleted() {
 	fmt.Printf("[%s] HTTP streaming completed!\n", s.name)
 }
 
-// Mock API data generator
 func mockAPIStream(ctx context.Context) []APIResponse {
 	return []APIResponse{
 		{ID: 1, Title: "Introduction to Reactive Programming", Body: "Learn the basics", UserID: 101, Status: "published"},

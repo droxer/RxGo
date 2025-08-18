@@ -11,8 +11,6 @@ import (
 	"github.com/droxer/RxGo/pkg/streams"
 )
 
-// Observable API Example
-
 type ObservableSubscriber struct {
 	name string
 }
@@ -32,8 +30,6 @@ func (s *ObservableSubscriber) OnError(err error) {
 func (s *ObservableSubscriber) OnCompleted() {
 	fmt.Printf("[Observable %s] Completed\n", s.name)
 }
-
-// Reactive Streams API Example
 
 type StreamsSubscriber struct {
 	name string
@@ -59,7 +55,6 @@ func (s *StreamsSubscriber) OnComplete() {
 func main() {
 	fmt.Println("=== Observable API Example ===")
 
-	// Observable API transformation
 	words := observable.Just("hello", "world", "rxgo")
 	uppercased := observable.Map(words, strings.ToUpper)
 	uppercased.Subscribe(context.Background(), &ObservableSubscriber{name: "Mapper"})
@@ -68,7 +63,6 @@ func main() {
 
 	fmt.Println("\n=== Reactive Streams API Example ===")
 
-	// Reactive Streams API transformation
 	wordPublisher := streams.FromSlicePublisher([]string{"hello", "world", "rxgo"})
 	wordPublisher.Subscribe(context.Background(), &StreamsSubscriber{name: "Direct"})
 
@@ -76,10 +70,8 @@ func main() {
 
 	fmt.Println("\n=== New Observable Operators Example ===")
 
-	// Demonstrate new operators
 	numbers := observable.Range(1, 10)
 
-	// Take first 5 numbers
 	firstFive := observable.Take(numbers, 5)
 	fmt.Println("\n--- Take Operator ---")
 	firstFive.Subscribe(context.Background(), observable.NewSubscriber(
@@ -88,7 +80,6 @@ func main() {
 		func(err error) { fmt.Printf("Take error: %v\n", err) },
 	))
 
-	// Skip first 3 numbers
 	skipped := observable.Skip(numbers, 3)
 	fmt.Println("\n--- Skip Operator ---")
 	skipped.Subscribe(context.Background(), observable.NewSubscriber(
@@ -97,7 +88,6 @@ func main() {
 		func(err error) { fmt.Printf("Skip error: %v\n", err) },
 	))
 
-	// Merge multiple observables
 	evens := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 == 0 })
 	odds := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 != 0 })
 	merged := observable.Merge(evens, odds)
@@ -108,7 +98,6 @@ func main() {
 		func(err error) { fmt.Printf("Merge error: %v\n", err) },
 	))
 
-	// Distinct values
 	withDuplicates := observable.FromSlice([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 	distinct := observable.Distinct(withDuplicates)
 	fmt.Println("\n--- Distinct Operator ---")
@@ -122,10 +111,8 @@ func main() {
 
 	fmt.Println("\n=== New Stream Processors Example ===")
 
-	// Demonstrate new processors
 	numberPublisher := streams.NewCompliantRangePublisher(1, 10)
 
-	// Take first 5 numbers using processor
 	takeProcessor := streams.NewTakeProcessor[int](5)
 	numberPublisher.Subscribe(context.Background(), takeProcessor)
 	fmt.Println("\n--- Take Processor ---")
@@ -135,10 +122,8 @@ func main() {
 		func() { fmt.Println("Take completed") },
 	))
 
-	// Reset publisher for next example
 	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
 
-	// Skip first 3 numbers using processor
 	skipProcessor := streams.NewSkipProcessor[int](3)
 	numberPublisher.Subscribe(context.Background(), skipProcessor)
 	fmt.Println("\n--- Skip Processor ---")
@@ -148,10 +133,8 @@ func main() {
 		func() { fmt.Println("Skip completed") },
 	))
 
-	// Reset publisher for next example
 	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
 
-	// Distinct values using processor
 	duplicatePublisher := streams.NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 	distinctProcessor := streams.NewDistinctProcessor[int]()
 	duplicatePublisher.Subscribe(context.Background(), distinctProcessor)

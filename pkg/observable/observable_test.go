@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-// Test subscriber for testing
 type testSubscriber[T any] struct {
 	mu     sync.Mutex
 	values []T
@@ -180,12 +179,10 @@ func TestContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Cancel immediately
 	cancel()
 
 	obs.Subscribe(ctx, sub)
 
-	// Should have no values due to cancellation
 	values := sub.getValues()
 	if len(values) != 0 {
 		t.Errorf("Expected no values due to cancellation, got %d", len(values))

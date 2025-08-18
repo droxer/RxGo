@@ -10,7 +10,6 @@ import (
 	"github.com/droxer/RxGo/pkg/observable"
 )
 
-// SensorData represents IoT sensor readings
 type SensorData struct {
 	DeviceID  string
 	Value     float64
@@ -19,14 +18,12 @@ type SensorData struct {
 	Location  string
 }
 
-// Alert represents system alerts
 type Alert struct {
 	Level   string
 	Message string
 	Time    time.Time
 }
 
-// MonitoringService processes real-time sensor data
 type MonitoringService struct {
 	name          string
 	thresholdHigh float64
@@ -94,7 +91,6 @@ func (s *MonitoringService) OnCompleted() {
 	fmt.Printf("[%s] Monitoring completed! Total alerts: %d\n", s.name, s.alertCount)
 }
 
-// randomFloat64 generates a random float64 in [0.0, 1.0) using crypto/rand
 func randomFloat64() float64 {
 	n, err := rand.Int(rand.Reader, big.NewInt(1<<53))
 	if err != nil {
@@ -103,7 +99,6 @@ func randomFloat64() float64 {
 	return float64(n.Int64()) / float64(1<<53)
 }
 
-// SensorSimulator generates realistic IoT sensor data
 func sensorSimulator(ctx context.Context, deviceID, location string) []SensorData {
 	var data []SensorData
 	baseTemp := 22.0
@@ -133,10 +128,8 @@ func main() {
 func realTimeMonitoringExamples() {
 	fmt.Println("=== Real-Time IoT Monitoring ===")
 
-	// Create monitoring services
 	temperatureMonitor := NewMonitoringService("TempMonitor", 18.0, 26.0)
 
-	// Simulate multiple IoT devices
 	devices := []struct {
 		id       string
 		location string
@@ -147,7 +140,6 @@ func realTimeMonitoringExamples() {
 		{"sensor-004", "Office"},
 	}
 
-	// Create temperature monitoring stream
 	tempStream := observable.Create(func(ctx context.Context, sub observable.Subscriber[SensorData]) {
 		for _, device := range devices {
 			data := sensorSimulator(ctx, device.id, device.location)
@@ -170,5 +162,3 @@ func realTimeMonitoringExamples() {
 	time.Sleep(10 * time.Second)
 	fmt.Println("\n=== Real-time monitoring completed ===")
 }
-
-// Run with: go run examples/real-time/monitoring.go

@@ -48,7 +48,6 @@ func TestSingleThreadScheduler(t *testing.T) {
 	results := make([]int, 0, 3)
 	mutex := sync.Mutex{}
 
-	// Schedule multiple tasks that should run sequentially
 	for i := 0; i < 3; i++ {
 		val := i
 		scheduler.Schedule(func() {
@@ -61,7 +60,6 @@ func TestSingleThreadScheduler(t *testing.T) {
 
 	wg.Wait()
 
-	// Should run in order due to single thread
 	expected := []int{0, 1, 2}
 	for i, v := range results {
 		if v != expected[i] {
@@ -139,8 +137,6 @@ func TestSchedulersAreThreadSafe(t *testing.T) {
 }
 
 func TestSingleThreadSchedulerClose(t *testing.T) {
-	// Since we're using the global SingleThread, we can't close it
-	// This test verifies the SingleThreadScheduler type exists and works
 	scheduler := SingleThread
 
 	var wg sync.WaitGroup
@@ -183,7 +179,6 @@ func TestSchedulerPerformance(t *testing.T) {
 			wg.Wait()
 			elapsed := time.Since(start)
 
-			// All should complete within reasonable time
 			if elapsed > 1*time.Second {
 				t.Errorf("%s took too long: %v", name, elapsed)
 			}

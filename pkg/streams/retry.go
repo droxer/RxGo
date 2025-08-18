@@ -7,10 +7,6 @@ import (
 )
 
 // RetryConfig configures retry and backoff behavior
-// This follows Reactive Streams 1.0.4 specification for error handling
-// and provides flexible retry strategies
-//
-// Example:
 //
 //	config := RetryConfig{
 //	    MaxRetries:     3,
@@ -19,9 +15,6 @@ import (
 //	    BackoffFactor:  2.0,
 //	    BackoffPolicy:  RetryExponential,
 //	}
-//
-// This will retry up to 3 times with delays: 100ms, 200ms, 400ms
-// (First retry uses factor^0=1, second uses factor^1=2, third uses factor^2=4)
 type RetryConfig struct {
 	MaxRetries     int                // Maximum number of retry attempts (0 = infinite)
 	InitialDelay   time.Duration      // Initial delay before first retry
@@ -40,7 +33,6 @@ const (
 	RetryExponential
 )
 
-// String returns string representation of retry backoff policy
 func (r RetryBackoffPolicy) String() string {
 	switch r {
 	case RetryFixed:
@@ -55,32 +47,24 @@ func (r RetryBackoffPolicy) String() string {
 }
 
 // RetryCondition determines if an error should trigger a retry
-// Return true to retry, false to propagate the error
-// This allows fine-grained control over which errors are retriable
-//
-// Example:
 //
 //	condition := func(err error, attempt int) bool {
 //	    if err == context.DeadlineExceeded {
-//	        return false // Don't retry timeouts
+//	        return false
 //	    }
 //	    return attempt < 3
 //	}
 type RetryCondition func(err error, attempt int) bool
 
-// DefaultRetryCondition retries all errors up to MaxRetries
 var DefaultRetryCondition = func(err error, attempt int) bool {
 	return true
 }
 
-// RetryPublisher adds retry capability to any Publisher
-// It wraps an existing Publisher and applies retry logic on errors
 type RetryPublisher[T any] struct {
 	source Publisher[T]
 	config RetryConfig
 }
 
-// NewRetryPublisher creates a new Publisher with retry capability
 func NewRetryPublisher[T any](source Publisher[T], config RetryConfig) Publisher[T] {
 	if config.BackoffFactor < 1.0 {
 		config.BackoffFactor = 1.0
@@ -94,7 +78,6 @@ func NewRetryPublisher[T any](source Publisher[T], config RetryConfig) Publisher
 	}
 }
 
-// Subscribe implements Publisher[T]
 func (r *RetryPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	retrySub := &retrySubscriber[T]{
 		subscriber: sub,
@@ -105,7 +88,6 @@ func (r *RetryPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	retrySub.start()
 }
 
-// retrySubscriber handles the retry logic for a single subscription
 type retrySubscriber[T any] struct {
 	subscriber   Subscriber[T]
 	config       RetryConfig
@@ -220,7 +202,6 @@ func (r *retrySubscription[T]) Cancel() {
 	}
 }
 
-// RetryBuilder provides a fluent API for configuring retry behavior
 type RetryBuilder[T any] struct {
 	source Publisher[T]
 	config RetryConfig
@@ -276,8 +257,6 @@ func (b *RetryBuilder[T]) RetryCondition(condition RetryCondition) *RetryBuilder
 func (b *RetryBuilder[T]) Build() Publisher[T] {
 	return NewRetryPublisher(b.source, b.config)
 }
-
-// Convenience functions
 
 func WithFixedRetry[T any](source Publisher[T], maxRetries int, delay time.Duration) Publisher[T] {
 	return NewRetryPublisher(source, RetryConfig{

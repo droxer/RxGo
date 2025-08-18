@@ -5,8 +5,6 @@ import (
 	"sync/atomic"
 )
 
-// ReactivePublisher implements Publisher with full Reactive Streams compliance
-// This provides backpressure support and follows Reactive Streams 1.0.4 specification
 type ReactivePublisher[T any] struct {
 	onSubscribe func(ctx context.Context, sub Subscriber[T])
 }
@@ -34,7 +32,6 @@ func (p *ReactivePublisher[T]) processWithBackpressure(ctx context.Context, s Su
 	p.onSubscribe(ctx, s)
 }
 
-// FromSlicePublisher creates a Publisher from a slice of items
 func FromSlicePublisher[T any](items []T) Publisher[T] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[T]) {
 		defer sub.OnComplete()
@@ -51,7 +48,6 @@ func FromSlicePublisher[T any](items []T) Publisher[T] {
 	})
 }
 
-// RangePublisher creates a Publisher that emits a range of integers
 func RangePublisher(start, count int) Publisher[int] {
 	return NewPublisher(func(ctx context.Context, sub Subscriber[int]) {
 		defer sub.OnComplete()
@@ -72,7 +68,6 @@ func RangePublisher(start, count int) Publisher[int] {
 	})
 }
 
-// RangePublishWithBackpressure creates a range publisher with backpressure support
 func RangePublishWithBackpressure(start, count int, config BackpressureConfig) Publisher[int] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
@@ -96,7 +91,6 @@ func RangePublishWithBackpressure(start, count int, config BackpressureConfig) P
 	})
 }
 
-// FromSlicePublishWithBackpressure creates a slice publisher with backpressure support
 func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfig) Publisher[T] {
 	return NewBufferedPublisher(BackpressureConfig{
 		Strategy:   config.Strategy,
@@ -116,7 +110,6 @@ func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfi
 	})
 }
 
-// reactiveSubscription implements Subscription for ReactivePublisher
 type reactiveSubscription struct {
 	cancelled atomic.Bool
 	requested atomic.Int64
@@ -136,7 +129,6 @@ func (s *reactiveSubscription) Cancel() {
 	s.cancelled.Store(true)
 }
 
-// functionalSubscriber implements the Subscriber interface with functions
 type functionalSubscriber[T any] struct {
 	onSubscribe func(Subscription)
 	onNext      func(T)
@@ -168,18 +160,6 @@ func (s *functionalSubscriber[T]) OnComplete() {
 	}
 }
 
-// NewSubscriber creates a Subscriber from a set of callback functions.
-// This provides a convenient way to subscribe to a Publisher without
-// implementing the Subscriber interface directly.
-//
-// It automatically requests math.MaxInt64 from the subscription upon
-// receiving it.
-//
-// Parameters:
-//
-//	onNext:     (optional) function to handle each emitted value.
-//	onError:    (optional) function to handle any error.
-//	onComplete: (optional) function to handle the completion signal.
 func NewSubscriber[T any](
 	onNext func(T),
 	onError func(error),
@@ -187,7 +167,6 @@ func NewSubscriber[T any](
 ) Subscriber[T] {
 	return &functionalSubscriber[T]{
 		onSubscribe: func(s Subscription) {
-			// Automatically request an unbounded number of items
 			s.Request(1<<63 - 1)
 		},
 		onNext:     onNext,
