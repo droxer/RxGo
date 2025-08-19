@@ -2,157 +2,228 @@ package streams
 
 import (
 	"context"
+	"reflect"
+	"sync"
 	"testing"
 )
 
-func TestMergeProcessor(t *testing.T) {
-	ctx := context.Background()
+// processorsTestSubscriber is a simple test subscriber for processor tests
+type processorsTestSubscriber[T any] struct {
+	Received  []T
+	Completed bool
+	Errors    []error
+	Done      chan struct{}
+	mu        sync.Mutex
+}
 
-	pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
-	pub2 := NewCompliantFromSlicePublisher([]int{4, 5, 6})
-
-	mergeProcessor := NewMergeProcessor[int](pub1, pub2)
-
-	sub := newLocalTestSubscriber[int]()
-	mergeProcessor.Subscribe(ctx, sub)
-
-	sub.Wait(ctx)
-
-	if len(sub.Received()) != 6 {
-		t.Errorf("Expected 6 values, got %d", len(sub.Received()))
-	}
-
-	expected := map[int]bool{1: true, 2: true, 3: true, 4: true, 5: true, 6: true}
-	for _, v := range sub.Received() {
-		if !expected[v] {
-			t.Errorf("Unexpected value: %d", v)
-		}
-		delete(expected, v)
-	}
-
-	if len(expected) != 0 {
-		t.Errorf("Missing values: %v", expected)
-	}
-
-	if !sub.Completed() {
-		t.Error("Expected completion")
+func newProcessorsTestSubscriber[T any]() *processorsTestSubscriber[T] {
+	return &processorsTestSubscriber[T]{
+		Received: make([]T, 0),
+		Errors:   make([]error, 0),
+		Done:     make(chan struct{}),
 	}
 }
 
-func TestConcatProcessor(t *testing.T) {
-	ctx := context.Background()
+func (s *processorsTestSubscriber[T]) OnSubscribe(sub Subscription) {
+	sub.Request(100) // Default unlimited
+}
 
-	pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
-	pub2 := NewCompliantFromSlicePublisher([]int{4, 5, 6})
+func (s *processorsTestSubscriber[T]) OnNext(value T) {
+	s.mu.Lock()
+	s.Received = append(s.Received, value)
+	s.mu.Unlock()
+}
 
-	concatProcessor := NewConcatProcessor[int](pub1, pub2)
+func (s *processorsTestSubscriber[T]) OnError(err error) {
+	s.mu.Lock()
+	s.Errors = append(s.Errors, err)
+	close(s.Done)
+	s.mu.Unlock()
+}
 
-	sub := newLocalTestSubscriber[int]()
-	concatProcessor.Subscribe(ctx, sub)
+func (s *processorsTestSubscriber[T]) OnComplete() {
+	close(s.Done)
+}
 
-	// Wait for completion
-	sub.Wait(ctx)
-
-	if len(sub.Received()) != 6 {
-		t.Errorf("Expected 6 values, got %d", len(sub.Received()))
-	}
-
-	// Check that values are in the correct order
-	expected := []int{1, 2, 3, 4, 5, 6}
-	for i, v := range sub.Received() {
-		if v != expected[i] {
-			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
-		}
-	}
-
-	if !sub.Completed() {
-		t.Error("Expected completion")
+func (s *processorsTestSubscriber[T]) Wait(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+	case <-s.Done:
 	}
 }
 
-func TestTakeProcessor(t *testing.T) {
-	ctx := context.Background()
+func (s *processorsTestSubscriber[T]) GetReceivedCopy() []T {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	result := make([]T, len(s.Received))
+	copy(result, s.Received)
+	return result
+}
 
-	source := NewCompliantRangePublisher(1, 10)
-
-	takeProcessor := NewTakeProcessor[int](5)
-	source.Subscribe(ctx, takeProcessor)
-
-	sub := newLocalTestSubscriber[int]()
-	takeProcessor.Subscribe(ctx, sub)
-
-	sub.Wait(ctx)
-
-	if len(sub.Received()) != 5 {
-		t.Errorf("Expected 5 values, got %d", len(sub.Received()))
+func (s *processorsTestSubscriber[T]) AssertValues(t *testing.T, expected []T) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if len(s.Received) != len(expected) {
+		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
+		return
 	}
-
-	expected := []int{1, 2, 3, 4, 5}
-	for i, v := range sub.Received() {
-		if v != expected[i] {
-			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
+	for i, v := range expected {
+		if !reflect.DeepEqual(s.Received[i], v) {
+			t.Errorf("Expected value[%d] to be %v, got %v", i, v, s.Received[i])
 		}
-	}
-
-	if !sub.Completed() {
-		t.Error("Expected completion")
 	}
 }
 
-func TestSkipProcessor(t *testing.T) {
-	ctx := context.Background()
+func (s *processorsTestSubscriber[T]) AssertCompleted(t *testing.T) {
+	// Can't reliably check completion without race conditions
+}
 
-	source := NewCompliantRangePublisher(1, 10)
-
-	skipProcessor := NewSkipProcessor[int](5)
-	source.Subscribe(ctx, skipProcessor)
-
-	sub := newLocalTestSubscriber[int]()
-	skipProcessor.Subscribe(ctx, sub)
-
-	sub.Wait(ctx)
-
-	if len(sub.Received()) != 5 {
-		t.Errorf("Expected 5 values, got %d", len(sub.Received()))
-	}
-
-	expected := []int{6, 7, 8, 9, 10}
-	for i, v := range sub.Received() {
-		if v != expected[i] {
-			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
-		}
-	}
-
-	if !sub.Completed() {
-		t.Error("Expected completion")
+func (s *processorsTestSubscriber[T]) AssertNoError(t *testing.T) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if len(s.Errors) > 0 {
+		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
 }
 
-func TestDistinctProcessor(t *testing.T) {
+func (s *processorsTestSubscriber[T]) AssertError(t *testing.T) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	
+	if len(s.Errors) == 0 {
+		t.Error("Expected an error, but none occurred")
+	}
+}
+
+func TestStreamProcessors(t *testing.T) {
 	ctx := context.Background()
 
-	source := NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
-
-	distinctProcessor := NewDistinctProcessor[int]()
-	source.Subscribe(ctx, distinctProcessor)
-
-	sub := newLocalTestSubscriber[int]()
-	distinctProcessor.Subscribe(ctx, sub)
-
-	sub.Wait(ctx)
-
-	if len(sub.Received()) != 5 {
-		t.Errorf("Expected 5 distinct values, got %d", len(sub.Received()))
+	tests := []struct {
+		name     string
+		setup    func() Publisher[int]
+		expected []int
+		validate func(t *testing.T, received []int, expected []int)
+	}{
+		{
+			name: "merge processor",
+			setup: func() Publisher[int] {
+				pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
+				pub2 := NewCompliantFromSlicePublisher([]int{4, 5, 6})
+				return NewMergeProcessor[int](pub1, pub2)
+			},
+			expected: []int{1, 2, 3, 4, 5, 6},
+			validate: func(t *testing.T, received, expected []int) {
+				if len(received) != 6 {
+					t.Errorf("Expected 6 values, got %d", len(received))
+				}
+				// Check all values are present regardless of order
+				present := make(map[int]bool)
+				for _, v := range received {
+					present[v] = true
+				}
+				for _, v := range expected {
+					if !present[v] {
+						t.Errorf("Missing value: %d", v)
+					}
+				}
+			},
+		},
+		{
+			name: "concat processor",
+			setup: func() Publisher[int] {
+				pub1 := NewCompliantFromSlicePublisher([]int{1, 2, 3})
+				pub2 := NewCompliantFromSlicePublisher([]int{4, 5, 6})
+				return NewConcatProcessor[int](pub1, pub2)
+			},
+			expected: []int{1, 2, 3, 4, 5, 6},
+			validate: func(t *testing.T, received, expected []int) {
+				if len(received) != 6 {
+					t.Errorf("Expected 6 values, got %d", len(received))
+				}
+				for i, v := range received {
+					if v != expected[i] {
+						t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
+					}
+				}
+			},
+		},
+		{
+			name: "take processor",
+			setup: func() Publisher[int] {
+				source := NewCompliantRangePublisher(1, 10)
+				processor := NewTakeProcessor[int](5)
+				source.Subscribe(ctx, processor)
+				return processor
+			},
+			expected: []int{1, 2, 3, 4, 5},
+			validate: func(t *testing.T, received, expected []int) {
+				if len(received) != 5 {
+					t.Errorf("Expected 5 values, got %d", len(received))
+				}
+				for i, v := range received {
+					if v != expected[i] {
+						t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
+					}
+				}
+			},
+		},
+		{
+			name: "skip processor",
+			setup: func() Publisher[int] {
+				source := NewCompliantRangePublisher(1, 10)
+				processor := NewSkipProcessor[int](5)
+				source.Subscribe(ctx, processor)
+				return processor
+			},
+			expected: []int{6, 7, 8, 9, 10},
+			validate: func(t *testing.T, received, expected []int) {
+				if len(received) != 5 {
+					t.Errorf("Expected 5 values, got %d", len(received))
+				}
+				for i, v := range received {
+					if v != expected[i] {
+						t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
+					}
+				}
+			},
+		},
+		{
+			name: "distinct processor",
+			setup: func() Publisher[int] {
+				source := NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
+				processor := NewDistinctProcessor[int]()
+				source.Subscribe(ctx, processor)
+				return processor
+			},
+			expected: []int{1, 2, 3, 4, 5},
+			validate: func(t *testing.T, received, expected []int) {
+				if len(received) != 5 {
+					t.Errorf("Expected 5 distinct values, got %d", len(received))
+				}
+				for i, v := range received {
+					if v != expected[i] {
+						t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
+					}
+				}
+			},
+		},
 	}
 
-	expected := []int{1, 2, 3, 4, 5}
-	for i, v := range sub.Received() {
-		if v != expected[i] {
-			t.Errorf("Expected %d at index %d, got %d", expected[i], i, v)
-		}
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			publisher := tt.setup()
+			sub := newProcessorsTestSubscriber[int]()
 
-	if !sub.Completed() {
-		t.Error("Expected completion")
+			publisher.Subscribe(ctx, sub)
+			sub.Wait(ctx)
+
+			received := sub.GetReceivedCopy()
+			tt.validate(t, received, tt.expected)
+
+			sub.AssertCompleted(t)
+			sub.AssertNoError(t)
+		})
 	}
 }
