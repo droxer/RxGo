@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"time"
 )
 
 type BufferedPublisher[T any] struct {
@@ -211,16 +212,16 @@ func (bp *BufferedPublisher[T]) flushBuffer(sub *bufferedSubscription[T]) {
 type CompliantRangePublisher struct {
 	*compliantPublisher[int]
 	start   int
-	end     int
+	count   int
 	started bool
 	mu      sync.Mutex
 }
 
-func NewCompliantRangePublisher(start, end int) *CompliantRangePublisher {
+func NewCompliantRangePublisher(start, count int) *CompliantRangePublisher {
 	return &CompliantRangePublisher{
 		compliantPublisher: newCompliantPublisher[int](),
 		start:              start,
-		end:                end,
+		count:              count,
 	}
 }
 
@@ -263,7 +264,11 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 		ctx = context.Background()
 	}
 
-	for i := rp.start; i <= rp.end; i++ {
+	if rp.count <= 0 {
+		return
+	}
+
+	for i := 0; i < rp.count; i++ {
 		select {
 		case <-ctx.Done():
 			return
@@ -278,7 +283,7 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 			}
 
 			// Check if any subscriber can accept the item
-			if rp.emit(i) {
+			if rp.emit(rp.start + i) {
 				break // Successfully emitted, move to next item
 			}
 
@@ -288,6 +293,9 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 				// Try again after receiving demand signal
 			case <-ctx.Done():
 				return
+			case <-time.After(1 * time.Millisecond):
+				// Short timeout to prevent deadlocks in tests - check demand again
+				continue
 			}
 		}
 	}

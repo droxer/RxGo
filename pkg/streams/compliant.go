@@ -25,18 +25,28 @@ func (p *compliantPublisher[T]) emit(item T) bool {
 		return false
 	}
 
+	// Get a snapshot of subscribers to avoid deadlocks
 	p.mu.RLock()
-	defer p.mu.RUnlock()
+	subs := make([]*compliantSubscription[T], 0, len(p.subscribers))
+	for sub := range p.subscribers {
+		subs = append(subs, sub)
+	}
+	p.mu.RUnlock()
 
 	emitted := false
-	for sub := range p.subscribers {
+
+	for _, sub := range subs {
 		if sub.canEmit() && sub.decrementDemand() {
 			sub.mu.Lock()
 			if !sub.isCancelled() {
-				sub.subscriber.OnNext(item)
+				// Release lock before calling subscriber to avoid deadlocks
+				subscriber := sub.subscriber
+				sub.mu.Unlock()
+				subscriber.OnNext(item)
 				emitted = true
+			} else {
+				sub.mu.Unlock()
 			}
-			sub.mu.Unlock()
 		}
 	}
 

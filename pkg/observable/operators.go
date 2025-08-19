@@ -66,12 +66,19 @@ func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 			defer sub.OnCompleted()
 			for _, source := range sources {
 				done := make(chan struct{})
-				source.Subscribe(ctx, &concatSubscriber[T]{
-					sub:  sub,
-					done: done,
-				})
+				errorChan := make(chan error, 1)
+				concatSub := &concatSubscriber[T]{
+					sub:       sub,
+					done:      done,
+					errorChan: errorChan,
+				}
+				source.Subscribe(ctx, concatSub)
 				select {
 				case <-done:
+				case err := <-errorChan:
+					// Propagate error and stop processing subsequent sources
+					sub.OnError(err)
+					return
 				case <-ctx.Done():
 					sub.OnError(ctx.Err())
 					return
@@ -185,14 +192,22 @@ func (m *mergeSubscriber[T]) OnError(err error) { m.sub.OnError(err) }
 func (m *mergeSubscriber[T]) OnCompleted()      { /* Don't complete parent yet */ }
 
 type concatSubscriber[T any] struct {
-	sub  Subscriber[T]
-	done chan struct{}
+	sub       Subscriber[T]
+	done      chan struct{}
+	errorChan chan error
 }
 
-func (c *concatSubscriber[T]) Start()            { /* No need to start sub */ }
-func (c *concatSubscriber[T]) OnNext(t T)        { c.sub.OnNext(t) }
-func (c *concatSubscriber[T]) OnError(err error) { c.sub.OnError(err); close(c.done) }
-func (c *concatSubscriber[T]) OnCompleted()      { close(c.done) }
+func (c *concatSubscriber[T]) Start() { /* No need to start sub */ }
+func (c *concatSubscriber[T]) OnNext(t T) {
+	c.sub.OnNext(t)
+}
+func (c *concatSubscriber[T]) OnError(err error) {
+	// Send error to error channel - don't close done to avoid race condition
+	c.errorChan <- err
+}
+func (c *concatSubscriber[T]) OnCompleted() {
+	close(c.done)
+}
 
 type takeSubscriber[T any] struct {
 	sub   Subscriber[T]

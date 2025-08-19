@@ -24,11 +24,11 @@ func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
 	s.OnSubscribe(subscription)
 
 	go func() {
-		p.processWithBackpressure(ctx, s, subscription)
+		p.processReactive(ctx, s, subscription)
 	}()
 }
 
-func (p *ReactivePublisher[T]) processWithBackpressure(ctx context.Context, s Subscriber[T], sub *reactiveSubscription) {
+func (p *ReactivePublisher[T]) processReactive(ctx context.Context, s Subscriber[T], sub *reactiveSubscription) {
 	p.onSubscribe(ctx, s)
 }
 

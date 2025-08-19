@@ -217,11 +217,14 @@ func (s *filterProcessorSubscription[T]) Cancel() {
 }
 
 type FlatMapProcessor[T any, R any] struct {
-	transform  func(T) Publisher[R]
-	upstream   Subscription
-	downstream Subscriber[R]
-	mu         sync.Mutex
-	terminated bool
+	transform         func(T) Publisher[R]
+	upstream          Subscription
+	downstream        Subscriber[R]
+	mu                sync.Mutex
+	terminated        bool
+	upstreamCompleted bool
+	activeInners      int
+	completedInners   int
 }
 
 func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapProcessor[T, R] {
@@ -259,6 +262,7 @@ func (p *FlatMapProcessor[T, R]) OnNext(value T) {
 	}
 
 	publisher := p.transform(value)
+	p.activeInners++
 	p.mu.Unlock()
 
 	publisher.Subscribe(context.Background(), &innerSubscriber[T, R]{processor: p})
@@ -284,8 +288,13 @@ func (p *FlatMapProcessor[T, R]) OnComplete() {
 		return
 	}
 
-	p.terminated = true
-	p.downstream.OnComplete()
+	p.upstreamCompleted = true
+
+	// Complete downstream only if no active inner publishers
+	if p.activeInners == p.completedInners {
+		p.terminated = true
+		p.downstream.OnComplete()
+	}
 }
 
 type flatMapProcessorSubscription[T any, R any] struct {
@@ -355,6 +364,20 @@ func (s *innerSubscriber[T, R]) OnError(err error) {
 }
 
 func (s *innerSubscriber[T, R]) OnComplete() {
+	s.processor.mu.Lock()
+	defer s.processor.mu.Unlock()
+
+	if s.processor.terminated || s.processor.downstream == nil {
+		return
+	}
+
+	s.processor.completedInners++
+
+	// Complete downstream if upstream is done and all inners are complete
+	if s.processor.upstreamCompleted && s.processor.activeInners == s.processor.completedInners {
+		s.processor.terminated = true
+		s.processor.downstream.OnComplete()
+	}
 }
 
 type MergeProcessor[T any] struct {
