@@ -63,7 +63,7 @@ func (s *processorsTestSubscriber[T]) GetReceivedCopy() []T {
 func (s *processorsTestSubscriber[T]) AssertValues(t *testing.T, expected []T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
 		return
@@ -82,7 +82,7 @@ func (s *processorsTestSubscriber[T]) AssertCompleted(t *testing.T) {
 func (s *processorsTestSubscriber[T]) AssertNoError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) > 0 {
 		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
@@ -91,7 +91,7 @@ func (s *processorsTestSubscriber[T]) AssertNoError(t *testing.T) {
 func (s *processorsTestSubscriber[T]) AssertError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) == 0 {
 		t.Error("Expected an error, but none occurred")
 	}

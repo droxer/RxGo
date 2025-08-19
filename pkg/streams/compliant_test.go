@@ -55,7 +55,7 @@ func (s *compliantTestSubscriber[T]) wait(ctx context.Context) {
 func (s *compliantTestSubscriber[T]) assertValues(t *testing.T, expected []T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
 		return
@@ -67,16 +67,10 @@ func (s *compliantTestSubscriber[T]) assertValues(t *testing.T, expected []T) {
 	}
 }
 
-func (s *compliantTestSubscriber[T]) assertCompleted(t *testing.T) {
-	if !s.Completed {
-		// Can't check completion status without race conditions
-	}
-}
-
 func (s *compliantTestSubscriber[T]) assertNoError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) > 0 {
 		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
@@ -85,7 +79,7 @@ func (s *compliantTestSubscriber[T]) assertNoError(t *testing.T) {
 func (s *compliantManualTestSubscriber[T]) AssertError(t *testing.T) {
 	s.compliantTestSubscriber.mu.Lock()
 	defer s.compliantTestSubscriber.mu.Unlock()
-	
+
 	if len(s.Errors) == 0 {
 		t.Error("Expected an error, but none occurred")
 	}
@@ -120,10 +114,10 @@ func TestCompliantFromSlicePublisher(t *testing.T) {
 		publisher := NewCompliantFromSlicePublisher(data)
 		sub := newCompliantTestSubscriber[string]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.wait(ctx)
-		
+
 		sub.assertValues(t, data)
 		sub.assertNoError(t)
 	})
@@ -132,10 +126,10 @@ func TestCompliantFromSlicePublisher(t *testing.T) {
 		publisher := NewCompliantFromSlicePublisher([]int{})
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.wait(ctx)
-		
+
 		sub.assertValues(t, []int{})
 		sub.assertNoError(t)
 	})
@@ -147,10 +141,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 5)
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.wait(ctx)
-		
+
 		sub.assertValues(t, expected)
 		sub.assertNoError(t)
 	})
@@ -159,10 +153,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 0)
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.wait(ctx)
-		
+
 		sub.assertValues(t, []int{})
 		sub.assertNoError(t)
 	})

@@ -10,11 +10,11 @@ import (
 
 // manualTestSubscriber is a test subscriber with manual request control
 type manualTestSubscriber[T any] struct {
-	Received  []T
-	Completed bool
-	Errors    []error
-	Done      chan struct{}
-	mu        sync.Mutex
+	Received     []T
+	Completed    bool
+	Errors       []error
+	Done         chan struct{}
+	mu           sync.Mutex
 	subscription Subscription
 }
 
@@ -78,7 +78,7 @@ func (s *manualTestSubscriber[T]) GetReceivedCopy() []T {
 func (s *manualTestSubscriber[T]) AssertValues(t *testing.T, expected []T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
 		return
@@ -97,7 +97,7 @@ func (s *manualTestSubscriber[T]) AssertCompleted(t *testing.T) {
 func (s *manualTestSubscriber[T]) AssertNoError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) > 0 {
 		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
@@ -106,7 +106,7 @@ func (s *manualTestSubscriber[T]) AssertNoError(t *testing.T) {
 func (s *manualTestSubscriber[T]) AssertError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) == 0 {
 		t.Error("Expected an error, but none occurred")
 	}
@@ -122,15 +122,12 @@ func TestSubscriptionRequestControl(t *testing.T) {
 	sub := newManualTestSubscriber[int]()
 
 	publisher.Subscribe(ctx, sub)
-	
+
 	// Request only 3 items initially
 	sub.Request(3)
-	
+
 	// Wait briefly for processing
-	select {
-	case <-time.After(50 * time.Millisecond):
-		// Allow some processing time
-	}
+	<-time.After(50 * time.Millisecond)
 
 	received := sub.GetReceivedCopy()
 	if len(received) > 3 {
@@ -152,24 +149,18 @@ func TestSubscriptionCancellation(t *testing.T) {
 	sub := newManualTestSubscriber[int]()
 
 	publisher.Subscribe(ctx, sub)
-	
+
 	// Request some items
 	sub.Request(5)
-	
+
 	// Wait briefly then cancel
-	select {
-	case <-time.After(50 * time.Millisecond):
-		// Allow some processing time
-	}
-	
+	<-time.After(50 * time.Millisecond)
+
 	sub.Cancel()
 	sub.Request(10) // Should have no effect
-	
+
 	// Wait briefly to ensure cancellation took effect
-	select {
-	case <-time.After(50 * time.Millisecond):
-		// Allow cleanup time
-	}
+	<-time.After(50 * time.Millisecond)
 
 	received := sub.GetReceivedCopy()
 	if len(received) > 10 {
@@ -190,10 +181,7 @@ func TestSubscriptionZeroRequest(t *testing.T) {
 	sub.Request(0)
 
 	// Wait briefly to ensure no items are processed
-	select {
-	case <-time.After(100 * time.Millisecond):
-		// Allow time for potential processing
-	}
+	<-time.After(100 * time.Millisecond)
 
 	received := sub.GetReceivedCopy()
 	if len(received) != 0 {
@@ -220,7 +208,7 @@ func TestSubscriptionMultipleRequests(t *testing.T) {
 	sub := newManualTestSubscriber[int]()
 
 	publisher.Subscribe(ctx, sub)
-	
+
 	// Make multiple small requests
 	sub.Request(2)
 	sub.Request(3)

@@ -64,7 +64,7 @@ func (s *mapFilterTestSubscriber[T]) GetReceivedCopy() []T {
 func (s *mapFilterTestSubscriber[T]) AssertValues(t *testing.T, expected []T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
 		return
@@ -83,7 +83,7 @@ func (s *mapFilterTestSubscriber[T]) AssertCompleted(t *testing.T) {
 func (s *mapFilterTestSubscriber[T]) AssertNoError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) > 0 {
 		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
@@ -92,7 +92,7 @@ func (s *mapFilterTestSubscriber[T]) AssertNoError(t *testing.T) {
 func (s *mapFilterTestSubscriber[T]) AssertError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) == 0 {
 		t.Error("Expected an error, but none occurred")
 	}
@@ -102,9 +102,9 @@ func TestMapProcessor(t *testing.T) {
 	t.Run("int to int", func(t *testing.T) {
 		source := NewCompliantRangePublisher(1, 5)
 		processor := NewMapProcessor(func(x int) int { return x * 2 })
-		
+
 		source.Subscribe(context.Background(), processor)
-		
+
 		sub := newMapFilterTestSubscriber[int]()
 		processor.Subscribe(context.Background(), sub)
 

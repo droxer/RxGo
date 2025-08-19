@@ -110,10 +110,10 @@ func TestRangePublishWithBackpressure(t *testing.T) {
 		wg:    sync.WaitGroup{},
 	}
 	ctx := context.Background()
-	
+
 	publisher.Subscribe(ctx, sub)
 	sub.wait()
-	
+
 	received := sub.getItems()
 	if len(received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(received), received)
@@ -203,12 +203,6 @@ func (s *backpressureTestSubscriber) wait() {
 	s.wg.Wait()
 }
 
-func (s *backpressureTestSubscriber) requestMore(n int64) {
-	if s.subscription != nil {
-		s.subscription.Request(n)
-	}
-}
-
 func (s *backpressureTestSubscriber) getItems() []int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -222,4 +216,3 @@ func (s *backpressureTestSubscriber) getError() error {
 	defer s.mu.Unlock()
 	return s.err
 }
-

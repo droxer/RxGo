@@ -63,7 +63,7 @@ func (s *publishersTestSubscriber[T]) GetReceivedCopy() []T {
 func (s *publishersTestSubscriber[T]) AssertValues(t *testing.T, expected []T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Received) != len(expected) {
 		t.Errorf("Expected %d values, got %d: %v", len(expected), len(s.Received), s.Received)
 		return
@@ -82,7 +82,7 @@ func (s *publishersTestSubscriber[T]) AssertCompleted(t *testing.T) {
 func (s *publishersTestSubscriber[T]) AssertNoError(t *testing.T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	
+
 	if len(s.Errors) > 0 {
 		t.Errorf("Expected no errors, got: %v", s.Errors)
 	}
@@ -92,13 +92,13 @@ func TestFromSlicePublisher(t *testing.T) {
 	t.Run("basic int slice", func(t *testing.T) {
 		expected := []int{1, 2, 3, 4, 5}
 		publisher := FromSlicePublisher(expected)
-		
+
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, expected)
 		sub.AssertNoError(t)
 	})
@@ -107,10 +107,10 @@ func TestFromSlicePublisher(t *testing.T) {
 		publisher := FromSlicePublisher([]int{})
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, []int{})
 		sub.AssertNoError(t)
 	})
@@ -120,10 +120,10 @@ func TestFromSlicePublisher(t *testing.T) {
 		publisher := FromSlicePublisher(expected)
 		sub := newPublishersTestSubscriber[string]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, expected)
 		sub.AssertNoError(t)
 	})
@@ -135,10 +135,10 @@ func TestRangePublisher(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 5)
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, expected)
 		sub.AssertNoError(t)
 	})
@@ -147,10 +147,10 @@ func TestRangePublisher(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 0)
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, []int{})
 		sub.AssertNoError(t)
 	})
@@ -160,10 +160,10 @@ func TestRangePublisher(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 10)
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
-		
+
 		publisher.Subscribe(ctx, sub)
 		sub.Wait(ctx)
-		
+
 		sub.AssertValues(t, expected)
 		sub.AssertNoError(t)
 	})
