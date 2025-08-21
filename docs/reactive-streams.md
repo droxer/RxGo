@@ -57,7 +57,7 @@ publisher.Subscribe(context.Background(), &IntSubscriber{name: "FromSlice"})
 Create custom publishers with context support:
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/streams"
+import "github.com/droxer/RxGo/pkg/streams"
 
 // Custom publisher creation
 customPublisher := streams.NewPublisher(func(ctx context.Context, sub streams.Subscriber[int]) {

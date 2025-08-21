@@ -31,7 +31,7 @@ The `Computation` scheduler uses a fixed-size thread pool optimized for CPU-boun
 - Efficient resource utilization
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 scheduler := scheduler.Computation
 scheduler.Schedule(func() {
@@ -56,7 +56,7 @@ The `IO` scheduler uses a cached thread pool that grows and shrinks based on dem
 - Unbounded thread creation (within limits)
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 scheduler := scheduler.IO
 scheduler.Schedule(func() {
@@ -81,7 +81,7 @@ The `NewThreadScheduler` creates a new goroutine for each unit of work, providin
 - Higher memory overhead
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 scheduler := scheduler.NewThread
 scheduler.Schedule(func() {
@@ -106,7 +106,7 @@ The `SingleThreadScheduler` uses a single dedicated goroutine to execute all sch
 - Predictable execution order
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 scheduler := scheduler.SingleThread
 scheduler.Schedule(func() {
@@ -134,7 +134,7 @@ The `TrampolineScheduler` queues work for later execution on the current gorouti
 - Non-blocking scheduling
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 scheduler := scheduler.Trampoline
 scheduler.Schedule(func() {
@@ -157,7 +157,7 @@ scheduler.Schedule(func() {
 ### CPU-Intensive Workload
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 func processImages(imageIDs []int) {
     sched := scheduler.Computation // Use Computation for CPU work
@@ -174,7 +174,7 @@ func processImages(imageIDs []int) {
 ### Sequential Database Operations
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 func sequentialDatabaseOperations() {
     sched := scheduler.SingleThread
@@ -189,7 +189,7 @@ func sequentialDatabaseOperations() {
 ### Real-time UI Updates
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 func updateUI(data int) {
     sched := scheduler.Trampoline
@@ -204,7 +204,7 @@ func updateUI(data int) {
 ### Batch Event Processing
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 func processEvents(events []Event) {
     sched := scheduler.Trampoline
@@ -252,7 +252,7 @@ for range unboundedStream {
 Use `Trampoline` for deterministic tests:
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 func TestMyFunction(t *testing.T) {
     sched := scheduler.Trampoline
@@ -393,7 +393,7 @@ func profileScheduler(scheduler observable.Scheduler, tasks int) time.Duration {
 ### Quick Demo - All Schedulers
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/scheduler"
+import "github.com/droxer/RxGo/pkg/scheduler"
 
 // Demo all 5 schedulers
 work := func(id int) { fmt.Printf("Task %d on goroutine %d\n", id, getGID()) }

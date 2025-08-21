@@ -20,7 +20,7 @@ RxGo provides full Reactive Streams 1.0.4 compliance with four backpressure stra
 ## Quick Start
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/streams"
+import "github.com/droxer/RxGo/pkg/streams"
 
 // Publisher with backpressure
 publisher := streams.RangePublisherWithConfig(1, 1000, streams.BackpressureConfig{

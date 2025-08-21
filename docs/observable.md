@@ -4,9 +4,12 @@
 
 | Function | Purpose | Example |
 |----------|---------|---------|
-| `Just` | Create from values | `rx.Just(1, 2, 3)` |
-| `Range` | Create from range | `rx.Range(1, 5)` |
-| `Create` | Custom logic | `rx.Create(...)` |
+| `Just` | Create from values | `observable.Just(1, 2, 3)` |
+| `Range` | Create from range | `observable.Range(1, 5)` |
+| `Create` | Custom logic | `observable.Create(...)` |
+| `FromSlice` | Create from slice | `observable.FromSlice([]int{1,2,3})` |
+| `Empty` | Create empty observable | `observable.Empty[int]()` |
+| `Error` | Create error observable | `observable.Error[int](err)` |
 
 ## Push Model
 
@@ -39,7 +42,6 @@ func main() {
 }
 ```
 
-
 ## Using Range
 
 Create observable from range of integers:
@@ -47,7 +49,11 @@ Create observable from range of integers:
 ```go
 // Create observable from range of integers
 rangeObservable := observable.Range(10, 5) // Emits 10, 11, 12, 13, 14
-rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
+rangeObservable.Subscribe(context.Background(), observable.NewSubscriber(
+	func(v int) { fmt.Printf("Received: %d\n", v) },
+	func() { fmt.Println("Completed") },
+	func(err error) { fmt.Printf("Error: %v\n", err) },
+))
 ```
 
 ## Using Create with Custom Logic
@@ -55,9 +61,6 @@ rangeObservable.Subscribe(context.Background(), &IntSubscriber{name: "Range"})
 Create custom observable with your own logic:
 
 ```go
-// Create custom observable
-import "github.com/droxer/RxGo/pkg/observable"
-
 customObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
     for i := 0; i < 3; i++ {
         select {
@@ -70,7 +73,11 @@ customObservable := observable.Create(func(ctx context.Context, sub observable.S
     }
     sub.OnCompleted()
 })
-customObservable.Subscribe(context.Background(), &IntSubscriber{name: "Create"})
+customObservable.Subscribe(context.Background(), observable.NewSubscriber(
+	func(v int) { fmt.Printf("Received: %d\n", v) },
+	func() { fmt.Println("Completed") },
+	func(err error) { fmt.Printf("Error: %v\n", err) },
+))
 ```
 
 ## Using Operators
@@ -79,15 +86,19 @@ Transform and filter data using operators:
 
 ```go
 import (
-    "github.com/droxer/RxGo/pkg/rx"
-    "github.com/droxer/RxGo/pkg/rx/operators"
+    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/scheduler"
 )
 
 // Transform data using operators
-obs := rx.Range(1, 10)
-transformed := operators.Map(obs, func(x int) int { return x * 2 })
-filtered := operators.Filter(transformed, func(x int) bool { return x > 10 })
-filtered.Subscribe(context.Background(), &IntSubscriber{name: "Operators"})
+obs := observable.Range(1, 10)
+transformed := observable.Map(obs, func(x int) int { return x * 2 })
+filtered := observable.Filter(transformed, func(x int) bool { return x > 10 })
+filtered.Subscribe(context.Background(), observable.NewSubscriber(
+	func(v int) { fmt.Printf("Received: %d\n", v) },
+	func() { fmt.Println("Completed") },
+	func(err error) { fmt.Printf("Error: %v\n", err) },
+))
 ```
 
 ## Using Schedulers
@@ -96,22 +107,39 @@ Control execution context with different schedulers:
 
 ```go
 import (
-    "github.com/droxer/RxGo/pkg/rx"
-    "github.com/droxer/RxGo/pkg/rx/operators"
-    "github.com/droxer/RxGo/pkg/rx/scheduler"
+    "github.com/droxer/RxGo/pkg/observable"
+    "github.com/droxer/RxGo/pkg/scheduler"
 )
 
 // Use different schedulers
-obs := rx.Range(1, 5)
+obs := observable.Range(1, 5)
 
 // Computation scheduler for CPU-bound work
-operators.ObserveOn(obs, scheduler.Computation).Subscribe(ctx, subscriber)
+observable.ObserveOn(obs, scheduler.Computation()).Subscribe(
+	context.Background(), 
+	observable.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func() { fmt.Println("Completed") },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+	))
 
 // IO scheduler for IO-bound work
-operators.ObserveOn(obs, scheduler.IO).Subscribe(ctx, subscriber)
+observable.ObserveOn(obs, scheduler.IO()).Subscribe(
+	context.Background(), 
+	observable.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func() { fmt.Println("Completed") },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+	))
 
 // Single thread for sequential processing
-operators.ObserveOn(obs, scheduler.SingleThread).Subscribe(ctx, subscriber)
+observable.ObserveOn(obs, scheduler.NewSingleThreadScheduler()).Subscribe(
+	context.Background(), 
+	observable.NewSubscriber(
+		func(v int) { fmt.Printf("Received: %d\n", v) },
+		func() { fmt.Println("Completed") },
+		func(err error) { fmt.Printf("Error: %v\n", err) },
+	))
 ```
 
 ## Context Cancellation
@@ -125,28 +153,46 @@ ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 defer cancel()
 
 // Observable that respects context cancellation
-contextObservable := rx.Create(func(ctx context.Context, sub rx.Subscriber[int]) {
+contextObservable := observable.Create(func(ctx context.Context, sub observable.Subscriber[int]) {
     for i := 0; i < 5; i++ {
         select {
         case <-ctx.Done():
             sub.OnError(ctx.Err())
             return
         default:
+            time.Sleep(30 * time.Millisecond)
             sub.OnNext(i * 100)
         }
     }
     sub.OnCompleted()
 })
-contextObservable.Subscribe(ctx, &IntSubscriber{name: "Context"})
+contextObservable.Subscribe(ctx, observable.NewSubscriber(
+	func(v int) { fmt.Printf("Received: %d\n", v) },
+	func() { fmt.Println("Completed") },
+	func(err error) { fmt.Printf("Error: %v\n", err) },
+))
 ```
 
 ## Key Concepts
 
-- **Observable/Subscriber Pattern**: The `rx` package provides a clean Observable API
+- **Observable/Subscriber Pattern**: The `observable` package provides a clean Observable API
 - **Push-based Model**: Data is pushed to subscribers as soon as it's available
 - **Context Support**: All observables support context cancellation for graceful shutdown
 - **Type Safety**: Generic types ensure compile-time type safety
 - **Simplicity**: Clean and intuitive API for basic reactive programming
+
+## Available Operators
+
+The following operators are available in the `observable` package:
+
+- **Map**: Transform each item emitted by an Observable
+- **Filter**: Filter items emitted by an Observable
+- **ObserveOn**: Specify the scheduler on which an Observable will operate
+- **Merge**: Combine multiple Observables into one by merging their emissions
+- **Concat**: Concatenate multiple Observables into a single Observable
+- **Take**: Emit only the first n items emitted by an Observable
+- **Skip**: Skip the first n items emitted by an Observable
+- **Distinct**: Suppress duplicate items emitted by an Observable
 
 ## observable vs. streams packages
 
@@ -171,7 +217,6 @@ import (
 	"time"
 
 	"github.com/droxer/RxGo/pkg/observable"
-	"github.com/droxer/RxGo/pkg/operators"
 	"github.com/droxer/RxGo/pkg/scheduler"
 )
 
@@ -199,9 +244,9 @@ func main() {
 	// Example 3: Using operators
 	fmt.Println("\n3. Using operators:")
 	obs := observable.Range(1, 5)
-	transformed := operators.Map(obs, func(x int) int { return x * 10 })
-	filtered := operators.Filter(transformed, func(x int) bool { return x > 20 })
-	operators.ObserveOn(filtered, scheduler.Computation()).Subscribe(
+	transformed := observable.Map(obs, func(x int) int { return x * 10 })
+	filtered := observable.Filter(transformed, func(x int) bool { return x > 20 })
+	observable.ObserveOn(filtered, scheduler.Computation()).Subscribe(
 		context.Background(),
 		observable.NewSubscriber(
 			func(v int) { fmt.Printf("Received: %d\n", v) },

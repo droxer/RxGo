@@ -19,7 +19,7 @@ RxGo provides flexible retry mechanisms with three backoff strategies to handle 
 ## Quick Start
 
 ```go
-import "github.com/droxer/RxGo/pkg/rx/streams"
+import "github.com/droxer/RxGo/pkg/streams"
 
 // Basic retry with exponential backoff
 publisher := streams.NewRetryPublisher(source, streams.RetryConfig{
