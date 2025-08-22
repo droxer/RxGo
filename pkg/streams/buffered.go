@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"sync"
-	"time"
 )
 
 type BufferedPublisher[T any] struct {
 	config     BackpressureConfig
 	source     func(ctx context.Context, sub Subscriber[T])
 	buffer     []T
+	head       int // Index of the first element
+	tail       int // Index where the next element will be inserted
+	count      int // Number of elements in the buffer
 	mu         sync.RWMutex
 	bufferFull chan struct{}
 }
@@ -22,14 +24,19 @@ func NewBufferedPublisher[T any](
 	return &BufferedPublisher[T]{
 		config:     config,
 		source:     source,
-		buffer:     make([]T, 0, config.BufferSize),
+		buffer:     make([]T, config.BufferSize),
+		head:       0,
+		tail:       0,
+		count:      0,
 		bufferFull: make(chan struct{}),
 	}
 }
 
 func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	if sub == nil {
-		panic("subscriber cannot be nil")
+		// Handle nil subscriber gracefully by returning early
+		// This maintains consistency with other publisher implementations
+		return
 	}
 
 	subscription := &bufferedSubscription[T]{
@@ -121,61 +128,91 @@ func (bp *BufferedPublisher[T]) handleNext(value T, sub *bufferedSubscription[T]
 }
 
 func (bp *BufferedPublisher[T]) handleBufferStrategy(value T, sub *bufferedSubscription[T]) {
-	if len(bp.buffer) < int(bp.config.BufferSize) {
-		bp.buffer = append(bp.buffer, value)
+	// Check if buffer is full
+	if bp.count >= int(bp.config.BufferSize) {
+		// Buffer is full, drop the value according to Buffer strategy
+		// In Buffer strategy, we should block or drop based on implementation
+		// For now, we'll just return (drop the value)
+		return
 	}
 
-	for len(bp.buffer) > 0 && sub.requested > 0 {
-		next := bp.buffer[0]
-		bp.buffer = bp.buffer[1:]
+	// Add the value to the buffer
+	bp.buffer[bp.tail] = value
+	bp.tail = (bp.tail + 1) % int(bp.config.BufferSize)
+	bp.count++
+
+	// Process buffered items if there's demand
+	for bp.count > 0 && sub.requested > 0 {
+		next := bp.buffer[bp.head]
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		bp.count--
 		sub.requested--
 		sub.sub.OnNext(next)
 	}
 }
 
 func (bp *BufferedPublisher[T]) handleDropStrategy(value T, sub *bufferedSubscription[T]) {
-	if int64(len(bp.buffer)) >= bp.config.BufferSize {
+	// Check if buffer is full
+	if bp.count >= int(bp.config.BufferSize) {
+		// Buffer is full, drop the value according to Drop strategy
 		return
 	}
 
-	bp.buffer = append(bp.buffer, value)
-	for len(bp.buffer) > 0 && sub.requested > 0 {
-		next := bp.buffer[0]
-		bp.buffer = bp.buffer[1:]
+	// Add the value to the buffer
+	bp.buffer[bp.tail] = value
+	bp.tail = (bp.tail + 1) % int(bp.config.BufferSize)
+	bp.count++
+
+	// Process buffered items if there's demand
+	for bp.count > 0 && sub.requested > 0 {
+		next := bp.buffer[bp.head]
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		bp.count--
 		sub.requested--
 		sub.sub.OnNext(next)
 	}
 }
 
 func (bp *BufferedPublisher[T]) handleLatestStrategy(value T, sub *bufferedSubscription[T]) {
-	if int64(len(bp.buffer)) >= bp.config.BufferSize {
-		if len(bp.buffer) > 0 {
-			bp.buffer[0] = value
-		} else {
-			bp.buffer = append(bp.buffer, value)
-		}
+	if bp.count >= int(bp.config.BufferSize) {
+		// Buffer is full, replace the oldest item (at head position) with the new value
+		bp.buffer[bp.head] = value
+		// Move head forward since we're replacing the oldest item
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		// tail stays the same, count stays the same
 	} else {
-		bp.buffer = append(bp.buffer, value)
+		// Buffer is not full, add the value normally
+		bp.buffer[bp.tail] = value
+		bp.tail = (bp.tail + 1) % int(bp.config.BufferSize)
+		bp.count++
 	}
 
-	for len(bp.buffer) > 0 && sub.requested > 0 {
-		next := bp.buffer[0]
-		bp.buffer = bp.buffer[1:]
+	// Process buffered items if there's demand
+	for bp.count > 0 && sub.requested > 0 {
+		next := bp.buffer[bp.head]
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		bp.count--
 		sub.requested--
 		sub.sub.OnNext(next)
 	}
 }
 
 func (bp *BufferedPublisher[T]) handleErrorStrategy(value T, sub *bufferedSubscription[T]) {
-	if int64(len(bp.buffer)) >= bp.config.BufferSize {
+	if bp.count >= int(bp.config.BufferSize) {
 		sub.sub.OnError(errors.New("buffer overflow: buffer size limit exceeded"))
 		return
 	}
 
-	bp.buffer = append(bp.buffer, value)
-	for len(bp.buffer) > 0 && sub.requested > 0 {
-		next := bp.buffer[0]
-		bp.buffer = bp.buffer[1:]
+	// Add the value to the buffer
+	bp.buffer[bp.tail] = value
+	bp.tail = (bp.tail + 1) % int(bp.config.BufferSize)
+	bp.count++
+
+	// Process buffered items if there's demand
+	for bp.count > 0 && sub.requested > 0 {
+		next := bp.buffer[bp.head]
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		bp.count--
 		sub.requested--
 		sub.sub.OnNext(next)
 	}
@@ -188,19 +225,24 @@ func (bp *BufferedPublisher[T]) flushBuffer(sub *bufferedSubscription[T]) {
 	sub.mu.Lock()
 	defer sub.mu.Unlock()
 
-	for len(bp.buffer) > 0 && sub.requested > 0 {
-		next := bp.buffer[0]
-		bp.buffer = bp.buffer[1:]
+	// Process all remaining buffered items
+	for bp.count > 0 && sub.requested > 0 {
+		next := bp.buffer[bp.head]
+		bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+		bp.count--
 		sub.requested--
 		sub.sub.OnNext(next)
 	}
 
-	if len(bp.buffer) > 0 {
+	// Handle any remaining items based on strategy
+	if bp.count > 0 {
 		switch bp.config.Strategy {
 		case Buffer, Drop, Latest:
-			for len(bp.buffer) > 0 {
-				next := bp.buffer[0]
-				bp.buffer = bp.buffer[1:]
+			// For these strategies, emit all remaining items regardless of demand
+			for bp.count > 0 {
+				next := bp.buffer[bp.head]
+				bp.head = (bp.head + 1) % int(bp.config.BufferSize)
+				bp.count--
 				sub.sub.OnNext(next)
 			}
 		case Error:
@@ -293,9 +335,6 @@ func (rp *CompliantRangePublisher) process(ctx context.Context) {
 				// Try again after receiving demand signal
 			case <-ctx.Done():
 				return
-			case <-time.After(1 * time.Millisecond):
-				// Short timeout to prevent deadlocks in tests - check demand again
-				continue
 			}
 		}
 	}

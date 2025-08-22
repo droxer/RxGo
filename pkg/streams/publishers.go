@@ -2,6 +2,7 @@ package streams
 
 import (
 	"context"
+	"errors"
 	"sync/atomic"
 )
 
@@ -17,10 +18,14 @@ func NewPublisher[T any](onSubscribe func(ctx context.Context, sub Subscriber[T]
 
 func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
 	if s == nil {
-		panic("subscriber cannot be nil")
+		// Handle nil subscriber gracefully by returning early
+		// This maintains consistency with the Observable API approach
+		return
 	}
 
-	subscription := &reactiveSubscription{}
+	subscription := &reactiveSubscription[T]{
+		subscriber: s,
+	}
 	s.OnSubscribe(subscription)
 
 	go func() {
@@ -28,7 +33,7 @@ func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
 	}()
 }
 
-func (p *ReactivePublisher[T]) processReactive(ctx context.Context, s Subscriber[T], sub *reactiveSubscription) {
+func (p *ReactivePublisher[T]) processReactive(ctx context.Context, s Subscriber[T], sub *reactiveSubscription[T]) {
 	p.onSubscribe(ctx, s)
 }
 
@@ -110,13 +115,15 @@ func FromSlicePublishWithBackpressure[T any](items []T, config BackpressureConfi
 	})
 }
 
-type reactiveSubscription struct {
-	cancelled atomic.Bool
-	requested atomic.Int64
+type reactiveSubscription[T any] struct {
+	cancelled  atomic.Bool
+	requested  atomic.Int64
+	subscriber Subscriber[T]
 }
 
-func (s *reactiveSubscription) Request(n int64) {
+func (s *reactiveSubscription[T]) Request(n int64) {
 	if n <= 0 {
+		s.subscriber.OnError(errors.New("non-positive subscription request"))
 		return
 	}
 	if s.cancelled.Load() {
@@ -125,7 +132,7 @@ func (s *reactiveSubscription) Request(n int64) {
 	s.requested.Add(n)
 }
 
-func (s *reactiveSubscription) Cancel() {
+func (s *reactiveSubscription[T]) Cancel() {
 	s.cancelled.Store(true)
 }
 
@@ -165,9 +172,18 @@ func NewSubscriber[T any](
 	onError func(error),
 	onComplete func(),
 ) Subscriber[T] {
+	return NewSubscriberWithDemand[T](onNext, onError, onComplete, 1<<63-1)
+}
+
+func NewSubscriberWithDemand[T any](
+	onNext func(T),
+	onError func(error),
+	onComplete func(),
+	demand int64,
+) Subscriber[T] {
 	return &functionalSubscriber[T]{
 		onSubscribe: func(s Subscription) {
-			s.Request(1<<63 - 1)
+			s.Request(demand)
 		},
 		onNext:     onNext,
 		onError:    onError,

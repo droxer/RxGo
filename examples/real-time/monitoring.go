@@ -87,7 +87,7 @@ func (s *MonitoringService) OnError(err error) {
 	fmt.Printf("[%s] Monitoring error: %v\n", s.name, err)
 }
 
-func (s *MonitoringService) OnCompleted() {
+func (s *MonitoringService) OnComplete() {
 	fmt.Printf("[%s] Monitoring completed! Total alerts: %d\n", s.name, s.alertCount)
 }
 
@@ -154,10 +154,12 @@ func realTimeMonitoringExamples() {
 				}
 			}
 		}
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 
-	tempStream.Subscribe(context.Background(), temperatureMonitor)
+	if err := tempStream.Subscribe(context.Background(), temperatureMonitor); err != nil {
+		fmt.Printf("Error subscribing to tempStream: %v\n", err)
+	}
 
 	time.Sleep(10 * time.Second)
 	fmt.Println("\n=== Real-time monitoring completed ===")

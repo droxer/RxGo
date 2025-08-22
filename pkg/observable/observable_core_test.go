@@ -19,7 +19,7 @@ func (t *testSubscriber[T]) OnNext(value T) {
 	defer t.mu.Unlock()
 	t.values = append(t.values, value)
 }
-func (t *testSubscriber[T]) OnCompleted() {
+func (t *testSubscriber[T]) OnComplete() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.done = true
@@ -55,7 +55,10 @@ func TestJust(t *testing.T) {
 	obs := Just(1, 2, 3, 4, 5)
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 5 {
@@ -74,7 +77,10 @@ func TestRange(t *testing.T) {
 	obs := Range(10, 5)
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 5 {
@@ -94,7 +100,10 @@ func TestFromSlice(t *testing.T) {
 	obs := FromSlice(data)
 	sub := &testSubscriber[string]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 3 {
@@ -113,7 +122,10 @@ func TestMap(t *testing.T) {
 	mapped := Map(obs, func(x int) int { return x * 2 })
 	sub := &testSubscriber[int]{}
 
-	mapped.Subscribe(context.Background(), sub)
+	err := mapped.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	expected := []int{2, 4, 6, 8, 10}
@@ -129,7 +141,10 @@ func TestFilter(t *testing.T) {
 	filtered := Filter(obs, func(x int) bool { return x%2 == 0 })
 	sub := &testSubscriber[int]{}
 
-	filtered.Subscribe(context.Background(), sub)
+	err := filtered.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	expected := []int{2, 4, 6}
@@ -144,7 +159,10 @@ func TestEmpty(t *testing.T) {
 	obs := Empty[int]()
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -161,7 +179,10 @@ func TestError(t *testing.T) {
 	obs := Error[int](expectedErr)
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	if sub.getError() != expectedErr {
 		t.Errorf("Expected error %v, got %v", expectedErr, sub.getError())
@@ -181,7 +202,10 @@ func TestContextCancellation(t *testing.T) {
 
 	cancel()
 
-	obs.Subscribe(ctx, sub)
+	err := obs.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {

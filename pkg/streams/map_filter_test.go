@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 // mapFilterTestSubscriber is a simple test subscriber for map/filter tests
@@ -100,6 +101,10 @@ func (s *mapFilterTestSubscriber[T]) AssertError(t *testing.T) {
 
 func TestMapProcessor(t *testing.T) {
 	t.Run("int to int", func(t *testing.T) {
+		// Create a context with timeout to prevent infinite wait
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
 		source := NewCompliantRangePublisher(1, 5)
 		processor := NewMapProcessor(func(x int) int { return x * 2 })
 
@@ -108,8 +113,12 @@ func TestMapProcessor(t *testing.T) {
 		sub := newMapFilterTestSubscriber[int]()
 		processor.Subscribe(context.Background(), sub)
 
-		ctx := context.Background()
 		sub.Wait(ctx)
+
+		// Check if context was cancelled (timeout)
+		if ctx.Err() == context.DeadlineExceeded {
+			t.Fatal("Test timed out waiting for completion")
+		}
 
 		expected := []int{2, 4, 6, 8, 10}
 		sub.AssertValues(t, expected)
@@ -118,6 +127,10 @@ func TestMapProcessor(t *testing.T) {
 	})
 
 	t.Run("int to string", func(t *testing.T) {
+		// Create a context with timeout to prevent infinite wait
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
 		source := NewCompliantFromSlicePublisher([]int{1, 2, 3})
 		processor := NewMapProcessor(func(x int) string {
 			return map[int]string{1: "one", 2: "two", 3: "three"}[x]
@@ -128,8 +141,12 @@ func TestMapProcessor(t *testing.T) {
 		sub := newMapFilterTestSubscriber[string]()
 		processor.Subscribe(context.Background(), sub)
 
-		ctx := context.Background()
 		sub.Wait(ctx)
+
+		// Check if context was cancelled (timeout)
+		if ctx.Err() == context.DeadlineExceeded {
+			t.Fatal("Test timed out waiting for completion")
+		}
 
 		expected := []string{"one", "two", "three"}
 		sub.AssertValues(t, expected)
@@ -140,6 +157,10 @@ func TestMapProcessor(t *testing.T) {
 
 func TestFilterProcessor(t *testing.T) {
 	t.Run("filter even numbers", func(t *testing.T) {
+		// Create a context with timeout to prevent infinite wait
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
 		source := NewCompliantRangePublisher(1, 10)
 		processor := NewFilterProcessor(func(x int) bool { return x%2 == 0 })
 
@@ -148,8 +169,12 @@ func TestFilterProcessor(t *testing.T) {
 		sub := newMapFilterTestSubscriber[int]()
 		processor.Subscribe(context.Background(), sub)
 
-		ctx := context.Background()
 		sub.Wait(ctx)
+
+		// Check if context was cancelled (timeout)
+		if ctx.Err() == context.DeadlineExceeded {
+			t.Fatal("Test timed out waiting for completion")
+		}
 
 		expected := []int{2, 4, 6, 8, 10}
 		sub.AssertValues(t, expected)
@@ -158,6 +183,10 @@ func TestFilterProcessor(t *testing.T) {
 	})
 
 	t.Run("filter all values", func(t *testing.T) {
+		// Create a context with timeout to prevent infinite wait
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
 		source := NewCompliantRangePublisher(1, 5)
 		processor := NewFilterProcessor(func(x int) bool { return x > 10 })
 
@@ -166,8 +195,12 @@ func TestFilterProcessor(t *testing.T) {
 		sub := newMapFilterTestSubscriber[int]()
 		processor.Subscribe(context.Background(), sub)
 
-		ctx := context.Background()
 		sub.Wait(ctx)
+
+		// Check if context was cancelled (timeout)
+		if ctx.Err() == context.DeadlineExceeded {
+			t.Fatal("Test timed out waiting for completion")
+		}
 
 		sub.AssertValues(t, []int{})
 		sub.AssertCompleted(t)
@@ -176,6 +209,10 @@ func TestFilterProcessor(t *testing.T) {
 }
 
 func TestFlatMapProcessor(t *testing.T) {
+	// Create a context with timeout to prevent infinite wait
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	source := NewCompliantFromSlicePublisher([]int{1, 2})
 	processor := NewFlatMapProcessor(func(x int) Publisher[int] {
 		return NewCompliantFromSlicePublisher([]int{x, x + 10})
@@ -186,8 +223,12 @@ func TestFlatMapProcessor(t *testing.T) {
 	sub := newMapFilterTestSubscriber[int]()
 	processor.Subscribe(context.Background(), sub)
 
-	ctx := context.Background()
 	sub.Wait(ctx)
+
+	// Check if context was cancelled (timeout)
+	if ctx.Err() == context.DeadlineExceeded {
+		t.Fatal("Test timed out waiting for completion")
+	}
 
 	// Check that all expected values are present regardless of order
 	received := sub.GetReceivedCopy()
@@ -209,6 +250,10 @@ func TestFlatMapProcessor(t *testing.T) {
 }
 
 func TestProcessorErrorHandling(t *testing.T) {
+	// Create a context with timeout to prevent infinite wait
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Create a publisher that emits an error
 	errorPublisher := NewPublisher(func(ctx context.Context, sub Subscriber[int]) {
 		sub.OnNext(1)
@@ -221,8 +266,12 @@ func TestProcessorErrorHandling(t *testing.T) {
 	sub := newMapFilterTestSubscriber[int]()
 	processor.Subscribe(context.Background(), sub)
 
-	ctx := context.Background()
 	sub.Wait(ctx)
+
+	// Check if context was cancelled (timeout)
+	if ctx.Err() == context.DeadlineExceeded {
+		t.Fatal("Test timed out waiting for completion")
+	}
 
 	// Should receive the mapped value before error
 	received := sub.GetReceivedCopy()
@@ -234,6 +283,10 @@ func TestProcessorErrorHandling(t *testing.T) {
 }
 
 func TestChainedProcessors(t *testing.T) {
+	// Create a context with timeout to prevent infinite wait
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	source := NewCompliantRangePublisher(1, 6)
 
 	// Chain: filter even numbers, then multiply by 3
@@ -247,8 +300,12 @@ func TestChainedProcessors(t *testing.T) {
 	sub := newMapFilterTestSubscriber[int]()
 	mapProcessor.Subscribe(context.Background(), sub)
 
-	ctx := context.Background()
 	sub.Wait(ctx)
+
+	// Check if context was cancelled (timeout)
+	if ctx.Err() == context.DeadlineExceeded {
+		t.Fatal("Test timed out waiting for completion")
+	}
 
 	// Should get even numbers (2,4,6) multiplied by 3 = (6,12,18)
 	expected := []int{6, 12, 18}

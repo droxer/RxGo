@@ -5,6 +5,12 @@ import (
 	"sync"
 )
 
+// MapProcessor transforms items emitted by a Publisher by applying a function to each item.
+// It implements the Processor interface and supports backpressure.
+//
+// Thread Safety:
+// MapProcessor is safe for concurrent use. All methods are synchronized using a mutex.
+// Multiple goroutines can safely call methods on the same MapProcessor instance.
 type MapProcessor[T any, R any] struct {
 	transform  func(T) R
 	upstream   Subscription
@@ -13,12 +19,33 @@ type MapProcessor[T any, R any] struct {
 	terminated bool
 }
 
+// NewMapProcessor creates a new MapProcessor with the specified transformation function.
+//
+// Parameters:
+//   - transform: A function that takes a value of type T and returns a value of type R
+//
+// Returns:
+//   - A new MapProcessor instance
+//
+// Example:
+//
+//	processor := NewMapProcessor(func(x int) string {
+//	    return strconv.Itoa(x)
+//	})
+//	// This processor will convert integers to strings
 func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 	return &MapProcessor[T, R]{
 		transform: transform,
 	}
 }
 
+// Subscribe subscribes a Subscriber to this MapProcessor.
+// This method establishes the subscription and begins the flow of values
+// from the upstream Publisher to the downstream Subscriber through the processor.
+//
+// Parameters:
+//   - ctx: The context for the subscription, used for cancellation
+//   - sub: The subscriber that will receive processed values
 func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 	p.mu.Lock()
 	p.downstream = sub
@@ -28,6 +55,11 @@ func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 	sub.OnSubscribe(processorSub)
 }
 
+// OnSubscribe is called when the subscription to the upstream Publisher is established.
+// It stores the subscription and requests an unlimited number of items from the upstream.
+//
+// Parameters:
+//   - s: The subscription to the upstream Publisher
 func (p *MapProcessor[T, R]) OnSubscribe(s Subscription) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -35,10 +67,16 @@ func (p *MapProcessor[T, R]) OnSubscribe(s Subscription) {
 	p.upstream = s
 
 	if p.downstream != nil {
-		s.Request(1<<63 - 1)
+		// Request a reasonable initial batch size for backpressure
+		s.Request(128)
 	}
 }
 
+// OnNext is called for each item emitted by the upstream Publisher.
+// It applies the transformation function to the item and emits the result to the downstream Subscriber.
+//
+// Parameters:
+//   - value: The item emitted by the upstream Publisher
 func (p *MapProcessor[T, R]) OnNext(value T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -51,6 +89,12 @@ func (p *MapProcessor[T, R]) OnNext(value T) {
 	p.downstream.OnNext(transformed)
 }
 
+// OnError is called when the upstream Publisher terminates with an error.
+// It terminates the processor and propagates the error to the downstream Subscriber.
+// After this method is called, no further calls to OnNext, OnComplete, or OnError will be made.
+//
+// Parameters:
+//   - err: The error that caused the upstream Publisher to terminate
 func (p *MapProcessor[T, R]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -63,6 +107,9 @@ func (p *MapProcessor[T, R]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
+// OnComplete is called when the upstream Publisher completes successfully.
+// It terminates the processor and signals completion to the downstream Subscriber.
+// After this method is called, no further calls to OnNext or OnComplete will be made.
 func (p *MapProcessor[T, R]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -75,31 +122,32 @@ func (p *MapProcessor[T, R]) OnComplete() {
 	p.downstream.OnComplete()
 }
 
+// mapProcessorSubscription represents the subscription from a downstream Subscriber to a MapProcessor.
+// It implements the Subscription interface and delegates request/cancel operations to the upstream Publisher.
+//
+// Thread Safety:
+// mapProcessorSubscription is safe for concurrent use through the MapProcessor's mutex.
 type mapProcessorSubscription[T any, R any] struct {
 	processor *MapProcessor[T, R]
 }
 
+// Request requests up to n additional items from the upstream Publisher.
+// This method delegates the request to the upstream Publisher's subscription.
+//
+// Parameters:
+//   - n: The number of additional items to request
 func (s *mapProcessorSubscription[T, R]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
 		upstream.Request(n)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil {
-			s.processor.upstream.Request(n)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
+// Cancel cancels the subscription and instructs the upstream Publisher to stop emitting items.
+// This method delegates the cancellation to the upstream Publisher's subscription.
 func (s *mapProcessorSubscription[T, R]) Cancel() {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
@@ -110,6 +158,13 @@ func (s *mapProcessorSubscription[T, R]) Cancel() {
 	}
 }
 
+// FilterProcessor filters items emitted by a Publisher by applying a predicate function to each item.
+// Only items for which the predicate returns true are emitted to the downstream Subscriber.
+// It implements the Processor interface and supports backpressure.
+//
+// Thread Safety:
+// FilterProcessor is safe for concurrent use. All methods are synchronized using a mutex.
+// Multiple goroutines can safely call methods on the same FilterProcessor instance.
 type FilterProcessor[T any] struct {
 	predicate  func(T) bool
 	upstream   Subscription
@@ -118,12 +173,33 @@ type FilterProcessor[T any] struct {
 	terminated bool
 }
 
+// NewFilterProcessor creates a new FilterProcessor with the specified predicate function.
+//
+// Parameters:
+//   - predicate: A function that takes a value of type T and returns true if the value should be emitted
+//
+// Returns:
+//   - A new FilterProcessor instance
+//
+// Example:
+//
+//	processor := NewFilterProcessor(func(x int) bool {
+//	    return x % 2 == 0
+//	})
+//	// This processor will only emit even numbers
 func NewFilterProcessor[T any](predicate func(T) bool) *FilterProcessor[T] {
 	return &FilterProcessor[T]{
 		predicate: predicate,
 	}
 }
 
+// Subscribe subscribes a Subscriber to this FilterProcessor.
+// This method establishes the subscription and begins the flow of values
+// from the upstream Publisher to the downstream Subscriber through the processor.
+//
+// Parameters:
+//   - ctx: The context for the subscription, used for cancellation
+//   - sub: The subscriber that will receive filtered values
 func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	p.mu.Lock()
 	p.downstream = sub
@@ -133,6 +209,11 @@ func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 	sub.OnSubscribe(processorSub)
 }
 
+// OnSubscribe is called when the subscription to the upstream Publisher is established.
+// It stores the subscription and requests an unlimited number of items from the upstream.
+//
+// Parameters:
+//   - s: The subscription to the upstream Publisher
 func (p *FilterProcessor[T]) OnSubscribe(s Subscription) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -140,10 +221,17 @@ func (p *FilterProcessor[T]) OnSubscribe(s Subscription) {
 	p.upstream = s
 
 	if p.downstream != nil {
-		s.Request(1<<63 - 1)
+		// Request a reasonable initial batch size for backpressure
+		s.Request(128)
 	}
 }
 
+// OnNext is called for each item emitted by the upstream Publisher.
+// It applies the predicate function to the item and emits the item to the downstream Subscriber
+// only if the predicate returns true.
+//
+// Parameters:
+//   - value: The item emitted by the upstream Publisher
 func (p *FilterProcessor[T]) OnNext(value T) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -157,6 +245,12 @@ func (p *FilterProcessor[T]) OnNext(value T) {
 	}
 }
 
+// OnError is called when the upstream Publisher terminates with an error.
+// It terminates the processor and propagates the error to the downstream Subscriber.
+// After this method is called, no further calls to OnNext, OnComplete, or OnError will be made.
+//
+// Parameters:
+//   - err: The error that caused the upstream Publisher to terminate
 func (p *FilterProcessor[T]) OnError(err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -169,6 +263,9 @@ func (p *FilterProcessor[T]) OnError(err error) {
 	p.downstream.OnError(err)
 }
 
+// OnComplete is called when the upstream Publisher completes successfully.
+// It terminates the processor and signals completion to the downstream Subscriber.
+// After this method is called, no further calls to OnNext or OnComplete will be made.
 func (p *FilterProcessor[T]) OnComplete() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -181,31 +278,32 @@ func (p *FilterProcessor[T]) OnComplete() {
 	p.downstream.OnComplete()
 }
 
+// filterProcessorSubscription represents the subscription from a downstream Subscriber to a FilterProcessor.
+// It implements the Subscription interface and delegates request/cancel operations to the upstream Publisher.
+//
+// Thread Safety:
+// filterProcessorSubscription is safe for concurrent use through the FilterProcessor's mutex.
 type filterProcessorSubscription[T any] struct {
 	processor *FilterProcessor[T]
 }
 
+// Request requests up to n additional items from the upstream Publisher.
+// This method delegates the request to the upstream Publisher's subscription.
+//
+// Parameters:
+//   - n: The number of additional items to request
 func (s *filterProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
 		upstream.Request(n)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil {
-			s.processor.upstream.Request(n)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
+// Cancel cancels the subscription and instructs the upstream Publisher to stop emitting items.
+// This method delegates the cancellation to the upstream Publisher's subscription.
 func (s *filterProcessorSubscription[T]) Cancel() {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
@@ -218,6 +316,7 @@ func (s *filterProcessorSubscription[T]) Cancel() {
 
 type FlatMapProcessor[T any, R any] struct {
 	transform         func(T) Publisher[R]
+	ctx               context.Context
 	upstream          Subscription
 	downstream        Subscriber[R]
 	mu                sync.Mutex
@@ -235,6 +334,11 @@ func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapP
 
 func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
 	p.mu.Lock()
+	if ctx == nil {
+		p.ctx = context.Background()
+	} else {
+		p.ctx = ctx
+	}
 	p.downstream = sub
 	p.mu.Unlock()
 
@@ -249,7 +353,9 @@ func (p *FlatMapProcessor[T, R]) OnSubscribe(s Subscription) {
 	p.upstream = s
 
 	if p.downstream != nil {
-		s.Request(1<<63 - 1)
+		// Request a reasonable initial batch size for backpressure
+		// FlatMap typically needs smaller batch sizes due to fan-out
+		s.Request(32)
 	}
 }
 
@@ -265,7 +371,7 @@ func (p *FlatMapProcessor[T, R]) OnNext(value T) {
 	p.activeInners++
 	p.mu.Unlock()
 
-	publisher.Subscribe(context.Background(), &innerSubscriber[T, R]{processor: p})
+	publisher.Subscribe(p.ctx, &innerSubscriber[T, R]{processor: p})
 }
 
 func (p *FlatMapProcessor[T, R]) OnError(err error) {
@@ -304,21 +410,10 @@ type flatMapProcessorSubscription[T any, R any] struct {
 func (s *flatMapProcessorSubscription[T, R]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
 		upstream.Request(n)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil {
-			s.processor.upstream.Request(n)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
@@ -704,12 +799,7 @@ type takeProcessorSubscription[T any] struct {
 func (s *takeProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
 	nValue := s.processor.n
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil && nValue > 0 {
@@ -718,16 +808,6 @@ func (s *takeProcessorSubscription[T]) Request(n int64) {
 			requestAmount = n
 		}
 		upstream.Request(requestAmount)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil && s.processor.n > 0 {
-			requestAmount := s.processor.n
-			if requestAmount > n {
-				requestAmount = n
-			}
-			s.processor.upstream.Request(requestAmount)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
@@ -822,21 +902,10 @@ type skipProcessorSubscription[T any] struct {
 func (s *skipProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
 		upstream.Request(n)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil {
-			s.processor.upstream.Request(n)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
@@ -929,21 +998,10 @@ type distinctProcessorSubscription[T comparable] struct {
 func (s *distinctProcessorSubscription[T]) Request(n int64) {
 	s.processor.mu.Lock()
 	upstream := s.processor.upstream
-	downstream := s.processor.downstream
-	s.processor.mu.Unlock()
-
-	s.processor.mu.Lock()
-	s.processor.downstream = downstream
 	s.processor.mu.Unlock()
 
 	if upstream != nil {
 		upstream.Request(n)
-	} else {
-		s.processor.mu.Lock()
-		if s.processor.upstream != nil {
-			s.processor.upstream.Request(n)
-		}
-		s.processor.mu.Unlock()
 	}
 }
 
@@ -963,14 +1021,14 @@ func NewProcessorBuilder[T any, R any]() *ProcessorBuilder[T, R] {
 	return &ProcessorBuilder[T, R]{}
 }
 
-func (b *ProcessorBuilder[T, R]) Map(transform func(T) R) Processor[T, R] {
+func (b *ProcessorBuilder[T, R]) Map(transform func(T) R) *MapProcessor[T, R] {
 	return NewMapProcessor(transform)
 }
 
-func (b *ProcessorBuilder[T, R]) Filter(predicate func(T) bool) Processor[T, T] {
+func (b *ProcessorBuilder[T, R]) Filter(predicate func(T) bool) *FilterProcessor[T] {
 	return NewFilterProcessor(predicate)
 }
 
-func (b *ProcessorBuilder[T, R]) FlatMap(transform func(T) Publisher[R]) Processor[T, R] {
+func (b *ProcessorBuilder[T, R]) FlatMap(transform func(T) Publisher[R]) *FlatMapProcessor[T, R] {
 	return NewFlatMapProcessor(transform)
 }

@@ -33,7 +33,10 @@ func TestNewSubscriber(t *testing.T) {
 	)
 
 	obs := Just(1, 2, 3)
-	obs.Subscribe(context.Background(), subscriber)
+	err := obs.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -79,7 +82,10 @@ func TestNewSubscriberWithError(t *testing.T) {
 
 	testError := errors.New("test error")
 	obs := Error[int](testError)
-	obs.Subscribe(context.Background(), subscriber)
+	err := obs.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -97,7 +103,10 @@ func TestRangeWithZeroCount(t *testing.T) {
 	obs := Range(10, 0)
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -113,7 +122,10 @@ func TestRangeWithNegativeCount(t *testing.T) {
 	obs := Range(5, -3)
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -129,7 +141,10 @@ func TestJustWithEmptyArgs(t *testing.T) {
 	obs := Just[int]() // No arguments
 	sub := &testSubscriber[int]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -145,7 +160,10 @@ func TestFromSliceWithNil(t *testing.T) {
 	obs := FromSlice[string](nil)
 	sub := &testSubscriber[string]{}
 
-	obs.Subscribe(context.Background(), sub)
+	err := obs.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -165,7 +183,10 @@ func TestOperatorErrorPropagation(t *testing.T) {
 	mapped := Map(obs, func(x int) string { return "mapped" })
 	sub := &testSubscriber[string]{}
 
-	mapped.Subscribe(context.Background(), sub)
+	err := mapped.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	if sub.getError() != testError {
 		t.Errorf("Map should propagate error, expected %v, got %v", testError, sub.getError())
@@ -179,7 +200,10 @@ func TestFilterErrorPropagation(t *testing.T) {
 	filtered := Filter(obs, func(x int) bool { return true })
 	sub := &testSubscriber[int]{}
 
-	filtered.Subscribe(context.Background(), sub)
+	err := filtered.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	if sub.getError() != testError {
 		t.Errorf("Filter should propagate error, expected %v, got %v", testError, sub.getError())
@@ -191,7 +215,10 @@ func TestTakeWithZeroCount(t *testing.T) {
 	taken := Take(obs, 0)
 	sub := &testSubscriber[int]{}
 
-	taken.Subscribe(context.Background(), sub)
+	err := taken.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -208,7 +235,10 @@ func TestSkipMoreThanAvailable(t *testing.T) {
 	skipped := Skip(obs, 10)
 	sub := &testSubscriber[int]{}
 
-	skipped.Subscribe(context.Background(), sub)
+	err := skipped.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 0 {
@@ -231,7 +261,7 @@ func TestConcurrentSubscribers(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			sub := &testSubscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 
 			values := sub.getValues()
 			if len(values) != 100 {
@@ -263,18 +293,18 @@ func TestSubscriberPanicsHandled(t *testing.T) {
 	}()
 
 	obs := Just(1, 2, 3)
-	obs.Subscribe(context.Background(), panicSubscriber)
+	_ = obs.Subscribe(context.Background(), panicSubscriber)
 }
 
 func TestNilSubscriberHandling(t *testing.T) {
 	obs := Just(1, 2, 3)
 
 	// Should not panic when subscribing with nil
-	obs.Subscribe(context.Background(), nil)
+	_ = obs.Subscribe(context.Background(), nil)
 
 	// Should not panic with nil context either
 	sub := &testSubscriber[int]{}
-	obs.Subscribe(context.TODO(), sub)
+	_ = obs.Subscribe(context.TODO(), sub)
 
 	// Should still work normally
 	values := sub.getValues()
@@ -290,7 +320,10 @@ func TestMergeWithEmptyObservables(t *testing.T) {
 	merged := Merge(empty1, empty2)
 	sub := &testSubscriber[int]{}
 
-	merged.Subscribe(context.Background(), sub)
+	err := merged.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	values := sub.getValues()
@@ -313,7 +346,10 @@ func TestConcatWithErrors(t *testing.T) {
 	concatenated := Concat(obs1, obs2, obs3)
 	sub := &testSubscriber[int]{}
 
-	concatenated.Subscribe(context.Background(), sub)
+	err := concatenated.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 	time.Sleep(10 * time.Millisecond)
 
 	values := sub.getValues()

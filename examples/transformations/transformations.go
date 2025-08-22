@@ -27,7 +27,7 @@ func (s *ObservableSubscriber) OnError(err error) {
 	fmt.Printf("[Observable %s] Error: %v\n", s.name, err)
 }
 
-func (s *ObservableSubscriber) OnCompleted() {
+func (s *ObservableSubscriber) OnComplete() {
 	fmt.Printf("[Observable %s] Completed\n", s.name)
 }
 
@@ -57,7 +57,9 @@ func main() {
 
 	words := observable.Just("hello", "world", "rxgo")
 	uppercased := observable.Map(words, strings.ToUpper)
-	uppercased.Subscribe(context.Background(), &ObservableSubscriber{name: "Mapper"})
+	if err := uppercased.Subscribe(context.Background(), &ObservableSubscriber{name: "Mapper"}); err != nil {
+		fmt.Printf("Error subscribing to uppercased observable: %v\n", err)
+	}
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -74,38 +76,46 @@ func main() {
 
 	firstFive := observable.Take(numbers, 5)
 	fmt.Println("\n--- Take Operator ---")
-	firstFive.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := firstFive.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Taken: %d\n", v) },
 		func() { fmt.Println("Take completed") },
 		func(err error) { fmt.Printf("Take error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Error subscribing to firstFive observable: %v\n", err)
+	}
 
 	skipped := observable.Skip(numbers, 3)
 	fmt.Println("\n--- Skip Operator ---")
-	skipped.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := skipped.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Skipped to: %d\n", v) },
 		func() { fmt.Println("Skip completed") },
 		func(err error) { fmt.Printf("Skip error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Error subscribing to skipped observable: %v\n", err)
+	}
 
 	evens := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 == 0 })
 	odds := observable.Filter(observable.Range(1, 10), func(x int) bool { return x%2 != 0 })
 	merged := observable.Merge(evens, odds)
 	fmt.Println("\n--- Merge Operator ---")
-	merged.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := merged.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Merged: %d\n", v) },
 		func() { fmt.Println("Merge completed") },
 		func(err error) { fmt.Printf("Merge error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Error subscribing to merged observable: %v\n", err)
+	}
 
 	withDuplicates := observable.FromSlice([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 	distinct := observable.Distinct(withDuplicates)
 	fmt.Println("\n--- Distinct Operator ---")
-	distinct.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := distinct.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Distinct: %d\n", v) },
 		func() { fmt.Println("Distinct completed") },
 		func(err error) { fmt.Printf("Distinct error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Error subscribing to distinct observable: %v\n", err)
+	}
 
 	time.Sleep(100 * time.Millisecond)
 

@@ -25,7 +25,7 @@ func (s *subscriber[T]) OnNext(next T) {
 	s.mu.Unlock()
 }
 
-func (s *subscriber[T]) OnCompleted() {
+func (s *subscriber[T]) OnComplete() {
 	s.mu.Lock()
 	s.completed = true
 	s.mu.Unlock()
@@ -42,7 +42,7 @@ func BenchmarkMap(b *testing.B) {
 		source := observable.Range(0, 1000)
 		mapped := observable.Map(source, func(v int) int { return v * 2 })
 		sub := &subscriber[int]{}
-		mapped.Subscribe(context.Background(), sub)
+		_ = mapped.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -51,7 +51,7 @@ func BenchmarkFilter(b *testing.B) {
 		source := observable.Range(0, 1000)
 		filtered := observable.Filter(source, func(v int) bool { return v%2 == 0 })
 		sub := &subscriber[int]{}
-		filtered.Subscribe(context.Background(), sub)
+		_ = filtered.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -61,7 +61,7 @@ func BenchmarkMapFilterChain(b *testing.B) {
 		mapped := observable.Map(source, func(v int) int { return v * 2 })
 		filtered := observable.Filter(mapped, func(v int) bool { return v > 500 })
 		sub := &subscriber[int]{}
-		filtered.Subscribe(context.Background(), sub)
+		_ = filtered.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -71,7 +71,7 @@ func BenchmarkDataTypes(b *testing.B) {
 			source := observable.Range(0, 100)
 			mapped := observable.Map(source, func(v int) int { return v * 2 })
 			sub := &subscriber[int]{}
-			mapped.Subscribe(context.Background(), sub)
+			_ = mapped.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -80,7 +80,7 @@ func BenchmarkDataTypes(b *testing.B) {
 			source := observable.Just(1.0, 2.0, 3.0, 4.0, 5.0)
 			mapped := observable.Map(source, func(v float64) float64 { return v * 2.0 })
 			sub := &subscriber[float64]{}
-			mapped.Subscribe(context.Background(), sub)
+			_ = mapped.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -89,7 +89,7 @@ func BenchmarkDataTypes(b *testing.B) {
 			source := observable.Just("a", "b", "c", "d", "e")
 			mapped := observable.Map(source, func(v string) string { return v + "x" })
 			sub := &subscriber[string]{}
-			mapped.Subscribe(context.Background(), sub)
+			_ = mapped.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -103,7 +103,7 @@ func BenchmarkDatasetSizes(b *testing.B) {
 				source := observable.Range(0, size)
 				mapped := observable.Map(source, func(v int) int { return v * 2 })
 				sub := &subscriber[int]{}
-				mapped.Subscribe(context.Background(), sub)
+				_ = mapped.Subscribe(context.Background(), sub)
 			}
 		})
 	}
@@ -116,7 +116,7 @@ func BenchmarkComplexChains(b *testing.B) {
 		filtered := observable.Filter(mapped1, func(v int) bool { return v > 500 })
 		mapped2 := observable.Map(filtered, func(v int) int { return v + 1 })
 		sub := &subscriber[int]{}
-		mapped2.Subscribe(context.Background(), sub)
+		_ = mapped2.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -129,7 +129,7 @@ func BenchmarkConcurrentChains(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			sub := &subscriber[int]{}
-			filtered.Subscribe(context.Background(), sub)
+			_ = filtered.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -141,7 +141,7 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 			source := observable.Range(0, 1000)
 			mapped := observable.Map(source, func(v int) int { return v * 2 })
 			sub := &subscriber[int]{}
-			mapped.Subscribe(context.Background(), sub)
+			_ = mapped.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -150,7 +150,7 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 			source := observable.Range(0, 1000)
 			filtered := observable.Filter(source, func(v int) bool { return v%2 == 0 })
 			sub := &subscriber[int]{}
-			filtered.Subscribe(context.Background(), sub)
+			_ = filtered.Subscribe(context.Background(), sub)
 		}
 	})
 }

@@ -26,7 +26,7 @@ func (s *subscriber[T]) OnNext(next T) {
 	s.mu.Unlock()
 }
 
-func (s *subscriber[T]) OnCompleted() {
+func (s *subscriber[T]) OnComplete() {
 	s.mu.Lock()
 	s.completed = true
 	s.mu.Unlock()
@@ -74,7 +74,7 @@ func BenchmarkSubscription(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			obs := observable.Just(1, 2, 3, 4, 5)
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -82,7 +82,7 @@ func BenchmarkSubscription(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			obs := observable.Range(0, 100)
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -92,7 +92,7 @@ func BenchmarkDataTypes(b *testing.B) {
 		obs := observable.Just(1, 2, 3, 4, 5)
 		for i := 0; i < b.N; i++ {
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -100,7 +100,7 @@ func BenchmarkDataTypes(b *testing.B) {
 		obs := observable.Just(1.0, 2.0, 3.0, 4.0, 5.0)
 		for i := 0; i < b.N; i++ {
 			sub := &subscriber[float64]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -108,7 +108,7 @@ func BenchmarkDataTypes(b *testing.B) {
 		obs := observable.Just("a", "b", "c", "d", "e")
 		for i := 0; i < b.N; i++ {
 			sub := &subscriber[string]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -129,10 +129,10 @@ func BenchmarkDatasetSizes(b *testing.B) {
 					for _, v := range data {
 						sub.OnNext(v)
 					}
-					sub.OnCompleted()
+					sub.OnComplete()
 				})
 				sub := &subscriber[int]{}
-				obs.Subscribe(context.Background(), sub)
+				_ = obs.Subscribe(context.Background(), sub)
 			}
 		})
 	}
@@ -148,7 +148,7 @@ func BenchmarkFromSlice(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		obs := observable.FromSlice(data)
 		sub := &subscriber[int]{}
-		obs.Subscribe(context.Background(), sub)
+		_ = obs.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -159,7 +159,7 @@ func BenchmarkConcurrentSubscribers(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -171,7 +171,7 @@ func BenchmarkErrorHandling(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		obs := observable.Error[int](err)
 		sub := &subscriber[int]{}
-		obs.Subscribe(context.Background(), sub)
+		_ = obs.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -189,11 +189,11 @@ func BenchmarkContextCancellation(b *testing.B) {
 					sub.OnNext(j)
 				}
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 
 		sub := &subscriber[int]{}
-		go obs.Subscribe(ctx, sub)
+		go func() { _ = obs.Subscribe(ctx, sub) }()
 		cancel()
 	}
 }
@@ -205,7 +205,7 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			obs := observable.Just(1, 2, 3, 4, 5)
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 
@@ -213,7 +213,7 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			obs := observable.Range(0, 100)
 			sub := &subscriber[int]{}
-			obs.Subscribe(context.Background(), sub)
+			_ = obs.Subscribe(context.Background(), sub)
 		}
 	})
 }
@@ -237,10 +237,10 @@ func BenchmarkStructData(b *testing.B) {
 			for _, v := range data {
 				sub.OnNext(v)
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 		sub := &subscriber[testStruct]{}
-		obs.Subscribe(context.Background(), sub)
+		_ = obs.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -256,7 +256,7 @@ func BenchmarkAtomicSubscriber(b *testing.B) {
 				counter.Add(int64(p))
 			},
 		}
-		obs.Subscribe(context.Background(), sub)
+		_ = obs.Subscribe(context.Background(), sub)
 	}
 }
 
@@ -266,5 +266,5 @@ type atomicSubscriber struct {
 
 func (s *atomicSubscriber) Start()          {}
 func (s *atomicSubscriber) OnNext(next int) { s.doNext(next) }
-func (s *atomicSubscriber) OnCompleted()    {}
+func (s *atomicSubscriber) OnComplete()     {}
 func (s *atomicSubscriber) OnError(e error) {}

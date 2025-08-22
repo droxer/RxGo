@@ -17,7 +17,10 @@ func TestMerge(t *testing.T) {
 	merged := Merge(obs1, obs2)
 
 	sub := &testSubscriber[int]{}
-	merged.Subscribe(ctx, sub)
+	err := merged.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -48,7 +51,10 @@ func TestConcat(t *testing.T) {
 	concatenated := Concat(obs1, obs2)
 
 	sub := &testSubscriber[int]{}
-	concatenated.Subscribe(ctx, sub)
+	err := concatenated.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	time.Sleep(10 * time.Millisecond)
 
@@ -72,7 +78,10 @@ func TestTake(t *testing.T) {
 	taken := Take(obs, 5)
 
 	sub := &testSubscriber[int]{}
-	taken.Subscribe(ctx, sub)
+	err := taken.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 5 {
@@ -94,7 +103,10 @@ func TestSkip(t *testing.T) {
 	skipped := Skip(obs, 5)
 
 	sub := &testSubscriber[int]{}
-	skipped.Subscribe(ctx, sub)
+	err := skipped.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 5 {
@@ -116,7 +128,10 @@ func TestDistinct(t *testing.T) {
 	distinct := Distinct(obs)
 
 	sub := &testSubscriber[int]{}
-	distinct.Subscribe(ctx, sub)
+	err := distinct.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	values := sub.getValues()
 	if len(values) != 5 {
@@ -138,7 +153,10 @@ func TestObserveOn(t *testing.T) {
 	scheduled := ObserveOn(obs, scheduler.Trampoline)
 
 	sub := &testSubscriber[int]{}
-	scheduled.Subscribe(ctx, sub)
+	err := scheduled.Subscribe(ctx, sub)
+	if err != nil {
+		t.Errorf("Subscribe failed: %v", err)
+	}
 
 	time.Sleep(10 * time.Millisecond)
 

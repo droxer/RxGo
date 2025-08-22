@@ -36,7 +36,8 @@ func (p *compliantPublisher[T]) emit(item T) bool {
 	emitted := false
 
 	for _, sub := range subs {
-		if sub.canEmit() && sub.decrementDemand() {
+		// Atomically check if we can emit and decrement demand in one operation
+		if sub.tryEmitAndDecrement() {
 			sub.mu.Lock()
 			if !sub.isCancelled() {
 				// Release lock before calling subscriber to avoid deadlocks
@@ -58,16 +59,27 @@ func (p *compliantPublisher[T]) complete() {
 		p.mu.Lock()
 		defer p.mu.Unlock()
 
+		subs := make([]*compliantSubscription[T], 0, len(p.subscribers))
 		for sub := range p.subscribers {
+			subs = append(subs, sub)
+		}
+
+		// Clear the subscribers map immediately to prevent new operations
+		p.subscribers = make(map[*compliantSubscription[T]]struct{})
+
+		// Notify subscribers outside the lock to avoid deadlocks
+		for _, sub := range subs {
 			if sub.markCompleted() {
 				sub.mu.Lock()
 				if !sub.isCancelled() {
-					sub.subscriber.OnComplete()
+					subscriber := sub.subscriber
+					sub.mu.Unlock()
+					subscriber.OnComplete()
+				} else {
+					sub.mu.Unlock()
 				}
-				sub.mu.Unlock()
 			}
 		}
-		p.subscribers = make(map[*compliantSubscription[T]]struct{})
 	}
 }
 
@@ -98,11 +110,10 @@ type compliantSubscription[T any] struct {
 }
 
 func newCompliantSubscription[T any](sub Subscriber[T], pub *compliantPublisher[T]) *compliantSubscription[T] {
-	subscription := &compliantSubscription[T]{
+	return &compliantSubscription[T]{
 		subscriber: sub,
 		publisher:  pub,
 	}
-	return subscription
 }
 
 func (s *compliantSubscription[T]) Request(n int64) {
@@ -138,10 +149,6 @@ func (s *compliantSubscription[T]) markCompleted() bool {
 	return s.completed.CompareAndSwap(false, true)
 }
 
-func (s *compliantSubscription[T]) canEmit() bool {
-	return !s.cancelled.Load() && !s.completed.Load() && s.requested.Load() > 0
-}
-
 func (s *compliantSubscription[T]) decrementDemand() bool {
 	for {
 		current := s.requested.Load()
@@ -152,4 +159,16 @@ func (s *compliantSubscription[T]) decrementDemand() bool {
 			return true
 		}
 	}
+}
+
+// tryEmitAndDecrement atomically checks if the subscription can emit and decrements demand
+func (s *compliantSubscription[T]) tryEmitAndDecrement() bool {
+	// First check if the subscription is in a state where it can emit
+	// without acquiring the mutex to avoid unnecessary locking
+	if s.cancelled.Load() || s.completed.Load() {
+		return false
+	}
+
+	// Try to decrement demand atomically
+	return s.decrementDemand()
 }

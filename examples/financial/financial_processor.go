@@ -75,7 +75,7 @@ func (s *FinancialProcessor) OnError(err error) {
 	fmt.Printf("[%s] Financial processing error: %v\n", s.name, err)
 }
 
-func (s *FinancialProcessor) OnCompleted() {
+func (s *FinancialProcessor) OnComplete() {
 	fmt.Printf("[%s] Financial processing completed!\n", s.name)
 	fmt.Printf("[%s] Final portfolio:\n", s.name)
 	for symbol, shares := range s.portfolio.Holdings {
@@ -120,10 +120,12 @@ func financialProcessingExamples() {
 				time.Sleep(800 * time.Millisecond)
 			}
 		}
-		sub.OnCompleted()
+		sub.OnComplete()
 	})
 
-	trades.Subscribe(context.Background(), processor)
+	if err := trades.Subscribe(context.Background(), processor); err != nil {
+		fmt.Printf("Error subscribing to trades: %v\n", err)
+	}
 
 	time.Sleep(5 * time.Second)
 
@@ -155,10 +157,12 @@ func financialProcessingExamples() {
 					time.Sleep(50 * time.Millisecond)
 				}
 			}
-			sub.OnCompleted()
+			sub.OnComplete()
 		})
 
-		trades.Subscribe(context.Background(), processor)
+		if err := trades.Subscribe(context.Background(), processor); err != nil {
+			fmt.Printf("Error subscribing to trades: %v\n", err)
+		}
 
 		time.Sleep(time.Duration(len(data)) * 100 * time.Millisecond)
 		return time.Since(start)
