@@ -10,39 +10,48 @@ import (
 
 func Map[T, R any](source *Observable[T], transform func(T) R) *Observable[R] {
 	return Create(func(ctx context.Context, sub Subscriber[R]) {
-		_ = source.Subscribe(ctx, &mapSubscriber[T, R]{
+		err := source.Subscribe(ctx, &mapSubscriber[T, R]{
 			sub:       sub,
 			transform: transform,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
 func Filter[T any](source *Observable[T], predicate func(T) bool) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		_ = source.Subscribe(ctx, &filterSubscriber[T]{
+		err := source.Subscribe(ctx, &filterSubscriber[T]{
 			sub:       sub,
 			predicate: predicate,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
 func ObserveOn[T any](source *Observable[T], sched scheduler.Scheduler) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		_ = source.Subscribe(ctx, &observeOnSubscriber[T]{
+		err := source.Subscribe(ctx, &observeOnSubscriber[T]{
 			scheduler: sched,
 			sub:       sub,
 			ctx:       ctx,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
 func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
 		var wg sync.WaitGroup
-		completedCount := 0
 		var mu sync.Mutex
 		var firstError error
 		allCompleted := make(chan struct{})
+		terminated := false
 
 		sub.Start()
 
@@ -51,9 +60,9 @@ func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 			sub:          sub,
 			wg:           &wg,
 			mu:           &mu,
-			completed:    &completedCount,
 			firstError:   &firstError,
 			allCompleted: allCompleted,
+			terminated:   &terminated,
 			totalSources: len(sources),
 		}
 
@@ -62,21 +71,38 @@ func Merge[T any](sources ...*Observable[T]) *Observable[T] {
 			wg.Add(1)
 			go func(s *Observable[T]) {
 				defer wg.Done()
-				_ = s.Subscribe(ctx, mergeSub)
+				err := s.Subscribe(ctx, mergeSub)
+				if err != nil {
+					mergeSub.OnError(err)
+				}
 			}(source)
 		}
 
 		// Wait for all sources to complete and then signal parent completion
 		go func() {
 			wg.Wait()
-			close(allCompleted)
 			mu.Lock()
 			err := firstError
+			alreadyTerminated := terminated
+			// Check if the channel was already closed by an error
+			select {
+			case <-allCompleted:
+				// Channel already closed by an error, nothing to do
+				mu.Unlock()
+				return
+			default:
+				close(allCompleted)
+				terminated = true
+			}
 			mu.Unlock()
-			if err != nil {
-				sub.OnError(err)
-			} else {
-				sub.OnComplete()
+
+			// Only signal completion if not already terminated by an error
+			if !alreadyTerminated {
+				if err != nil {
+					sub.OnError(err)
+				} else {
+					sub.OnComplete()
+				}
 			}
 		}()
 	})
@@ -95,7 +121,11 @@ func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 					done:      done,
 					errorChan: errorChan,
 				}
-				_ = source.Subscribe(ctx, concatSub)
+				err := source.Subscribe(ctx, concatSub)
+				if err != nil {
+					sub.OnError(err)
+					return
+				}
 				select {
 				case <-done:
 				case err := <-errorChan:
@@ -113,19 +143,25 @@ func Concat[T any](sources ...*Observable[T]) *Observable[T] {
 
 func Take[T any](source *Observable[T], n int) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		_ = source.Subscribe(ctx, &takeSubscriber[T]{
+		err := source.Subscribe(ctx, &takeSubscriber[T]{
 			sub: sub,
 			n:   n,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
 func Skip[T any](source *Observable[T], n int) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		_ = source.Subscribe(ctx, &skipSubscriber[T]{
+		err := source.Subscribe(ctx, &skipSubscriber[T]{
 			sub: sub,
 			n:   n,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
@@ -135,12 +171,15 @@ func Distinct[T comparable](source *Observable[T]) *Observable[T] {
 
 func DistinctWithLimit[T comparable](source *Observable[T], maxSize int) *Observable[T] {
 	return Create(func(ctx context.Context, sub Subscriber[T]) {
-		_ = source.Subscribe(ctx, &distinctSubscriber[T]{
+		err := source.Subscribe(ctx, &distinctSubscriber[T]{
 			sub:      sub,
 			seen:     make(map[T]struct{}),
 			maxSize:  maxSize,
 			overflow: false,
 		})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
@@ -173,9 +212,13 @@ type observeOnSubscriber[T any] struct {
 	sub       Subscriber[T]
 	ctx       context.Context
 	started   bool
+	mu        sync.Mutex
 }
 
 func (o *observeOnSubscriber[T]) Start() {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	if !o.started {
 		o.started = true
 		o.scheduler.Schedule(func() {
@@ -215,9 +258,9 @@ type mergeSubscriber[T any] struct {
 	sub          Subscriber[T]
 	wg           *sync.WaitGroup
 	mu           *sync.Mutex
-	completed    *int
 	firstError   *error
 	allCompleted chan struct{}
+	terminated   *bool
 	totalSources int
 }
 
@@ -234,6 +277,7 @@ func (m *mergeSubscriber[T]) OnError(err error) {
 	// Only propagate the first error
 	if *m.firstError == nil {
 		*m.firstError = err
+		*m.terminated = true
 		// Cancel all other operations
 		select {
 		case <-m.allCompleted:
@@ -274,10 +318,14 @@ type takeSubscriber[T any] struct {
 	sub   Subscriber[T]
 	n     int
 	count int
+	mu    sync.Mutex
 }
 
 func (t *takeSubscriber[T]) Start() { t.sub.Start() }
 func (t *takeSubscriber[T]) OnNext(value T) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if t.count < t.n {
 		t.sub.OnNext(value)
 		t.count++
@@ -288,6 +336,9 @@ func (t *takeSubscriber[T]) OnNext(value T) {
 }
 func (t *takeSubscriber[T]) OnError(err error) { t.sub.OnError(err) }
 func (t *takeSubscriber[T]) OnComplete() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if t.count < t.n {
 		t.sub.OnComplete()
 	}
@@ -297,10 +348,14 @@ type skipSubscriber[T any] struct {
 	sub   Subscriber[T]
 	n     int
 	count int
+	mu    sync.Mutex
 }
 
 func (s *skipSubscriber[T]) Start() { s.sub.Start() }
 func (s *skipSubscriber[T]) OnNext(value T) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.count >= s.n {
 		s.sub.OnNext(value)
 	} else {

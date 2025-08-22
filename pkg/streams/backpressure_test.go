@@ -89,7 +89,10 @@ func TestBackpressureStrategies(t *testing.T) {
 			sub := tt.setup()
 
 			ctx := context.Background()
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				t.Fatalf("Subscribe failed: %v", err)
+			}
 			sub.wait()
 
 			received := sub.getItems()
@@ -111,7 +114,10 @@ func TestRangePublishWithBackpressure(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	publisher.Subscribe(ctx, sub)
+	err := publisher.Subscribe(ctx, sub)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 	sub.wait()
 
 	received := sub.getItems()

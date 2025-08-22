@@ -2,6 +2,7 @@ package streams
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"sync"
 	"testing"
@@ -154,7 +155,10 @@ func TestStreamProcessors(t *testing.T) {
 			setup: func() Publisher[int] {
 				source := NewCompliantRangePublisher(1, 10)
 				processor := NewTakeProcessor[int](5)
-				source.Subscribe(ctx, processor)
+				err := source.Subscribe(ctx, processor)
+				if err != nil {
+					panic(fmt.Sprintf("Source subscribe failed: %v", err))
+				}
 				return processor
 			},
 			expected: []int{1, 2, 3, 4, 5},
@@ -174,7 +178,10 @@ func TestStreamProcessors(t *testing.T) {
 			setup: func() Publisher[int] {
 				source := NewCompliantRangePublisher(1, 10)
 				processor := NewSkipProcessor[int](5)
-				source.Subscribe(ctx, processor)
+				err := source.Subscribe(ctx, processor)
+				if err != nil {
+					panic(fmt.Sprintf("Source subscribe failed: %v", err))
+				}
 				return processor
 			},
 			expected: []int{6, 7, 8, 9, 10},
@@ -194,7 +201,10 @@ func TestStreamProcessors(t *testing.T) {
 			setup: func() Publisher[int] {
 				source := NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 				processor := NewDistinctProcessor[int]()
-				source.Subscribe(ctx, processor)
+				err := source.Subscribe(ctx, processor)
+				if err != nil {
+					panic(fmt.Sprintf("Source subscribe failed: %v", err))
+				}
 				return processor
 			},
 			expected: []int{1, 2, 3, 4, 5},
@@ -216,7 +226,10 @@ func TestStreamProcessors(t *testing.T) {
 			publisher := tt.setup()
 			sub := newProcessorsTestSubscriber[int]()
 
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				t.Fatalf("Subscribe failed: %v", err)
+			}
 			sub.Wait(ctx)
 
 			received := sub.GetReceivedCopy()

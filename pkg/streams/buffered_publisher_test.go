@@ -46,7 +46,10 @@ func TestBufferedPublisherErrorInSource(t *testing.T) {
 		},
 	)
 
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Give time for processing
 	time.Sleep(100 * time.Millisecond)
@@ -108,7 +111,10 @@ func TestBufferedPublisherCancellation(t *testing.T) {
 		func() {},
 	)
 
-	publisher.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Cancel after short time
 	time.Sleep(10 * time.Millisecond)
@@ -170,7 +176,10 @@ func TestBufferedPublisherCompleteWithBufferedItems(t *testing.T) {
 		},
 	}
 
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Wait for completion - should flush all buffered items
 	time.Sleep(100 * time.Millisecond)
@@ -271,7 +280,10 @@ func TestBufferedPublisherLatestStrategyOverflow(t *testing.T) {
 		func() {},
 	)
 
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Wait for completion
 	time.Sleep(200 * time.Millisecond)
@@ -299,10 +311,12 @@ func TestBufferedPublisherNilSubscriber(t *testing.T) {
 		BufferSize: 5,
 	}, source)
 
-	// Should handle nil subscriber gracefully without panic
-	// The Subscribe method should return early without error
-	publisher.Subscribe(context.Background(), nil)
-
-	// If we get here without panic, the test passes
-	// This matches the actual implementation behavior
+	// Should return error for nil subscriber
+	err := publisher.Subscribe(context.Background(), nil)
+	if err == nil {
+		t.Error("Expected error for nil subscriber, got nil")
+	}
+	if err.Error() != "subscriber cannot be nil" {
+		t.Errorf("Expected 'subscriber cannot be nil' error, got: %v", err)
+	}
 }

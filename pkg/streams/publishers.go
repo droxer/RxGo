@@ -16,11 +16,9 @@ func NewPublisher[T any](onSubscribe func(ctx context.Context, sub Subscriber[T]
 	}
 }
 
-func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
+func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) error {
 	if s == nil {
-		// Handle nil subscriber gracefully by returning early
-		// This maintains consistency with the Observable API approach
-		return
+		return errors.New("subscriber cannot be nil")
 	}
 
 	subscription := &reactiveSubscription[T]{
@@ -31,6 +29,8 @@ func (p *ReactivePublisher[T]) Subscribe(ctx context.Context, s Subscriber[T]) {
 	go func() {
 		p.processReactive(ctx, s, subscription)
 	}()
+
+	return nil
 }
 
 func (p *ReactivePublisher[T]) processReactive(ctx context.Context, s Subscriber[T], sub *reactiveSubscription[T]) {

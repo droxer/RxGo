@@ -108,10 +108,16 @@ func TestMapProcessor(t *testing.T) {
 		source := NewCompliantRangePublisher(1, 5)
 		processor := NewMapProcessor(func(x int) int { return x * 2 })
 
-		source.Subscribe(context.Background(), processor)
+		err := source.Subscribe(context.Background(), processor)
+		if err != nil {
+			t.Fatalf("Source subscribe failed: %v", err)
+		}
 
 		sub := newMapFilterTestSubscriber[int]()
-		processor.Subscribe(context.Background(), sub)
+		err = processor.Subscribe(context.Background(), sub)
+		if err != nil {
+			t.Fatalf("Processor subscribe failed: %v", err)
+		}
 
 		sub.Wait(ctx)
 
@@ -136,10 +142,16 @@ func TestMapProcessor(t *testing.T) {
 			return map[int]string{1: "one", 2: "two", 3: "three"}[x]
 		})
 
-		source.Subscribe(context.Background(), processor)
+		err := source.Subscribe(context.Background(), processor)
+		if err != nil {
+			t.Fatalf("Source subscribe failed: %v", err)
+		}
 
 		sub := newMapFilterTestSubscriber[string]()
-		processor.Subscribe(context.Background(), sub)
+		err = processor.Subscribe(context.Background(), sub)
+		if err != nil {
+			t.Fatalf("Processor subscribe failed: %v", err)
+		}
 
 		sub.Wait(ctx)
 
@@ -164,10 +176,16 @@ func TestFilterProcessor(t *testing.T) {
 		source := NewCompliantRangePublisher(1, 10)
 		processor := NewFilterProcessor(func(x int) bool { return x%2 == 0 })
 
-		source.Subscribe(context.Background(), processor)
+		err := source.Subscribe(context.Background(), processor)
+		if err != nil {
+			t.Fatalf("Source subscribe failed: %v", err)
+		}
 
 		sub := newMapFilterTestSubscriber[int]()
-		processor.Subscribe(context.Background(), sub)
+		err = processor.Subscribe(context.Background(), sub)
+		if err != nil {
+			t.Fatalf("Processor subscribe failed: %v", err)
+		}
 
 		sub.Wait(ctx)
 
@@ -190,10 +208,16 @@ func TestFilterProcessor(t *testing.T) {
 		source := NewCompliantRangePublisher(1, 5)
 		processor := NewFilterProcessor(func(x int) bool { return x > 10 })
 
-		source.Subscribe(context.Background(), processor)
+		err := source.Subscribe(context.Background(), processor)
+		if err != nil {
+			t.Fatalf("Source subscribe failed: %v", err)
+		}
 
 		sub := newMapFilterTestSubscriber[int]()
-		processor.Subscribe(context.Background(), sub)
+		err = processor.Subscribe(context.Background(), sub)
+		if err != nil {
+			t.Fatalf("Processor subscribe failed: %v", err)
+		}
 
 		sub.Wait(ctx)
 
@@ -218,10 +242,16 @@ func TestFlatMapProcessor(t *testing.T) {
 		return NewCompliantFromSlicePublisher([]int{x, x + 10})
 	})
 
-	source.Subscribe(context.Background(), processor)
+	err := source.Subscribe(context.Background(), processor)
+	if err != nil {
+		t.Fatalf("Source subscribe failed: %v", err)
+	}
 
 	sub := newMapFilterTestSubscriber[int]()
-	processor.Subscribe(context.Background(), sub)
+	err = processor.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Fatalf("Processor subscribe failed: %v", err)
+	}
 
 	sub.Wait(ctx)
 
@@ -261,10 +291,16 @@ func TestProcessorErrorHandling(t *testing.T) {
 	})
 
 	processor := NewMapProcessor(func(x int) int { return x * 2 })
-	errorPublisher.Subscribe(context.Background(), processor)
+	err := errorPublisher.Subscribe(context.Background(), processor)
+	if err != nil {
+		t.Fatalf("Error publisher subscribe failed: %v", err)
+	}
 
 	sub := newMapFilterTestSubscriber[int]()
-	processor.Subscribe(context.Background(), sub)
+	err = processor.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Fatalf("Processor subscribe failed: %v", err)
+	}
 
 	sub.Wait(ctx)
 
@@ -294,11 +330,20 @@ func TestChainedProcessors(t *testing.T) {
 	mapProcessor := NewMapProcessor(func(x int) int { return x * 3 })
 
 	// Connect the chain: source -> filter -> map -> subscriber
-	source.Subscribe(context.Background(), filterProcessor)
-	filterProcessor.Subscribe(context.Background(), mapProcessor)
+	err := source.Subscribe(context.Background(), filterProcessor)
+	if err != nil {
+		t.Fatalf("Source subscribe failed: %v", err)
+	}
+	err = filterProcessor.Subscribe(context.Background(), mapProcessor)
+	if err != nil {
+		t.Fatalf("Filter processor subscribe failed: %v", err)
+	}
 
 	sub := newMapFilterTestSubscriber[int]()
-	mapProcessor.Subscribe(context.Background(), sub)
+	err = mapProcessor.Subscribe(context.Background(), sub)
+	if err != nil {
+		t.Fatalf("Map processor subscribe failed: %v", err)
+	}
 
 	sub.Wait(ctx)
 

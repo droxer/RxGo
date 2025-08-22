@@ -95,7 +95,10 @@ func BenchmarkSubscription(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.RangePublisher(0, 100)
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -107,7 +110,10 @@ func BenchmarkSubscription(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.FromSlicePublisher(data)
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 }
@@ -118,7 +124,10 @@ func BenchmarkBackpressureStrategies(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.RangePublisher(0, 1000)
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -126,7 +135,10 @@ func BenchmarkBackpressureStrategies(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.RangePublisher(0, 1000)
 			sub := &controlledSubscriber[int]{request: 10}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -134,7 +146,10 @@ func BenchmarkBackpressureStrategies(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.RangePublisher(0, 1000)
 			sub := &controlledSubscriber[int]{request: 1}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 }
@@ -145,9 +160,15 @@ func BenchmarkProcessors(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			source := streams.RangePublisher(0, 100)
 			processor := streams.NewMapProcessor(func(v int) int { return v * 2 })
-			source.Subscribe(ctx, processor)
+			err := source.Subscribe(ctx, processor)
+			if err != nil {
+				b.Fatalf("Source subscribe failed: %v", err)
+			}
 			sub := &testSubscriber[int]{}
-			processor.Subscribe(ctx, sub)
+			err = processor.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Processor subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -155,9 +176,15 @@ func BenchmarkProcessors(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			source := streams.RangePublisher(0, 100)
 			processor := streams.NewFilterProcessor(func(v int) bool { return v%2 == 0 })
-			source.Subscribe(ctx, processor)
+			err := source.Subscribe(ctx, processor)
+			if err != nil {
+				b.Fatalf("Source subscribe failed: %v", err)
+			}
 			sub := &testSubscriber[int]{}
-			processor.Subscribe(ctx, sub)
+			err = processor.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Processor subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -167,11 +194,20 @@ func BenchmarkProcessors(b *testing.B) {
 			mapProc := streams.NewMapProcessor(func(v int) int { return v * 2 })
 			filterProc := streams.NewFilterProcessor(func(v int) bool { return v > 50 })
 
-			source.Subscribe(ctx, mapProc)
-			mapProc.Subscribe(ctx, filterProc)
+			err := source.Subscribe(ctx, mapProc)
+			if err != nil {
+				b.Fatalf("Source subscribe failed: %v", err)
+			}
+			err = mapProc.Subscribe(ctx, filterProc)
+			if err != nil {
+				b.Fatalf("Map processor subscribe failed: %v", err)
+			}
 
 			sub := &testSubscriber[int]{}
-			filterProc.Subscribe(ctx, sub)
+			err = filterProc.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Filter processor subscribe failed: %v", err)
+			}
 		}
 	})
 }
@@ -186,7 +222,10 @@ func BenchmarkDatasetSizes(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				publisher := streams.RangePublisher(0, size)
 				sub := &testSubscriber[int]{}
-				publisher.Subscribe(ctx, sub)
+				err := publisher.Subscribe(ctx, sub)
+				if err != nil {
+					b.Fatalf("Subscribe failed: %v", err)
+				}
 			}
 		})
 	}
@@ -200,7 +239,10 @@ func BenchmarkConcurrentSubscribers(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 }
@@ -213,7 +255,10 @@ func BenchmarkErrorHandling(b *testing.B) {
 				sub.OnError(fmt.Errorf("test error"))
 			})
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 }
@@ -226,7 +271,10 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.RangePublisher(0, 100)
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -238,7 +286,10 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			publisher := streams.FromSlicePublisher(data)
 			sub := &testSubscriber[int]{}
-			publisher.Subscribe(ctx, sub)
+			err := publisher.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Subscribe failed: %v", err)
+			}
 		}
 	})
 
@@ -246,9 +297,15 @@ func BenchmarkMemoryAllocations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			source := streams.RangePublisher(0, 100)
 			processor := streams.NewMapProcessor(func(v int) int { return v * 2 })
-			source.Subscribe(ctx, processor)
+			err := source.Subscribe(ctx, processor)
+			if err != nil {
+				b.Fatalf("Source subscribe failed: %v", err)
+			}
 			sub := &testSubscriber[int]{}
-			processor.Subscribe(ctx, sub)
+			err = processor.Subscribe(ctx, sub)
+			if err != nil {
+				b.Fatalf("Processor subscribe failed: %v", err)
+			}
 		}
 	})
 }

@@ -130,7 +130,27 @@ Native Go context support:
 - Goroutine leak prevention
 - Timeout and deadline support
 
-### 6. Performance
+### 6. Thread Safety
+Comprehensive thread safety guarantees:
+- **Observable API**: All Observable instances are immutable and safe for concurrent access. All operators provide proper synchronization:
+  - **ObserveOn**: Thread-safe scheduling with mutex-protected state
+  - **Take/Skip**: Mutex-protected counting to prevent race conditions
+  - **Merge**: Proper synchronization for error handling and completion signaling
+  - **Distinct**: Memory-bounded distinct filtering with overflow protection
+- **Reactive Streams API**: All Publisher, Subscriber, and Subscription implementations are thread-safe with proper error handling:
+  - Consistent error return patterns across all Subscribe methods
+  - Nil subscriber validation with proper error returns
+  - Thread-safe state management in all processors
+- **Processors**: All Processor implementations (Map, Filter, FlatMap, etc.) are safe for concurrent use with:
+  - Mutex protection for shared state
+  - Proper error propagation
+  - Graceful termination handling
+- **Synchronization**: Proper mutex protection for shared state across all concurrent operations
+- **Race-free**: All implementations tested with Go's race detector
+- **Immutable Configuration**: All configuration objects (BackpressureConfig, RetryConfig) are immutable
+- **Error Handling**: Consistent error return patterns with proper validation and propagation
+
+### 7. Performance
 Optimized for Go's concurrency model:
 - Zero-allocation signal delivery where possible
 - Lock-free data structures

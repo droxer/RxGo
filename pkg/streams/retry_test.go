@@ -90,7 +90,8 @@ func TestRetryConvenienceFunctionsFinal(t *testing.T) {
 
 type mockPublisher[T any] struct{}
 
-func (m *mockPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (m *mockPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	return nil
 }
 
 func TestRetryConfigValidation(t *testing.T) {

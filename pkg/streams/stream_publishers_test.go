@@ -96,7 +96,10 @@ func TestFromSlicePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, expected)
@@ -108,7 +111,10 @@ func TestFromSlicePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, []int{})
@@ -121,7 +127,10 @@ func TestFromSlicePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[string]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, expected)
@@ -136,7 +145,10 @@ func TestRangePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, expected)
@@ -148,7 +160,10 @@ func TestRangePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, []int{})
@@ -161,7 +176,10 @@ func TestRangePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.Wait(ctx)
 
 		sub.AssertValues(t, expected)
@@ -176,8 +194,14 @@ func TestRangePublisher(t *testing.T) {
 		sub1 := newPublishersTestSubscriber[int]()
 		sub2 := newPublishersTestSubscriber[int]()
 
-		publisher.Subscribe(ctx, sub1)
-		publisher.Subscribe(ctx, sub2)
+		err := publisher.Subscribe(ctx, sub1)
+		if err != nil {
+			t.Fatalf("Subscribe to sub1 failed: %v", err)
+		}
+		err = publisher.Subscribe(ctx, sub2)
+		if err != nil {
+			t.Fatalf("Subscribe to sub2 failed: %v", err)
+		}
 		sub1.Wait(ctx)
 		sub2.Wait(ctx)
 
@@ -187,8 +211,11 @@ func TestRangePublisher(t *testing.T) {
 
 	t.Run("nil subscriber", func(t *testing.T) {
 		publisher := NewCompliantRangePublisher(1, 5)
-		// Should not panic
-		publisher.Subscribe(context.Background(), nil)
+		// Should return error for nil subscriber
+		err := publisher.Subscribe(context.Background(), nil)
+		if err == nil {
+			t.Error("Expected error for nil subscriber, got nil")
+		}
 	})
 
 	t.Run("context cancellation", func(t *testing.T) {
@@ -196,7 +223,10 @@ func TestRangePublisher(t *testing.T) {
 		sub := newPublishersTestSubscriber[int]()
 		publisher := NewCompliantRangePublisher(1, 1000)
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		cancel()
 
 		sub.Wait(ctx)

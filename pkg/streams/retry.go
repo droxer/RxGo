@@ -2,6 +2,7 @@ package streams
 
 import (
 	"context"
+	"errors"
 	"math"
 	"time"
 )
@@ -78,7 +79,11 @@ func NewRetryPublisher[T any](source Publisher[T], config RetryConfig) Publisher
 	}
 }
 
-func (r *RetryPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (r *RetryPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	retrySub := &retrySubscriber[T]{
 		subscriber: sub,
 		config:     r.config,
@@ -86,6 +91,8 @@ func (r *RetryPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 		ctx:        ctx,
 	}
 	retrySub.start()
+
+	return nil
 }
 
 type retrySubscriber[T any] struct {
@@ -108,7 +115,10 @@ func (r *retrySubscriber[T]) subscribeToSource() {
 	sourceSub := &retrySourceSubscriber[T]{
 		parent: r,
 	}
-	r.source.Subscribe(r.ctx, sourceSub)
+	err := r.source.Subscribe(r.ctx, sourceSub)
+	if err != nil {
+		sourceSub.OnError(err)
+	}
 }
 
 func (r *retrySubscriber[T]) OnNext(value T) {

@@ -33,7 +33,7 @@ func RunSimpleSubscriberExample() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	publisher.Subscribe(context.Background(), streams.NewSubscriber(
+	err := publisher.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func(err error) {
 			fmt.Printf("Error: %v\n", err)
@@ -44,6 +44,10 @@ func RunSimpleSubscriberExample() {
 			wg.Done()
 		},
 	))
+	if err != nil {
+		fmt.Printf("Subscribe failed: %v\n", err)
+		wg.Done()
+	}
 
 	wg.Wait()
 }
@@ -54,7 +58,11 @@ func RunCompliantRangePublisher() {
 	publisher := streams.NewCompliantRangePublisher(1, 10)
 	subscriber := &intSubscriber{name: "CompliantSubscriber"}
 	ctx := context.Background()
-	publisher.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, subscriber)
+	if err != nil {
+		fmt.Printf("Subscribe failed: %v\n", err)
+		return
+	}
 	subscriber.wait()
 
 	fmt.Printf("Compliant publisher processed %d items\n", subscriber.processed)
@@ -74,9 +82,21 @@ func RunCompliantProcessorChain() {
 
 	ctx := context.Background()
 
-	publisher.Subscribe(ctx, mapProcessor)
-	mapProcessor.Subscribe(ctx, filterProcessor)
-	filterProcessor.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, mapProcessor)
+	if err != nil {
+		fmt.Printf("Publisher subscribe failed: %v\n", err)
+		return
+	}
+	err = mapProcessor.Subscribe(ctx, filterProcessor)
+	if err != nil {
+		fmt.Printf("Map processor subscribe failed: %v\n", err)
+		return
+	}
+	err = filterProcessor.Subscribe(ctx, subscriber)
+	if err != nil {
+		fmt.Printf("Filter processor subscribe failed: %v\n", err)
+		return
+	}
 
 	subscriber.wait()
 	fmt.Printf("Processor chain processed %d items\n", subscriber.processed)
@@ -92,7 +112,11 @@ func RunDemandEnforcement() {
 		delay:    100 * time.Millisecond,
 	}
 	ctx := context.Background()
-	publisher.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, subscriber)
+	if err != nil {
+		fmt.Printf("Subscribe failed: %v\n", err)
+		return
+	}
 	subscriber.wait()
 
 	fmt.Printf("Demand enforcement: requested 5, received %d\n", subscriber.received)
@@ -112,7 +136,11 @@ func RunThreadSafetyDemo() {
 				name: fmt.Sprintf("ThreadSafe-%d", id),
 			}
 			ctx := context.Background()
-			publisher.Subscribe(ctx, subscriber)
+			err := publisher.Subscribe(ctx, subscriber)
+			if err != nil {
+				fmt.Printf("Thread %d subscribe failed: %v\n", id, err)
+				return
+			}
 			subscriber.wait()
 			fmt.Printf("Thread %d processed %d items\n", id, subscriber.processed)
 		}(i)
@@ -132,8 +160,16 @@ func RunProcessorExamples() {
 	ctx := context.Background()
 
 	source := streams.NewCompliantFromSlicePublisher[int]([]int{1, 2, 3})
-	source.Subscribe(ctx, mapProc)
-	mapProc.Subscribe(ctx, sub1)
+	err := source.Subscribe(ctx, mapProc)
+	if err != nil {
+		fmt.Printf("Source subscribe failed: %v\n", err)
+		return
+	}
+	err = mapProc.Subscribe(ctx, sub1)
+	if err != nil {
+		fmt.Printf("Map processor subscribe failed: %v\n", err)
+		return
+	}
 	sub1.wait()
 
 	fmt.Println("Filter Processor:")
@@ -143,8 +179,16 @@ func RunProcessorExamples() {
 	sub2 := &intSubscriber{name: "FilterSubscriber"}
 
 	source2 := streams.NewCompliantFromSlicePublisher[int]([]int{1, 2, 3, 4, 5})
-	source2.Subscribe(ctx, filterProc)
-	filterProc.Subscribe(ctx, sub2)
+	err = source2.Subscribe(ctx, filterProc)
+	if err != nil {
+		fmt.Printf("Source2 subscribe failed: %v\n", err)
+		return
+	}
+	err = filterProc.Subscribe(ctx, sub2)
+	if err != nil {
+		fmt.Printf("Filter processor subscribe failed: %v\n", err)
+		return
+	}
 	sub2.wait()
 }
 
@@ -251,7 +295,11 @@ func RunBuilderExample() {
 
 	subscriber := &intSubscriber{name: "BuilderSubscriber"}
 	ctx := context.Background()
-	publisher.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, subscriber)
+	if err != nil {
+		fmt.Printf("Subscribe failed: %v\n", err)
+		return
+	}
 	subscriber.wait()
 
 	fmt.Printf("Builder processed %d items\n", subscriber.processed)
@@ -272,9 +320,21 @@ func RunProcessorBuilderExample() {
 	subscriber := &stringSubscriber{name: "ProcessorBuilderSubscriber"}
 	ctx := context.Background()
 
-	publisher.Subscribe(ctx, mapProcessor)
-	mapProcessor.Subscribe(ctx, filterProcessor)
-	filterProcessor.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, mapProcessor)
+	if err != nil {
+		fmt.Printf("Publisher subscribe failed: %v\n", err)
+		return
+	}
+	err = mapProcessor.Subscribe(ctx, filterProcessor)
+	if err != nil {
+		fmt.Printf("Map processor subscribe failed: %v\n", err)
+		return
+	}
+	err = filterProcessor.Subscribe(ctx, subscriber)
+	if err != nil {
+		fmt.Printf("Filter processor subscribe failed: %v\n", err)
+		return
+	}
 	subscriber.wait()
 
 	fmt.Printf("Processor builder processed %d items\n", subscriber.processed)
@@ -292,7 +352,11 @@ func RunMemorySafetyTest() {
 		publisher := streams.NewCompliantRangePublisher(1, 10)
 		subscriber := &intSubscriber{name: fmt.Sprintf("Memory-%d", i)}
 		ctx := context.Background()
-		publisher.Subscribe(ctx, subscriber)
+		err := publisher.Subscribe(ctx, subscriber)
+		if err != nil {
+			fmt.Printf("Memory test %d subscribe failed: %v\n", i, err)
+			continue
+		}
 		subscriber.wait()
 	}
 
@@ -311,7 +375,11 @@ func RunStressTest() {
 			defer wg.Done()
 			subscriber := &intSubscriber{name: fmt.Sprintf("Stress-%d", id)}
 			ctx := context.Background()
-			publisher.Subscribe(ctx, subscriber)
+			err := publisher.Subscribe(ctx, subscriber)
+			if err != nil {
+				fmt.Printf("Stress test %d subscribe failed: %v\n", id, err)
+				return
+			}
 			subscriber.wait()
 		}(i)
 	}
@@ -337,7 +405,10 @@ func TestCompliantAPIs() {
 	publisher := streams.NewCompliantRangePublisher(1, 3)
 	subscriber := &intSubscriber{name: "Test"}
 	ctx := context.Background()
-	publisher.Subscribe(ctx, subscriber)
+	err := publisher.Subscribe(ctx, subscriber)
+	if err != nil {
+		panic(fmt.Sprintf("Compliant API test failed: %v", err))
+	}
 	subscriber.wait()
 
 	if subscriber.processed != 3 {

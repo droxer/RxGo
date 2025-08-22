@@ -13,7 +13,7 @@ Reactive Extensions for Go with full Reactive Streams 1.0.4 compliance.
 - **Push & Pull Models** - Observable API (push) and Reactive Streams (pull with backpressure)
 - **Retry and backoff** - Fixed, Linear, Exponential backoff with configurable retry limits
 - **Context cancellation** - Graceful shutdown
-- **Thread-safe** - Safe concurrent access
+- **Thread-safe** - All APIs are safe for concurrent access with proper synchronization
 
 ## Quick Start
 

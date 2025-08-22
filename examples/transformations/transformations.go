@@ -66,7 +66,11 @@ func main() {
 	fmt.Println("\n=== Reactive Streams API Example ===")
 
 	wordPublisher := streams.FromSlicePublisher([]string{"hello", "world", "rxgo"})
-	wordPublisher.Subscribe(context.Background(), &StreamsSubscriber{name: "Direct"})
+	err := wordPublisher.Subscribe(context.Background(), &StreamsSubscriber{name: "Direct"})
+	if err != nil {
+		fmt.Printf("Word publisher subscribe failed: %v\n", err)
+		return
+	}
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -124,57 +128,88 @@ func main() {
 	numberPublisher := streams.NewCompliantRangePublisher(1, 10)
 
 	takeProcessor := streams.NewTakeProcessor[int](5)
-	numberPublisher.Subscribe(context.Background(), takeProcessor)
+	err = numberPublisher.Subscribe(context.Background(), takeProcessor)
+	if err != nil {
+		fmt.Printf("Take processor source subscribe failed: %v\n", err)
+		return
+	}
 	fmt.Println("\n--- Take Processor ---")
-	takeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+	err = takeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Taken: %d\n", v) },
 		func(err error) { fmt.Printf("Take error: %v\n", err) },
 		func() { fmt.Println("Take completed") },
 	))
+	if err != nil {
+		fmt.Printf("Take processor subscribe failed: %v\n", err)
+		return
+	}
 
 	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
 
 	skipProcessor := streams.NewSkipProcessor[int](3)
-	numberPublisher.Subscribe(context.Background(), skipProcessor)
+	err = numberPublisher.Subscribe(context.Background(), skipProcessor)
+	if err != nil {
+		fmt.Printf("Skip processor source subscribe failed: %v\n", err)
+		return
+	}
 	fmt.Println("\n--- Skip Processor ---")
-	skipProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+	err = skipProcessor.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Skipped to: %d\n", v) },
 		func(err error) { fmt.Printf("Skip error: %v\n", err) },
 		func() { fmt.Println("Skip completed") },
 	))
+	if err != nil {
+		fmt.Printf("Skip processor subscribe failed: %v\n", err)
+		return
+	}
 
 	numberPublisher = streams.NewCompliantRangePublisher(1, 10)
 
 	duplicatePublisher := streams.NewCompliantFromSlicePublisher([]int{1, 2, 2, 3, 3, 3, 4, 5, 5})
 	distinctProcessor := streams.NewDistinctProcessor[int]()
-	duplicatePublisher.Subscribe(context.Background(), distinctProcessor)
+	err = duplicatePublisher.Subscribe(context.Background(), distinctProcessor)
+	if err != nil {
+		fmt.Printf("Distinct processor source subscribe failed: %v\n", err)
+		return
+	}
 	fmt.Println("\n--- Distinct Processor ---")
-	distinctProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+	err = distinctProcessor.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Distinct: %d\n", v) },
 		func(err error) { fmt.Printf("Distinct error: %v\n", err) },
 		func() { fmt.Println("Distinct completed") },
 	))
+	if err != nil {
+		fmt.Printf("Distinct processor subscribe failed: %v\n", err)
+		return
+	}
 
 	// Additional stream processors examples
 	fmt.Println("\n--- Merge Processor ---")
 	pub1 := streams.NewCompliantFromSlicePublisher([]int{1, 2, 3})
 	pub2 := streams.NewCompliantFromSlicePublisher([]int{4, 5, 6})
 	mergeProcessor := streams.NewMergeProcessor[int](pub1, pub2)
-	mergeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+	err = mergeProcessor.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Merged processor value: %d\n", v) },
 		func(err error) { fmt.Printf("Merge processor error: %v\n", err) },
 		func() { fmt.Println("Merge processor completed") },
 	))
+	if err != nil {
+		fmt.Printf("Merge processor subscribe failed: %v\n", err)
+		return
+	}
 
 	fmt.Println("\n--- Concat Processor ---")
 	pub3 := streams.NewCompliantFromSlicePublisher([]int{7, 8, 9})
 	pub4 := streams.NewCompliantFromSlicePublisher([]int{10, 11, 12})
 	concatProcessor := streams.NewConcatProcessor[int](pub3, pub4)
-	concatProcessor.Subscribe(context.Background(), streams.NewSubscriber(
+	err = concatProcessor.Subscribe(context.Background(), streams.NewSubscriber(
 		func(v int) { fmt.Printf("Concat processor value: %d\n", v) },
 		func(err error) { fmt.Printf("Concat processor error: %v\n", err) },
 		func() { fmt.Println("Concat processor completed") },
 	))
+	if err != nil {
+		fmt.Printf("Concat processor subscribe failed: %v\n", err)
+	}
 
 	time.Sleep(100 * time.Millisecond)
 	fmt.Println("\n=== All examples completed ===")

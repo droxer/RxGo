@@ -115,7 +115,10 @@ func TestCompliantFromSlicePublisher(t *testing.T) {
 		sub := newCompliantTestSubscriber[string]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.wait(ctx)
 
 		sub.assertValues(t, data)
@@ -127,7 +130,10 @@ func TestCompliantFromSlicePublisher(t *testing.T) {
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.wait(ctx)
 
 		sub.assertValues(t, []int{})
@@ -142,7 +148,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.wait(ctx)
 
 		sub.assertValues(t, expected)
@@ -154,7 +163,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		sub := newCompliantTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.wait(ctx)
 
 		sub.assertValues(t, []int{})
@@ -166,7 +178,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		sub := newCompliantManualTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.request(5)
 
 		sub.wait(ctx)
@@ -180,7 +195,10 @@ func TestCompliantRangePublisher(t *testing.T) {
 		sub := newCompliantManualTestSubscriber[int]()
 		ctx := context.Background()
 
-		publisher.Subscribe(ctx, sub)
+		err := publisher.Subscribe(ctx, sub)
+		if err != nil {
+			t.Fatalf("Subscribe failed: %v", err)
+		}
 		sub.request(-1)
 
 		sub.wait(ctx)
@@ -195,8 +213,14 @@ func TestCompliantRangePublisher(t *testing.T) {
 		sub1 := newCompliantTestSubscriber[int]()
 		sub2 := newCompliantTestSubscriber[int]()
 
-		publisher.Subscribe(ctx, sub1)
-		publisher.Subscribe(ctx, sub2)
+		err := publisher.Subscribe(ctx, sub1)
+		if err != nil {
+			t.Fatalf("Subscribe to sub1 failed: %v", err)
+		}
+		err = publisher.Subscribe(ctx, sub2)
+		if err != nil {
+			t.Fatalf("Subscribe to sub2 failed: %v", err)
+		}
 		sub1.wait(ctx)
 		sub2.wait(ctx)
 

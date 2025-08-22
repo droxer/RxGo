@@ -19,7 +19,10 @@ type Publisher[T any] interface {
 	// Parameters:
 	//   ctx: The context for the subscription, used for cancellation
 	//   s: The subscriber that will receive values
-	Subscribe(ctx context.Context, s Subscriber[T])
+	//
+	// Returns:
+	//   error if subscription fails (e.g., nil subscriber)
+	Subscribe(ctx context.Context, s Subscriber[T]) error
 }
 
 // Subscriber is the interface that receives values from a Publisher.

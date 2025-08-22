@@ -32,11 +32,9 @@ func NewBufferedPublisher[T any](
 	}
 }
 
-func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
 	if sub == nil {
-		// Handle nil subscriber gracefully by returning early
-		// This maintains consistency with other publisher implementations
-		return
+		return errors.New("subscriber cannot be nil")
 	}
 
 	subscription := &bufferedSubscription[T]{
@@ -45,6 +43,8 @@ func (bp *BufferedPublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]
 		ctx:       ctx,
 	}
 	sub.OnSubscribe(subscription)
+
+	return nil
 }
 
 type bufferedSubscription[T any] struct {
@@ -267,9 +267,9 @@ func NewCompliantRangePublisher(start, count int) *CompliantRangePublisher {
 	}
 }
 
-func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber[int]) {
+func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber[int]) error {
 	if sub == nil {
-		return
+		return errors.New("subscriber cannot be nil")
 	}
 
 	if ctx == nil {
@@ -282,7 +282,7 @@ func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber
 	rp.compliantPublisher.mu.Lock()
 	if rp.compliantPublisher.terminal.Load() {
 		rp.compliantPublisher.mu.Unlock()
-		return
+		return nil
 	}
 	rp.compliantPublisher.subscribers[subscription] = struct{}{}
 	rp.compliantPublisher.mu.Unlock()
@@ -297,6 +297,8 @@ func (rp *CompliantRangePublisher) Subscribe(ctx context.Context, sub Subscriber
 		go rp.process(ctx)
 	}
 	rp.mu.Unlock()
+
+	return nil
 }
 
 func (rp *CompliantRangePublisher) process(ctx context.Context) {
@@ -354,9 +356,9 @@ func NewCompliantFromSlicePublisher[T any](items []T) *CompliantFromSlicePublish
 	}
 }
 
-func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
 	if sub == nil {
-		return
+		return errors.New("subscriber cannot be nil")
 	}
 
 	if ctx == nil {
@@ -369,7 +371,7 @@ func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Sub
 	sp.compliantPublisher.mu.Lock()
 	if sp.compliantPublisher.terminal.Load() {
 		sp.compliantPublisher.mu.Unlock()
-		return
+		return nil
 	}
 	sp.compliantPublisher.subscribers[subscription] = struct{}{}
 	sp.compliantPublisher.mu.Unlock()
@@ -384,6 +386,8 @@ func (sp *CompliantFromSlicePublisher[T]) Subscribe(ctx context.Context, sub Sub
 		go sp.process(ctx)
 	}
 	sp.mu.Unlock()
+
+	return nil
 }
 
 func (sp *CompliantFromSlicePublisher[T]) process(ctx context.Context) {

@@ -33,7 +33,10 @@ func TestNewSubscriber(t *testing.T) {
 	)
 
 	publisher := NewCompliantRangePublisher(1, 3)
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Give some time for async processing
 	// Note: This is a bit fragile, but needed for testing
@@ -93,7 +96,10 @@ func TestNewSubscriberWithError(t *testing.T) {
 		sub.OnError(testError)
 	})
 
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Give some time for processing
 	time.Sleep(100 * time.Millisecond)
@@ -119,7 +125,10 @@ func TestNewSubscriberNilHandlers(t *testing.T) {
 	subscriber := NewSubscriber[int](nil, nil, nil)
 
 	publisher := NewCompliantRangePublisher(1, 2)
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Should not panic - this test passes if no panic occurs
 }
@@ -151,7 +160,10 @@ func TestNewSubscriberAutoRequest(t *testing.T) {
 
 	// The functional subscriber should auto-request unlimited items
 	publisher := NewCompliantRangePublisher(1, 5)
-	publisher.Subscribe(context.Background(), subscriber)
+	err := publisher.Subscribe(context.Background(), subscriber)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Give time for processing
 	time.Sleep(100 * time.Millisecond)

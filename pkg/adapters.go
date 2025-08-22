@@ -11,7 +11,10 @@ import (
 
 func ObservablePublisherAdapter[T any](obs *observable.Observable[T]) streams.Publisher[T] {
 	return streams.NewPublisher(func(ctx context.Context, sub streams.Subscriber[T]) {
-		_ = obs.Subscribe(ctx, &observableSubscriberAdapter[T]{sub: sub})
+		err := obs.Subscribe(ctx, &observableSubscriberAdapter[T]{sub: sub})
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 
@@ -52,7 +55,10 @@ func PublisherToObservableAdapter[T any](publisher streams.Publisher[T]) *observ
 			highWaterMark:    256,  // Maximum outstanding requests
 			maxBufferSize:    1024, // Maximum buffer size to prevent unbounded growth
 		}
-		publisher.Subscribe(ctx, adapter)
+		err := publisher.Subscribe(ctx, adapter)
+		if err != nil {
+			sub.OnError(err)
+		}
 	})
 }
 

@@ -164,7 +164,10 @@ func TestSubscriptionCancellation(t *testing.T) {
 	publisher := NewCompliantRangePublisher(1, 100)
 	sub := newManualTestSubscriber[int]()
 
-	publisher.Subscribe(ctx, sub)
+	err := publisher.Subscribe(ctx, sub)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Request some items
 	sub.Request(5)
@@ -193,7 +196,10 @@ func TestSubscriptionZeroRequest(t *testing.T) {
 	publisher := NewCompliantRangePublisher(1, 5)
 	sub := newManualTestSubscriber[int]()
 
-	publisher.Subscribe(ctx, sub)
+	err := publisher.Subscribe(ctx, sub)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 	sub.Request(0)
 
 	// Wait briefly to ensure no items are processed
@@ -210,7 +216,10 @@ func TestSubscriptionNegativeRequest(t *testing.T) {
 	publisher := NewCompliantRangePublisher(1, 5)
 	sub := newManualTestSubscriber[int]()
 
-	publisher.Subscribe(ctx, sub)
+	err := publisher.Subscribe(ctx, sub)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 	sub.Request(-1)
 
 	sub.Wait(ctx)
@@ -223,7 +232,10 @@ func TestSubscriptionMultipleRequests(t *testing.T) {
 	publisher := NewCompliantRangePublisher(1, 10)
 	sub := newManualTestSubscriber[int]()
 
-	publisher.Subscribe(ctx, sub)
+	err := publisher.Subscribe(ctx, sub)
+	if err != nil {
+		t.Fatalf("Subscribe failed: %v", err)
+	}
 
 	// Make multiple small requests
 	sub.Request(2)

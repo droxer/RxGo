@@ -2,6 +2,7 @@ package streams
 
 import (
 	"context"
+	"errors"
 	"sync"
 )
 
@@ -46,13 +47,19 @@ func NewMapProcessor[T any, R any](transform func(T) R) *MapProcessor[T, R] {
 // Parameters:
 //   - ctx: The context for the subscription, used for cancellation
 //   - sub: The subscriber that will receive processed values
-func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
+func (p *MapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.downstream = sub
 	p.mu.Unlock()
 
 	processorSub := &mapProcessorSubscription[T, R]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 // OnSubscribe is called when the subscription to the upstream Publisher is established.
@@ -200,13 +207,19 @@ func NewFilterProcessor[T any](predicate func(T) bool) *FilterProcessor[T] {
 // Parameters:
 //   - ctx: The context for the subscription, used for cancellation
 //   - sub: The subscriber that will receive filtered values
-func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *FilterProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.downstream = sub
 	p.mu.Unlock()
 
 	processorSub := &filterProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 // OnSubscribe is called when the subscription to the upstream Publisher is established.
@@ -332,10 +345,13 @@ func NewFlatMapProcessor[T any, R any](transform func(T) Publisher[R]) *FlatMapP
 	}
 }
 
-func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) {
+func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	if ctx == nil {
-		p.ctx = context.Background()
 	} else {
 		p.ctx = ctx
 	}
@@ -344,6 +360,8 @@ func (p *FlatMapProcessor[T, R]) Subscribe(ctx context.Context, sub Subscriber[R
 
 	processorSub := &flatMapProcessorSubscription[T, R]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *FlatMapProcessor[T, R]) OnSubscribe(s Subscription) {
@@ -371,7 +389,11 @@ func (p *FlatMapProcessor[T, R]) OnNext(value T) {
 	p.activeInners++
 	p.mu.Unlock()
 
-	publisher.Subscribe(p.ctx, &innerSubscriber[T, R]{processor: p})
+	err := publisher.Subscribe(p.ctx, &innerSubscriber[T, R]{processor: p})
+	if err != nil {
+		innerSub := &innerSubscriber[T, R]{processor: p}
+		innerSub.OnError(err)
+	}
 }
 
 func (p *FlatMapProcessor[T, R]) OnError(err error) {
@@ -492,7 +514,11 @@ func NewMergeProcessor[T any](sources ...Publisher[T]) *MergeProcessor[T] {
 	}
 }
 
-func (p *MergeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *MergeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.ctx = ctx
 	p.downstream = sub
@@ -500,6 +526,8 @@ func (p *MergeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 
 	processorSub := &mergeProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *MergeProcessor[T]) OnSubscribe(s Subscription) {
@@ -565,7 +593,11 @@ func (s *mergeProcessorSubscription[T]) Request(n int64) {
 	}
 
 	for _, source := range s.processor.sources {
-		source.Subscribe(ctx, &mergeInnerSubscriber[T]{processor: s.processor})
+		err := source.Subscribe(ctx, &mergeInnerSubscriber[T]{processor: s.processor})
+		if err != nil {
+			innerSub := &mergeInnerSubscriber[T]{processor: s.processor}
+			innerSub.OnError(err)
+		}
 	}
 }
 
@@ -607,7 +639,11 @@ func NewConcatProcessor[T any](sources ...Publisher[T]) *ConcatProcessor[T] {
 	}
 }
 
-func (p *ConcatProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *ConcatProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.ctx = ctx
 	p.downstream = sub
@@ -615,6 +651,8 @@ func (p *ConcatProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
 
 	processorSub := &concatProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *ConcatProcessor[T]) OnSubscribe(s Subscription) {
@@ -651,7 +689,11 @@ func (p *ConcatProcessor[T]) OnComplete() {
 	p.currentIndex++
 	if p.currentIndex < len(p.sources) && p.ctx != nil {
 		// Move to the next source
-		p.sources[p.currentIndex].Subscribe(p.ctx, &concatInnerSubscriber[T]{processor: p})
+		err := p.sources[p.currentIndex].Subscribe(p.ctx, &concatInnerSubscriber[T]{processor: p})
+		if err != nil && p.downstream != nil {
+			p.terminated = true
+			p.downstream.OnError(err)
+		}
 	} else if p.downstream != nil {
 		// All sources completed
 		p.terminated = true
@@ -671,7 +713,11 @@ func (s *concatProcessorSubscription[T]) Request(n int64) {
 
 	// Start with the first source
 	if len(s.processor.sources) > 0 {
-		s.processor.sources[0].Subscribe(ctx, &concatInnerSubscriber[T]{processor: s.processor})
+		err := s.processor.sources[0].Subscribe(ctx, &concatInnerSubscriber[T]{processor: s.processor})
+		if err != nil {
+			innerSub := &concatInnerSubscriber[T]{processor: s.processor}
+			innerSub.OnError(err)
+		}
 	} else {
 		s.processor.terminated = true
 		if s.processor.downstream != nil {
@@ -726,13 +772,19 @@ func NewTakeProcessor[T any](n int64) *TakeProcessor[T] {
 	}
 }
 
-func (p *TakeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *TakeProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.downstream = sub
 	p.mu.Unlock()
 
 	processorSub := &takeProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *TakeProcessor[T]) OnSubscribe(s Subscription) {
@@ -836,13 +888,19 @@ func NewSkipProcessor[T any](n int64) *SkipProcessor[T] {
 	}
 }
 
-func (p *SkipProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *SkipProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.downstream = sub
 	p.mu.Unlock()
 
 	processorSub := &skipProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *SkipProcessor[T]) OnSubscribe(s Subscription) {
@@ -933,13 +991,19 @@ func NewDistinctProcessor[T comparable]() *DistinctProcessor[T] {
 	}
 }
 
-func (p *DistinctProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) {
+func (p *DistinctProcessor[T]) Subscribe(ctx context.Context, sub Subscriber[T]) error {
+	if sub == nil {
+		return errors.New("subscriber cannot be nil")
+	}
+
 	p.mu.Lock()
 	p.downstream = sub
 	p.mu.Unlock()
 
 	processorSub := &distinctProcessorSubscription[T]{processor: p}
 	sub.OnSubscribe(processorSub)
+
+	return nil
 }
 
 func (p *DistinctProcessor[T]) OnSubscribe(s Subscription) {
