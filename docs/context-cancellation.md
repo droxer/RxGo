@@ -61,7 +61,9 @@ func main() {
         }
     })
 
-    observable.Subscribe(ctx, subscriber)
+    if err := observable.Subscribe(ctx, subscriber); err != nil {
+        fmt.Printf("Subscription failed: %v\n", err)
+    }
     time.Sleep(500 * time.Millisecond) // Wait for completion
     fmt.Println("Context cancellation example completed!")
 }

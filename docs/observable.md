@@ -34,11 +34,13 @@ import (
 func main() {
 	// Using Just to create observable
 	justObservable := observable.Just(1, 2, 3, 4, 5)
-	justObservable.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := justObservable.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+	}
 }
 ```
 
@@ -49,11 +51,13 @@ Create observable from range of integers:
 ```go
 // Create observable from range of integers
 rangeObservable := observable.Range(10, 5) // Emits 10, 11, 12, 13, 14
-rangeObservable.Subscribe(context.Background(), observable.NewSubscriber(
+if err := rangeObservable.Subscribe(context.Background(), observable.NewSubscriber(
 	func(v int) { fmt.Printf("Received: %d\n", v) },
 	func() { fmt.Println("Completed") },
 	func(err error) { fmt.Printf("Error: %v\n", err) },
-))
+)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ## Using Create with Custom Logic
@@ -73,11 +77,13 @@ customObservable := observable.Create(func(ctx context.Context, sub observable.S
     }
     sub.OnCompleted()
 })
-customObservable.Subscribe(context.Background(), observable.NewSubscriber(
+if err := customObservable.Subscribe(context.Background(), observable.NewSubscriber(
 	func(v int) { fmt.Printf("Received: %d\n", v) },
 	func() { fmt.Println("Completed") },
 	func(err error) { fmt.Printf("Error: %v\n", err) },
-))
+)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ## Using Operators
@@ -94,11 +100,13 @@ import (
 obs := observable.Range(1, 10)
 transformed := observable.Map(obs, func(x int) int { return x * 2 })
 filtered := observable.Filter(transformed, func(x int) bool { return x > 10 })
-filtered.Subscribe(context.Background(), observable.NewSubscriber(
+if err := filtered.Subscribe(context.Background(), observable.NewSubscriber(
 	func(v int) { fmt.Printf("Received: %d\n", v) },
 	func() { fmt.Println("Completed") },
 	func(err error) { fmt.Printf("Error: %v\n", err) },
-))
+)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ## Using Schedulers
@@ -115,31 +123,37 @@ import (
 obs := observable.Range(1, 5)
 
 // Computation scheduler for CPU-bound work
-observable.ObserveOn(obs, scheduler.Computation()).Subscribe(
+if err := observable.ObserveOn(obs, scheduler.Computation()).Subscribe(
 	context.Background(), 
 	observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 
 // IO scheduler for IO-bound work
-observable.ObserveOn(obs, scheduler.IO()).Subscribe(
+if err := observable.ObserveOn(obs, scheduler.IO()).Subscribe(
 	context.Background(), 
 	observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 
 // Single thread for sequential processing
-observable.ObserveOn(obs, scheduler.NewSingleThreadScheduler()).Subscribe(
+if err := observable.ObserveOn(obs, scheduler.NewSingleThreadScheduler()).Subscribe(
 	context.Background(), 
 	observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ## Context Cancellation
@@ -166,11 +180,13 @@ contextObservable := observable.Create(func(ctx context.Context, sub observable.
     }
     sub.OnCompleted()
 })
-contextObservable.Subscribe(ctx, observable.NewSubscriber(
+if err := contextObservable.Subscribe(ctx, observable.NewSubscriber(
 	func(v int) { fmt.Printf("Received: %d\n", v) },
 	func() { fmt.Println("Completed") },
 	func(err error) { fmt.Printf("Error: %v\n", err) },
-))
+)); err != nil {
+	fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ## Key Concepts
@@ -226,33 +242,39 @@ func main() {
 	// Example 1: Basic usage with Just
 	fmt.Println("\n1. Using Just():")
 	justObservable := observable.Just(1, 2, 3, 4, 5)
-	justObservable.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := justObservable.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+	}
 
 	// Example 2: Range observable
 	fmt.Println("\n2. Using Range():")
 	rangeObservable := observable.Range(10, 5)
-	rangeObservable.Subscribe(context.Background(), observable.NewSubscriber(
+	if err := rangeObservable.Subscribe(context.Background(), observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+	}
 
 	// Example 3: Using operators
 	fmt.Println("\n3. Using operators:")
 	obs := observable.Range(1, 5)
 	transformed := observable.Map(obs, func(x int) int { return x * 10 })
 	filtered := observable.Filter(transformed, func(x int) bool { return x > 20 })
-	observable.ObserveOn(filtered, scheduler.Computation()).Subscribe(
+	if err := observable.ObserveOn(filtered, scheduler.Computation()).Subscribe(
 		context.Background(),
 		observable.NewSubscriber(
 			func(v int) { fmt.Printf("Received: %d\n", v) },
 			func() { fmt.Println("Completed") },
 			func(err error) { fmt.Printf("Error: %v\n", err) },
-		))
+		)); err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+	}
 
 	// Example 4: With context cancellation
 	fmt.Println("\n4. With context cancellation:")
@@ -272,11 +294,13 @@ func main() {
 		}
 		sub.OnCompleted()
 	})
-	contextObservable.Subscribe(ctx, observable.NewSubscriber(
+	if err := contextObservable.Subscribe(ctx, observable.NewSubscriber(
 		func(v int) { fmt.Printf("Received: %d\n", v) },
 		func() { fmt.Println("Completed") },
 		func(err error) { fmt.Printf("Error: %v\n", err) },
-	))
+	)); err != nil {
+		fmt.Printf("Subscription failed: %v\n", err)
+	}
 
 	time.Sleep(200 * time.Millisecond)
 	fmt.Println("\n=== All examples completed ===")

@@ -55,7 +55,9 @@ func main() {
     filtered := observable.Filter(mapped, func(x int) bool { return x > 5 })
     
     // Subscribe to receive transformed values
-    filtered.Subscribe(context.Background(), &IntSubscriber{name: "Observable"})
+    if err := filtered.Subscribe(context.Background(), &IntSubscriber{name: "Observable"}); err != nil {
+        fmt.Printf("Subscription failed: %v\n", err)
+    }
 }
 ```
 
@@ -218,7 +220,9 @@ func main() {
     obs := observable.Range(1, 5)
     mapped := observable.Map(obs, func(x int) int { return x * 3 })
     filtered := observable.Filter(mapped, func(x int) bool { return x > 6 })
-    filtered.Subscribe(context.Background(), &ObservableSubscriber{name: "Transform"})
+    if err := filtered.Subscribe(context.Background(), &ObservableSubscriber{name: "Transform"}); err != nil {
+        fmt.Printf("Subscription failed: %v\n", err)
+    }
     
     fmt.Println("\n=== Reactive Streams API Transformation ===")
     

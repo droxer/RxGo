@@ -10,11 +10,13 @@ import "github.com/droxer/RxGo/pkg/observable"
 
 // Producer pushes data as fast as it can generate it
 obs := observable.Just(1, 2, 3, 4, 5)
-obs.Subscribe(context.Background(), observable.NewSubscriber(
+if err := obs.Subscribe(context.Background(), observable.NewSubscriber(
     func(v int) { fmt.Printf("Received: %d\n", v) },
     func() { fmt.Println("Completed") },
     func(err error) { fmt.Printf("Error: %v\n", err) },
-))
+)); err != nil {
+    fmt.Printf("Subscription failed: %v\n", err)
+}
 ```
 
 ### Characteristics of Push Model:
